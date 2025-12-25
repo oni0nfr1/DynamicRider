@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.oni0nfr1.dynamicrider.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "RiderActionBarMixin",
+    "RiderTachoEnableMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

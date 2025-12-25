@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "dynamicrider",
+  "version": "${version}",
+  "name": "DynamicRider",
+  "description": "Provides HUD & utils for Kartrider : Minecraft",
+  "authors": [],
+  "contact": {},
+  "license": "GPL-3.0",
+  "icon": "assets/dynamicrider/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient"
+    ],
+    "main": [
+      "io.github.oni0nfr1.dynamicrider.DynamicRider"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "dynamicrider.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

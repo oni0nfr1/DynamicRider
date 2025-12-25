@@ -1,0 +1,47 @@
+package io.github.oni0nfr1.dynamicrider.client.mixin;
+
+import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
+import io.github.oni0nfr1.dynamicrider.client.rider.KartNitroCounter;
+import io.github.oni0nfr1.dynamicrider.client.rider.KartSpeedMeasure;
+import net.minecraft.client.gui.Gui;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import org.jetbrains.annotations.NotNull;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+@Mixin(ClientPacketListener.class)
+public class RiderActionBarMixin {
+
+    @Inject(
+        method = "setActionBarText",
+        at = @At("TAIL")
+    )
+    private void dynrider$readActionBar(
+            @NotNull ClientboundSetActionBarTextPacket packet,
+            CallbackInfo ci
+    ) {
+        String actionBarRaw = packet.text().getString();
+        KartSpeedMeasure.updateSpeed(actionBarRaw);
+        KartNitroCounter.updateNitro(actionBarRaw);
+    }
+
+    @WrapWithCondition(
+        method = "setActionBarText(Lnet/minecraft/network/protocol/game/ClientboundSetActionBarTextPacket;)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/Gui;setOverlayMessage(Lnet/minecraft/network/chat/Component;Z)V"
+        )
+    )
+    private static boolean dynrider$blockActionBar(
+        Gui instance,
+        Component component,
+        boolean bl
+    ) {
+        return true; // TODO: 상황에 따라 ActionBar 렌더링 막도록
+    }
+
+}
