@@ -12,17 +12,23 @@ object KartNitroCounter {
         this.stateManager = stateManager
         this.nitro = mutableStateOf(KartNitroCounter.stateManager, 0)
         this.gear = mutableStateOf(KartNitroCounter.stateManager, 0)
-        this.type = mutableStateOf(KartNitroCounter.stateManager, BoosterType.NITRO)
     }
 
     var enabled = false
+        set(value) {
+            if (value == false) {
+                nitro.set(0)
+                gear.set(0)
+                KartDetector.type.set(BoosterType.NITRO)
+            }
+            field = value
+        }
     val nitroRegex = Regex("""NITRO\s*x\s*(\d+)""", RegexOption.IGNORE_CASE)
     val fusionRegex = Regex("""FUSION\s*x\s*(\d+)""", RegexOption.IGNORE_CASE)
     val gearRegex = Regex("""(\d+)\s*단""", RegexOption.IGNORE_CASE)
 
     lateinit var nitro: MutableState<Int>
     lateinit var gear: MutableState<Int>
-    lateinit var type: MutableState<BoosterType>
 
     @JvmStatic
     fun updateNitro(raw: String) {
@@ -30,25 +36,19 @@ object KartNitroCounter {
 
         tryParse(raw, nitroRegex) { match ->
             val readNitro = match.groupValues[1].toInt()
-            type.set(BoosterType.NITRO)
+            KartDetector.type.set(BoosterType.NITRO)
             nitro.set(readNitro)
         }
         tryParse(raw, fusionRegex) { match ->
             val readNitro = match.groupValues[1].toInt()
-            type.set(BoosterType.FUSION)
+            KartDetector.type.set(BoosterType.FUSION)
             nitro.set(readNitro)
         }
         tryParse(raw, gearRegex) { match ->
             val readGear = match.groupValues[1].toInt()
-            type.set(BoosterType.GEAR)
+            KartDetector.type.set(BoosterType.GEAR)
             gear.set(readGear)
         }
-    }
-
-    enum class BoosterType {
-        NITRO,
-        FUSION,
-        GEAR,
     }
 
     private fun tryParse(

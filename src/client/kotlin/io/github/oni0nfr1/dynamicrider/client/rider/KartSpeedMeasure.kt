@@ -7,6 +7,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
 object KartSpeedMeasure {
 
     var enabled: Boolean = false
+        set(value) {
+            if(value == false) speed.set(0)
+            field = value
+        }
     val speedRegex = Regex("""(\d{1,4})(?:\.(\d))?\s*km\s*/?\s*h""", RegexOption.IGNORE_CASE)
 
     lateinit var stateManager: HudStateManager

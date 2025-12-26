@@ -1,6 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
+import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
+import io.github.oni0nfr1.dynamicrider.client.rider.KartGaugeMeasure;
 import io.github.oni0nfr1.dynamicrider.client.rider.KartNitroCounter;
 import io.github.oni0nfr1.dynamicrider.client.rider.KartSpeedMeasure;
 import net.minecraft.client.gui.Gui;
@@ -24,7 +26,9 @@ public class RiderActionBarMixin {
             @NotNull ClientboundSetActionBarTextPacket packet,
             CallbackInfo ci
     ) {
-        String actionBarRaw = packet.text().getString();
+        Component actionBar = packet.text();
+        String actionBarRaw = actionBar.getString();
+        KartGaugeMeasure.updateGauge(actionBar);
         KartSpeedMeasure.updateSpeed(actionBarRaw);
         KartNitroCounter.updateNitro(actionBarRaw);
     }
@@ -41,7 +45,7 @@ public class RiderActionBarMixin {
         Component component,
         boolean bl
     ) {
-        return true; // TODO: 상황에 따라 ActionBar 렌더링 막도록
+        return !VanillaSuppression.getSuppressVanillaKartState();
     }
 
 }

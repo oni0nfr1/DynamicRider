@@ -3,8 +3,11 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
+import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
+import io.github.oni0nfr1.dynamicrider.client.rider.KartGaugeMeasure
 import io.github.oni0nfr1.dynamicrider.client.rider.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.KartSpeedMeasure
 import org.joml.Vector3f
@@ -35,10 +38,26 @@ class ExampleScene(
         iconSize = 28
     }
 
+    val gaugeBar: PlainGaugeBar = PlainGaugeBar(stateManager) {
+        gauge = KartGaugeMeasure.gauge()
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position = Vector3f(0f, -75f, 0f)
+    }
+
     override val elements: MutableSet<HudElement>
         = mutableSetOf(
             speedMeter,
             nitroSlot1,
             nitroSlot2,
+            gaugeBar,
         )
+
+    override fun enable() {
+        VanillaSuppression.suppressVanillaKartState = true
+    }
+
+    override fun disable() {
+        VanillaSuppression.suppressVanillaKartState = false
+    }
 }

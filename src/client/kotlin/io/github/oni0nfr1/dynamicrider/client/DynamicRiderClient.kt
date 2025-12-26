@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client
 import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
 import io.github.oni0nfr1.dynamicrider.client.rider.KartDetector
+import io.github.oni0nfr1.dynamicrider.client.rider.KartGaugeMeasure
 import io.github.oni0nfr1.dynamicrider.client.rider.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.KartSpeedMeasure
 import net.fabricmc.api.ClientModInitializer
@@ -25,6 +26,11 @@ class DynamicRiderClient : ClientModInitializer {
         = ResourceLocation.fromNamespaceAndPath(ResourceStore.MOD_ID, "hud")
 
     var currentScene: HudScene? = null
+        set(value) {
+            field?.disable()
+            field = value
+            field?.enable()
+        }
 
     override fun onInitializeClient() {
         _instance = this
@@ -44,8 +50,9 @@ class DynamicRiderClient : ClientModInitializer {
     }
 
     fun initializeDetectors() {
-        KartDetector.init()
+        KartDetector.init(stateManager)
         KartSpeedMeasure.init(stateManager)
         KartNitroCounter.init(stateManager)
+        KartGaugeMeasure.init(stateManager)
     }
 }

@@ -14,4 +14,7 @@ interface HudScene {
         elements.forEach { it.draw(guiGraphics, deltaTracker) }
     }
 
+    fun enable()
+    fun disable()
+
 }
