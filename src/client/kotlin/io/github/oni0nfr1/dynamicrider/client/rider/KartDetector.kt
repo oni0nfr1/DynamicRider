@@ -7,69 +7,115 @@ import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.minecraft.client.Minecraft
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.animal.Cod
+
+typealias Kart = Cod
 
 object KartDetector {
 
     lateinit var stateManager: HudStateManager
-    lateinit var type: MutableState<BoosterType>
+    lateinit var boosterType: MutableState<BoosterType>
+    lateinit var mountType: MutableState<MountType>
 
     var detectTriesLeft = 0
-    var pendingVehicleId: Int? = null
 
     const val KART_ENGINE_CODE = "mcrider-saddle-common"
 
     fun init(stateManager: HudStateManager) {
         this.stateManager = stateManager
-        this.type = mutableStateOf(stateManager, BoosterType.NITRO)
+        this.boosterType = mutableStateOf(stateManager, BoosterType.NITRO)
+        this.mountType = mutableStateOf(stateManager, MountType.DISMOUNTED)
 
-        ClientTickEvents.END_CLIENT_TICK.register { client ->
-            tick(client)
+        ClientTickEvents.END_CLIENT_TICK.register { _ ->
+            tick()
+        }
+
+        ClientPlayConnectionEvents.JOIN.register { _, _, client ->
+            reset()
+
+            client.execute {
+                bootstrap(client)
+            }
+        }
+
+        ClientPlayConnectionEvents.DISCONNECT.register { _, _ ->
+            reset()
+            RiderMountState.reset() // 아래 2) 참고
         }
     }
 
-    var lastVehicleId: Int? = null
-    @JvmStatic
-    fun detectKart(vehicleId: Int) {
-        // 플레이어가 타는 순간부터 customName을 인식하는 사이에 들어오는 액션바 취소
-        VanillaSuppression.suppressVanillaKartState = true
-
-        if (lastVehicleId == vehicleId) return
-        pendingVehicleId = vehicleId
-
-        detectTriesLeft = 10 // 10틱 동안 CustomName 기다리기
-        // CustomName 동기화 패킷이 플레이어 탑승 패킷보다 늦게 올라오는 상황을 대응하기 위함
+    fun reset() {
+        detectTriesLeft = 0
+        currentKart = null
     }
 
-    fun tick(client: Minecraft) {
-        val vehicleId = pendingVehicleId    ?: return
-        val level = client.level            ?: return
+    // init은 게임 시작 시에, bootstrap은 게임 접속 시에
+    @JvmStatic
+    fun bootstrap(client: Minecraft) {
+        val subject = client.subject ?: return
+        val vehicle = subject.vehicle ?: return
+        detectKart(vehicle.id)
+    }
 
-        val entity = level.getEntity(vehicleId)
-        val kart = entity as? Cod
-        val kartName = kart?.customName?.string
+    val Minecraft.subject: Entity?
+        get() {
+            val player = this.player ?: return null
+            val cam = this.cameraEntity
+            return if (player.isSpectator && cam != null && cam != player) cam else player
+        }
+
+    @JvmStatic var currentKart: Kart? = null
+    @JvmStatic
+    fun detectKart(vehicleId: Int) {
+        val client = Minecraft.getInstance()
+        val subject = client.subject ?: return
+        val level = client.level ?: return
+
+        val newKart = level.getEntity(vehicleId) as? Kart ?: return
+        if (subject.vehicle != newKart) return
+        if (currentKart?.id == newKart.id && detectTriesLeft > 0) return
+
+        currentKart = newKart
+        VanillaSuppression.suppressVanillaKartState = true
+        detectTriesLeft = 10
+    }
+
+    @JvmStatic
+    fun triggerDismounted() {
+        reset()
+        onKartDismount()
+    }
+
+    fun tick() {
+        if (detectTriesLeft <= 0) return
+        val kart = currentKart ?: return
+        val kartName = kart.customName?.string
 
         if (kartName == KART_ENGINE_CODE) {
-            lastVehicleId = vehicleId
-            pendingVehicleId = null
             detectTriesLeft = 0
-
             onKartMount()
             return
-        } else {
-            detectTriesLeft--
-            if (detectTriesLeft <= 0) {
-                // 카트에 탄 게 아님이 확인되면 그 뒤로는 액션바를 띄워 줌
-                VanillaSuppression.suppressVanillaKartState = false
-                pendingVehicleId = null
-            }
+        }
+
+        detectTriesLeft--
+        if (detectTriesLeft <= 0) {
+            VanillaSuppression.suppressVanillaKartState = false
+            currentKart = null
         }
     }
 
     fun onKartMount() {
+        val client = Minecraft.getInstance()
         val mod = DynamicRiderClient.instance
+        val mount = when (client.player?.isSpectator) {
+            true -> MountType.SPECTATOR
+            else -> MountType.MOUNTED
+        }
 
+        mountType.set(mount)
         KartSpeedMeasure.enabled = true
         KartNitroCounter.enabled = true
         KartGaugeMeasure.enabled = true
@@ -79,10 +125,17 @@ object KartDetector {
     fun onKartDismount() {
         val mod = DynamicRiderClient.instance
 
+        mountType.set(MountType.DISMOUNTED)
         KartSpeedMeasure.enabled = false
         KartNitroCounter.enabled = false
         KartGaugeMeasure.enabled = false
         mod.currentScene = null
+    }
+
+    enum class MountType {
+        DISMOUNTED,
+        MOUNTED,
+        SPECTATOR
     }
 
 }

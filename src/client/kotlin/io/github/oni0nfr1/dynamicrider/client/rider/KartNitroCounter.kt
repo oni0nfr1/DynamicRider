@@ -19,7 +19,7 @@ object KartNitroCounter {
             if (value == false) {
                 nitro.set(0)
                 gear.set(0)
-                KartDetector.type.set(BoosterType.NITRO)
+                KartDetector.boosterType.set(BoosterType.NITRO)
             }
             field = value
         }
@@ -36,17 +36,17 @@ object KartNitroCounter {
 
         tryParse(raw, nitroRegex) { match ->
             val readNitro = match.groupValues[1].toInt()
-            KartDetector.type.set(BoosterType.NITRO)
+            KartDetector.boosterType.set(BoosterType.NITRO)
             nitro.set(readNitro)
         }
         tryParse(raw, fusionRegex) { match ->
             val readNitro = match.groupValues[1].toInt()
-            KartDetector.type.set(BoosterType.FUSION)
+            KartDetector.boosterType.set(BoosterType.FUSION)
             nitro.set(readNitro)
         }
         tryParse(raw, gearRegex) { match ->
             val readGear = match.groupValues[1].toInt()
-            KartDetector.type.set(BoosterType.GEAR)
+            KartDetector.boosterType.set(BoosterType.GEAR)
             gear.set(readGear)
         }
     }

@@ -28,9 +28,11 @@ public class RiderActionBarMixin {
     ) {
         Component actionBar = packet.text();
         String actionBarRaw = actionBar.getString();
-        KartGaugeMeasure.updateGauge(actionBar);
-        KartSpeedMeasure.updateSpeed(actionBarRaw);
-        KartNitroCounter.updateNitro(actionBarRaw);
+        if (actionBarRaw.contains("km/h")) { // 카트 상태를 보여주는 액션바가 맞는지 확인
+            KartGaugeMeasure.updateGauge(actionBar);
+            KartSpeedMeasure.updateSpeed(actionBarRaw);
+            KartNitroCounter.updateNitro(actionBarRaw);
+        }
     }
 
     @WrapWithCondition(
