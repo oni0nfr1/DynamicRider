@@ -1,11 +1,15 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.interfaces
 
-import net.minecraft.world.entity.player.Player
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager.ElimReason
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager.Racer
+import java.util.UUID
 
 interface RankingTable: HudElement {
 
-    val players: List<Player>
-    val racingPlayers: List<Player>
-    val spectators: List<Player>
+    var ranking: List<RankingManager.RankingEntry>
+    var racers: LinkedHashMap<UUID, Racer>
+    var eliminated: LinkedHashMap<UUID, ElimReason>
+    var alive: LinkedHashSet<UUID>
 
 }

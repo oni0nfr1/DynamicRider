@@ -3,9 +3,11 @@ package io.github.oni0nfr1.dynamicrider.client
 import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
 import io.github.oni0nfr1.dynamicrider.client.rider.KartDetector
-import io.github.oni0nfr1.dynamicrider.client.rider.KartGaugeMeasure
-import io.github.oni0nfr1.dynamicrider.client.rider.KartNitroCounter
-import io.github.oni0nfr1.dynamicrider.client.rider.KartSpeedMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
+import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
@@ -34,6 +36,7 @@ class DynamicRiderClient : ClientModInitializer {
 
     override fun onInitializeClient() {
         _instance = this
+        Ticker.init()
         initializeDetectors()
 
         HudLayerRegistrationCallback.EVENT.register { drawerWrapper ->
@@ -54,5 +57,7 @@ class DynamicRiderClient : ClientModInitializer {
         KartSpeedMeasure.init(stateManager)
         KartNitroCounter.init(stateManager)
         KartGaugeMeasure.init(stateManager)
+
+        RankingManager.init(stateManager)
     }
 }

@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.rider
+package io.github.oni0nfr1.dynamicrider.client.rider.actionbar
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.MutableState

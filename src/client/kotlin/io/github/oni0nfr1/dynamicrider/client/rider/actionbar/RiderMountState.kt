@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.rider
+package io.github.oni0nfr1.dynamicrider.client.rider.actionbar
 
 /**
  * 카트뿐만 아니라 어떤 엔티티든 플레이어 자신의 탑승 상태를 관리함

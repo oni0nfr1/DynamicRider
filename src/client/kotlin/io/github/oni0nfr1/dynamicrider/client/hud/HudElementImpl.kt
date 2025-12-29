@@ -20,7 +20,8 @@ abstract class HudElementImpl<T: HudElement>(
     override var screenAnchor: HudAnchor = HudAnchor.TOP_LEFT
     override var elementAnchor: HudAnchor = HudAnchor.TOP_LEFT
     override var scale: Vector2f = Vector2f(1f, 1f)
-    override var position: Vector3f = Vector3f(0f, 0f, 0f)
+    override var position: Vector2i = Vector2i(0, 0)
+    override var zIndex: Float = 0f
 
     private val transform = Matrix4f()
     protected val size = Vector2i()
@@ -50,10 +51,13 @@ abstract class HudElementImpl<T: HudElement>(
         val screenPoint = screenAnchor.point(screenWidth, screenHeight)
         val elementPoint = elementAnchor.point(size.x, size.y)
 
+        val rx = screenPoint.x - elementPoint.x + position.x
+        val ry = screenPoint.y - elementPoint.y + position.y
+
         renderPosition.set(
-            screenPoint.x - elementPoint.x + position.x,
-            screenPoint.y - elementPoint.y + position.y,
-            position.z
+            rx.toFloat(),
+            ry.toFloat(),
+            zIndex
         )
         updateTransform()
 

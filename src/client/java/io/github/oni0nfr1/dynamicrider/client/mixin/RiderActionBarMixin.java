@@ -2,9 +2,9 @@ package io.github.oni0nfr1.dynamicrider.client.mixin;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
-import io.github.oni0nfr1.dynamicrider.client.rider.KartGaugeMeasure;
-import io.github.oni0nfr1.dynamicrider.client.rider.KartNitroCounter;
-import io.github.oni0nfr1.dynamicrider.client.rider.KartSpeedMeasure;
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeMeasure;
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter;
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedMeasure;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.chat.Component;

@@ -19,6 +19,18 @@ class MutableState<T>(
         runtime.invalidateByState(this)
     }
 
+    /** 내부를 변경하는 용도: 컬렉션/가변 객체에만 쓰는 걸 권장 */
+    fun mutate(action: T.() -> Unit) {
+        _value.action()
+        runtime.invalidateByState(this)
+    }
+
+    /** [action]이 true를 반환해야 invalidate됨 */
+    fun mutateIfChanged(action: T.() -> Boolean) {
+        val changed = _value.action()
+        if (changed) runtime.invalidateByState(this)
+    }
+
     override operator fun invoke(): T = value
 }
 

@@ -6,6 +6,12 @@ import io.github.oni0nfr1.dynamicrider.client.hud.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.RiderMountState
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.SidebarProvider
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.minecraft.client.Minecraft
@@ -119,6 +125,11 @@ object KartDetector {
         KartSpeedMeasure.enabled = true
         KartNitroCounter.enabled = true
         KartGaugeMeasure.enabled = true
+
+        RankingManager.enabled = true
+        SidebarProvider.enabled = true
+        SidebarProvider.invalidate()
+
         mod.currentScene = ExampleScene(mod.stateManager)
     }
 
@@ -129,6 +140,9 @@ object KartDetector {
         KartSpeedMeasure.enabled = false
         KartNitroCounter.enabled = false
         KartGaugeMeasure.enabled = false
+
+        RankingManager.enabled = false
+        SidebarProvider.enabled = false
         mod.currentScene = null
     }
 

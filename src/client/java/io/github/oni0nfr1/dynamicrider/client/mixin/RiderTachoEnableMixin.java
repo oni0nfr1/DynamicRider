@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
 import io.github.oni0nfr1.dynamicrider.client.rider.KartDetector;
-import io.github.oni0nfr1.dynamicrider.client.rider.RiderMountState;
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.RiderMountState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;

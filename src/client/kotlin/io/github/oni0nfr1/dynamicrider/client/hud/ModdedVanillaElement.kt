@@ -4,7 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import org.joml.Vector2f
-import org.joml.Vector3f
+import org.joml.Vector2i
 
 /**
  * # TODO
@@ -22,7 +22,10 @@ abstract class ModdedVanillaElement: HudElement {
     override var scale: Vector2f
         get() = TODO("Not yet implemented")
         set(value) {}
-    override var position: Vector3f
+    override var position: Vector2i
+        get() = TODO("Not yet implemented")
+        set(value) {}
+    override var zIndex: Float
         get() = TODO("Not yet implemented")
         set(value) {}
 
