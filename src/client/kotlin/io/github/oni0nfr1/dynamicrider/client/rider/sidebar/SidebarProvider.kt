@@ -6,7 +6,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
 import net.minecraft.world.level.GameType
 import net.minecraft.world.scores.DisplaySlot
-import net.minecraft.world.scores.Objective
 import net.minecraft.world.scores.PlayerScoreEntry
 import net.minecraft.world.scores.PlayerTeam
 import net.minecraft.world.scores.Scoreboard
@@ -50,11 +49,20 @@ object SidebarProvider {
         scheduled = null
     }
 
+    fun readSidebarTitle(client: Minecraft = Minecraft.getInstance()): Component? {
+        val level = client.level ?: return null
+        val scoreboard = level.scoreboard
+        val obj = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR)
+            ?: return null
+
+        return obj.displayName
+    }
+
     fun readSidebar(client: Minecraft = Minecraft.getInstance()): SidebarSnapshot? {
         val level = client.level ?: return null
         val scoreboard = level.scoreboard
         val obj = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR)
-            ?: return SidebarSnapshot(Component.empty(), null, emptyList())
+            ?: return emptySidebar()
 
         val title = obj.displayName
         val raw: Collection<PlayerScoreEntry> = scoreboard.listPlayerScores(obj)
@@ -104,16 +112,5 @@ object SidebarProvider {
         }
     }
 
-    data class SidebarLine(
-        val rank: Int,                 // 화면에 보이는 순서 기준
-        val owner: String,             // score holder id (보통 닉네임)
-        val name: Component,           // 화면에 찍을 이름(팀 포맷 반영)
-        val value: Int,                // 점수(정렬용)
-    )
-
-    data class SidebarSnapshot(
-        val title: Component,          // 예: "00,44,142"
-        val objective: Objective?,
-        val lines: List<SidebarLine>,
-    )
+    fun emptySidebar() = SidebarSnapshot(Component.empty(), null, emptyList())
 }

@@ -1,5 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.actionbar
 
+import io.github.oni0nfr1.dynamicrider.client.ResourceStore
+import io.github.oni0nfr1.dynamicrider.client.event.ActionBarTextCallback
 import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
@@ -8,6 +10,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.FormattedText
 import net.minecraft.network.chat.Style
 import net.minecraft.network.chat.TextColor
+import net.minecraft.world.InteractionResult
 import java.util.Optional
 
 object KartGaugeMeasure {
@@ -16,9 +19,20 @@ object KartGaugeMeasure {
     val GOLD: TextColor = TextColor.fromLegacyFormat(ChatFormatting.GOLD)
         ?: TextColor.fromRgb(0xFFAA00)
 
+    var eventListener: AutoCloseable? = null
+
     var enabled = false
         set(value) {
-            if (value == false) gauge.set(0.0)
+            if (value == false) {
+                gauge.set(0.0)
+                eventListener?.close()
+            } else {
+                eventListener = ActionBarTextCallback.EVENT.register { _, packet ->
+                    updateGauge(packet.text)
+                    ResourceStore.logger.info("!!!")
+                    InteractionResult.PASS
+                }
+            }
             field = value
         }
 

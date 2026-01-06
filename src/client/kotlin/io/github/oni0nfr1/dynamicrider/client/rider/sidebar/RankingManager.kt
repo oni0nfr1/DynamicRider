@@ -90,7 +90,7 @@ object RankingManager {
         alive.mutateIfChanged { remove(uuid) } // remove가 true면 변경
     }
 
-    fun updateRanking(snapshot: SidebarProvider.SidebarSnapshot) {
+    fun updateRanking(snapshot: SidebarSnapshot) {
         if (!enabled) return
 
 

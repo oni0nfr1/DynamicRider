@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
+import io.github.oni0nfr1.dynamicrider.client.event.ActionBarTextCallback;
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeMeasure;
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter;
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedMeasure;
 import net.minecraft.client.gui.Gui;
@@ -29,10 +29,12 @@ public class RiderActionBarMixin {
         Component actionBar = packet.text();
         String actionBarRaw = actionBar.getString();
         if (actionBarRaw.contains("km/h")) { // 카트 상태를 보여주는 액션바가 맞는지 확인
-            KartGaugeMeasure.updateGauge(actionBar);
             KartSpeedMeasure.updateSpeed(actionBarRaw);
             KartNitroCounter.updateNitro(actionBarRaw);
         }
+
+        ClientPacketListener self = (ClientPacketListener) (Object) this;
+        ActionBarTextCallback.EVENT.invoker.interact(self, packet);
     }
 
     @WrapWithCondition(

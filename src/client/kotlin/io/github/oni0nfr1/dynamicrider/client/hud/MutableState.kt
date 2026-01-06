@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud
 
 class MutableState<T>(
-    private val runtime: HudStateManager,
+    val runtime: HudStateManager,
     initial: T
 ) : State<T> {
 
@@ -19,15 +19,17 @@ class MutableState<T>(
         runtime.invalidateByState(this)
     }
 
+    fun silentRead(): T = _value
+
     /** 내부를 변경하는 용도: 컬렉션/가변 객체에만 쓰는 걸 권장 */
-    fun mutate(action: T.() -> Unit) {
-        _value.action()
+    inline fun mutate(action: T.() -> Unit) {
+        silentRead().action()
         runtime.invalidateByState(this)
     }
 
     /** [action]이 true를 반환해야 invalidate됨 */
-    fun mutateIfChanged(action: T.() -> Boolean) {
-        val changed = _value.action()
+    inline fun mutateIfChanged(action: T.() -> Boolean) {
+        val changed = silentRead().action()
         if (changed) runtime.invalidateByState(this)
     }
 
