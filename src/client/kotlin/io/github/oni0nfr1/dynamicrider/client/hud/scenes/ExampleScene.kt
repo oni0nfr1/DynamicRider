@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
-import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
@@ -12,9 +12,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedMeasure
+import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
 import org.joml.Vector2i
 
@@ -22,14 +22,14 @@ class ExampleScene(
     override val stateManager: HudStateManager
 ): HudScene {
     val speedMeter: SpeedMeter = PlainSpeedMeter(stateManager) {
-        speed = KartSpeedMeasure.speed()
+        speed = speedometer.speed()
         screenAnchor = HudAnchor.BOTTOM_RIGHT
         elementAnchor = HudAnchor.BOTTOM_RIGHT
         position = Vector2i(-10, -10)
     }
 
     val nitroSlot1: NitroSlot = PlainNitroSlot(stateManager) {
-        occupied = KartNitroCounter.nitro() >= 1
+        occupied = nitroCounter.nitro() >= 1
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
         position = Vector2i(10, 10)
@@ -37,7 +37,7 @@ class ExampleScene(
     }
 
     val nitroSlot2: NitroSlot = PlainNitroSlot(stateManager) {
-        occupied = KartNitroCounter.nitro() >= 2
+        occupied = nitroCounter.nitro() >= 2
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
         position = Vector2i(62, 10)
@@ -45,7 +45,7 @@ class ExampleScene(
     }
 
     val gaugeBar: GaugeBar = PlainGaugeBar(stateManager) {
-        gauge = KartGaugeMeasure.gauge()
+        gauge = gaugeTracker.gauge()
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
         position = Vector2i(0, -75)
@@ -63,8 +63,8 @@ class ExampleScene(
         position = Vector2i(10, 0)
     }
 
-    override val elements: MutableSet<HudElement>
-        = mutableSetOf(
+    override val elements: MutableList<HudElement>
+        = mutableListOf(
             speedMeter,
             nitroSlot1,
             nitroSlot2,
@@ -72,11 +72,17 @@ class ExampleScene(
             rankingTable
         )
 
+    val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
+    val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
+    val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
+
     override fun enable() {
         VanillaSuppression.suppressVanillaKartState = true
     }
 
     override fun disable() {
         VanillaSuppression.suppressVanillaKartState = false
+        gaugeTracker.close()
+        nitroCounter.close()
     }
 }

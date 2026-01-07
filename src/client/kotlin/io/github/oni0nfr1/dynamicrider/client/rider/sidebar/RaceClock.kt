@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.sidebar
 
-import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.MutableState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.rider.RaceTime
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 

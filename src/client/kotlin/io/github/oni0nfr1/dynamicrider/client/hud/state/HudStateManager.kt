@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud
+package io.github.oni0nfr1.dynamicrider.client.hud.state
 
 import java.util.Collections
 import java.util.IdentityHashMap

@@ -1,15 +1,12 @@
-package io.github.oni0nfr1.dynamicrider.client.rider
+package io.github.oni0nfr1.dynamicrider.client.rider.mount
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
-import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.MutableState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
-import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
+import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeMeasure
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedMeasure
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.RiderMountState
+import io.github.oni0nfr1.dynamicrider.client.rider.BoosterType
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.SidebarProvider
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -122,9 +119,6 @@ object KartDetector {
         }
 
         mountType.set(mount)
-        KartSpeedMeasure.enabled = true
-        KartNitroCounter.enabled = true
-        KartGaugeMeasure.enabled = true
 
         RankingManager.enabled = true
         SidebarProvider.enabled = true
@@ -137,9 +131,6 @@ object KartDetector {
         val mod = DynamicRiderClient.instance
 
         mountType.set(MountType.DISMOUNTED)
-        KartSpeedMeasure.enabled = false
-        KartNitroCounter.enabled = false
-        KartGaugeMeasure.enabled = false
 
         RankingManager.enabled = false
         SidebarProvider.enabled = false

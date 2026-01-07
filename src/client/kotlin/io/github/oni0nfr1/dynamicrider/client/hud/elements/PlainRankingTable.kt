@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements
 
-import io.github.oni0nfr1.dynamicrider.client.hud.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
 import io.github.oni0nfr1.dynamicrider.client.util.ordinal

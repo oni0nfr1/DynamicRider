@@ -13,10 +13,11 @@ class RiderEvent<T : Any>(
 ) {
     private val listeners = CopyOnWriteArrayList<T>()
 
-    @JvmField
-    val invoker: T = invokerFactory(listeners) { listener, block ->
+    private val _invoker: T = invokerFactory(listeners) { listener, block ->
         callSafely(listener, block)
     }
+
+    fun invoker() = _invoker
 
     fun register(listener: T): AutoCloseable {
         listeners.add(listener)

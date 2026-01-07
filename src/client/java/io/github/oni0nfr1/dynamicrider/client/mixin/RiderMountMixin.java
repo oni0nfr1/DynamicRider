@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
-import io.github.oni0nfr1.dynamicrider.client.rider.KartDetector;
-import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.RiderMountState;
+import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartDetector;
+import io.github.oni0nfr1.dynamicrider.client.rider.mount.RiderMountState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 
 // 타코미터 HUD를 생성해야 할지를 감지하는 믹스인
 @Mixin(ClientPacketListener.class)
-public class RiderTachoEnableMixin {
+public class RiderMountMixin {
 
     @Inject(
         method = "handleSetEntityPassengersPacket",

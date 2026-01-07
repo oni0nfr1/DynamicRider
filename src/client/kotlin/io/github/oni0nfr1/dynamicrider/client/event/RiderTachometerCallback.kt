@@ -3,10 +3,10 @@ package io.github.oni0nfr1.dynamicrider.client.event
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.impl.RiderEvent
 import net.minecraft.client.multiplayer.ClientPacketListener
-import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket
+import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionResult
 
-fun interface ActionBarTextCallback {
+fun interface RiderTachometerCallback {
     /**
      * 액션바 텍스트 패킷을 받았을 때 호출됨 (바닐라 처리 직전).
      *
@@ -17,17 +17,18 @@ fun interface ActionBarTextCallback {
      */
     fun interact(
         packetListener: ClientPacketListener,
-        packet: ClientboundSetActionBarTextPacket
+        text: Component,
+        raw: String,
     ): InteractionResult
 
     companion object {
 
         @JvmField
         val EVENT = RiderEvent(logger = ResourceStore.logger) { listeners, callSafely ->
-            ActionBarTextCallback { packetListener, packet ->
+            RiderTachometerCallback { packetListener, text, raw ->
                 for (listener in listeners) {
-                    val r = callSafely(listener) { listener.interact(packetListener, packet) }
-                    if (r != InteractionResult.PASS) return@ActionBarTextCallback r
+                    val r = callSafely(listener) { listener.interact(packetListener, text, raw) }
+                    if (r != InteractionResult.PASS) return@RiderTachometerCallback r
                 }
                 InteractionResult.PASS
             }

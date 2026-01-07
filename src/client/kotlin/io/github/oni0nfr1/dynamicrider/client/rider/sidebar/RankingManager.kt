@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.sidebar
 
-import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.MutableState
-import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.world.level.GameType

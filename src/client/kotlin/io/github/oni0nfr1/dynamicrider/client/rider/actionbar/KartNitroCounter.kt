@@ -1,41 +1,33 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.actionbar
 
-import io.github.oni0nfr1.dynamicrider.client.hud.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.MutableState
-import io.github.oni0nfr1.dynamicrider.client.hud.mutableStateOf
+import io.github.oni0nfr1.dynamicrider.client.event.RiderTachometerCallback
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.rider.BoosterType
-import io.github.oni0nfr1.dynamicrider.client.rider.KartDetector
+import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartDetector
+import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
+import net.minecraft.world.InteractionResult
+import java.lang.AutoCloseable
 
-object KartNitroCounter {
-
-    lateinit var stateManager: HudStateManager
-
-    fun init(stateManager: HudStateManager) {
-        this.stateManager = stateManager
-        this.nitro = mutableStateOf(KartNitroCounter.stateManager, 0)
-        this.gear = mutableStateOf(KartNitroCounter.stateManager, 0)
+class KartNitroCounter(
+    override val stateManager: HudStateManager
+): RiderBackend, AutoCloseable {
+    companion object {
+        val nitroRegex = Regex("""NITRO\s*x\s*(\d+)""", RegexOption.IGNORE_CASE)
+        val fusionRegex = Regex("""FUSION\s*x\s*(\d+)""", RegexOption.IGNORE_CASE)
+        val gearRegex = Regex("""(\d+)\s*단""", RegexOption.IGNORE_CASE)
     }
 
-    var enabled = false
-        set(value) {
-            if (value == false) {
-                nitro.set(0)
-                gear.set(0)
-                KartDetector.boosterType.set(BoosterType.NITRO)
-            }
-            field = value
-        }
-    val nitroRegex = Regex("""NITRO\s*x\s*(\d+)""", RegexOption.IGNORE_CASE)
-    val fusionRegex = Regex("""FUSION\s*x\s*(\d+)""", RegexOption.IGNORE_CASE)
-    val gearRegex = Regex("""(\d+)\s*단""", RegexOption.IGNORE_CASE)
+    private val eventListener = RiderTachometerCallback.EVENT.register { _, _, raw ->
+        updateNitro(raw)
+        InteractionResult.PASS
+    }
 
-    lateinit var nitro: MutableState<Int>
-    lateinit var gear: MutableState<Int>
+    val nitro: MutableState<Int> = mutableStateOf(stateManager, 0)
+    val gear:  MutableState<Int> = mutableStateOf(stateManager, 0)
 
-    @JvmStatic
-    fun updateNitro(raw: String) {
-        if (!enabled) return
-
+    private fun updateNitro(raw: String) {
         tryParse(raw, nitroRegex) { match ->
             val readNitro = match.groupValues[1].toInt()
             KartDetector.boosterType.set(BoosterType.NITRO)
@@ -62,4 +54,7 @@ object KartNitroCounter {
         if (matches != null) predicate.invoke(matches)
     }
 
+    override fun close() {
+        eventListener.close()
+    }
 }

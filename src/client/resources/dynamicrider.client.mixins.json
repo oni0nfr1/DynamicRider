@@ -5,8 +5,9 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "RiderActionBarMixin",
-    "RiderTachoEnableMixin",
-    "RiderScoreboardMixin"
+    "RiderMountMixin",
+    "RiderScoreboardMixin",
+    "HideCodMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,5 +1,7 @@
-package io.github.oni0nfr1.dynamicrider.client.hud
+package io.github.oni0nfr1.dynamicrider.client.hud.impl
 
+import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft

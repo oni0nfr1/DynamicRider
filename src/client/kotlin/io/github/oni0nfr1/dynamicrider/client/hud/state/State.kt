@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud
+package io.github.oni0nfr1.dynamicrider.client.hud.state
 
 // React의 State와 비슷한 개념
 interface State<T> {
