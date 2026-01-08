@@ -4,10 +4,11 @@
   "package": "io.github.oni0nfr1.dynamicrider.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "HideCodMixin",
     "RiderActionBarMixin",
     "RiderMountMixin",
     "RiderScoreboardMixin",
-    "HideCodMixin"
+    "RiderSpectateMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.actionbar
 
-import io.github.oni0nfr1.dynamicrider.client.event.RiderTachometerCallback
+import io.github.oni0nfr1.dynamicrider.client.event.RiderActionBarCallback
+import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
@@ -10,7 +11,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.FormattedText
 import net.minecraft.network.chat.Style
 import net.minecraft.network.chat.TextColor
-import net.minecraft.world.InteractionResult
 import java.util.Optional
 
 class KartGaugeTracker(
@@ -22,9 +22,9 @@ class KartGaugeTracker(
             ?: TextColor.fromRgb(0xFFAA00)
     }
 
-    private val eventListener: AutoCloseable = RiderTachometerCallback.EVENT.register { _, text, _ ->
+    private val eventListener: AutoCloseable = RiderActionBarCallback.EVENT.register { _, text, _ ->
         updateGauge(text)
-        InteractionResult.PASS
+        HandleResult.PASS
     }
 
     val gauge: MutableState<Double> = mutableStateOf(stateManager, 0.0)

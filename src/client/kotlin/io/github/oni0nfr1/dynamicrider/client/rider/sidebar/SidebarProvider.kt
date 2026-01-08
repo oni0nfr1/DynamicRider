@@ -32,7 +32,7 @@ object SidebarProvider {
         dirty = true
         if (scheduled != null && !scheduled!!.isCancelled) return
 
-        scheduled = Ticker.runTaskLater(delay = 1) {
+        scheduled = Ticker.runTaskLater(delay = 0) {
             scheduled = null
             if (!dirty) return@runTaskLater
             dirty = false

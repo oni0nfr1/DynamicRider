@@ -1,15 +1,15 @@
 package io.github.oni0nfr1.dynamicrider.client.event.impl
 
+import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.event.util.ListenerExceptionPolicy
 
-import net.minecraft.world.InteractionResult
 import org.slf4j.Logger
 import java.util.concurrent.CopyOnWriteArrayList
 
 class RiderEvent<T : Any>(
     private val logger: Logger,
     private val exceptionPolicy: ListenerExceptionPolicy = ListenerExceptionPolicy.default,
-    invokerFactory: (Iterable<T>, (T, () -> InteractionResult) -> InteractionResult) -> T,
+    invokerFactory: (Iterable<T>, (T, () -> HandleResult) -> HandleResult) -> T,
 ) {
     private val listeners = CopyOnWriteArrayList<T>()
 
@@ -24,7 +24,7 @@ class RiderEvent<T : Any>(
         return AutoCloseable { listeners.remove(listener) }
     }
 
-    private fun callSafely(listener: T, block: () -> InteractionResult): InteractionResult {
+    private fun callSafely(listener: T, block: () -> HandleResult): HandleResult {
         return try {
             block()
         } catch (t: Throwable) {
@@ -32,11 +32,11 @@ class RiderEvent<T : Any>(
                 ListenerExceptionPolicy.THROW -> throw t
                 ListenerExceptionPolicy.LOG_AND_PASS -> {
                     logger.error("Event listener failed: {}", listener.javaClass.name, t)
-                    InteractionResult.PASS
+                    HandleResult.PASS
                 }
                 ListenerExceptionPolicy.LOG_AND_FAIL -> {
                     logger.error("Event listener failed: {}", listener.javaClass.name, t)
-                    InteractionResult.FAIL
+                    HandleResult.FAILURE
                 }
             }
         }

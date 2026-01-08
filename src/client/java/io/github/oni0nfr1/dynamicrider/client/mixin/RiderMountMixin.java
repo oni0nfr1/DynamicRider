@@ -1,11 +1,10 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartDetector;
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.RiderMountState;
+import io.github.oni0nfr1.dynamicrider.client.event.RiderMountCallback;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
-import net.minecraft.network.protocol.game.ClientboundSetCameraPacket;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.Cod;
@@ -14,64 +13,30 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Arrays;
-
-// 타코미터 HUD를 생성해야 할지를 감지하는 믹스인
 @Mixin(ClientPacketListener.class)
-public class RiderMountMixin {
+public abstract class RiderMountMixin {
 
     @Inject(
         method = "handleSetEntityPassengersPacket",
         at = @At("TAIL")
     )
-    private void dynrider$onSetPassengers(ClientboundSetPassengersPacket packet, CallbackInfo ci) {
-        Minecraft mc = Minecraft.getInstance();
-        Entity subject = KartDetector.INSTANCE.getSubject(mc);
-        if (subject == null || mc.level == null) return;
+    private void dynrider$onKartMount(ClientboundSetPassengersPacket packet, CallbackInfo ci) {
+        Minecraft client = Minecraft.getInstance();
+        ClientLevel level = client.level;
+        if (level == null) return;
 
-        int subjectId = subject.getId();
         int vehicleId = packet.getVehicle();
+        int[] passengerIds = packet.getPassengers();
 
-        boolean iAmPassenger = Arrays
-            .stream(packet.getPassengers())
-            .anyMatch(id -> id == subjectId);
-        if (iAmPassenger) {
-            RiderMountState.markMounted(vehicleId);
-            KartDetector.detectKart(vehicleId);
-            return;
+        Entity[] passengers = new Entity[passengerIds.length];
+        for (int i = 0; i < passengerIds.length; i++) {
+            passengers[i] = level.getEntity(passengerIds[i]);
         }
 
-        if (RiderMountState.wasPassenger
-            && RiderMountState.currentVehicleId != null
-            && RiderMountState.currentVehicleId == vehicleId) {
-            RiderMountState.reset();
-            KartDetector.triggerDismounted();
+        Entity vehicle = client.level.getEntity(vehicleId);
+        if (vehicle instanceof Cod) {
+            RiderMountCallback.EVENT.invoker().handle((Cod) vehicle, passengers);
         }
-    }
-
-    @Inject(
-        method = "handleSetCamera(Lnet/minecraft/network/protocol/game/ClientboundSetCameraPacket;)V",
-        at = @At("TAIL")
-    )
-    private void dynrider$onSetCamera(ClientboundSetCameraPacket packet, CallbackInfo ci) {
-        Minecraft mc = Minecraft.getInstance();
-        Entity subject = KartDetector.INSTANCE.getSubject(mc);
-        if (subject == null) return;
-
-        Entity vehicle = subject.getVehicle();
-
-        if (vehicle != null) {
-            int vehicleId = vehicle.getId();
-            RiderMountState.markMounted(vehicleId);
-            KartDetector.detectKart(vehicleId);
-            return;
-        }
-
-        if (RiderMountState.wasPassenger) {
-            RiderMountState.reset();
-            KartDetector.triggerDismounted();
-        }
-
     }
 
     @Inject(method = "handleRemoveEntities", at = @At("TAIL"))
@@ -79,15 +44,15 @@ public class RiderMountMixin {
         ClientboundRemoveEntitiesPacket packet,
         CallbackInfo ci
     ) {
-        Cod kart = KartDetector.getCurrentKart();
-        if  (kart == null) return;
-        int kartId =  kart.getId();
+        Minecraft client = Minecraft.getInstance();
+        ClientLevel level = client.level;
+        if (level == null) return;
 
         for (int id : packet.getEntityIds()) {
-            if (id == kartId) {
-                RiderMountState.reset();
-                KartDetector.triggerDismounted();
-                return;
+            Entity entity = level.getEntity(id);
+
+            if (entity instanceof Cod) {
+                RiderMountCallback.EVENT.invoker().handle((Cod) entity, new Entity[0]);
             }
         }
     }

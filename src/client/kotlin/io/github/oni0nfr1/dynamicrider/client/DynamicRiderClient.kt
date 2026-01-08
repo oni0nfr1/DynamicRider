@@ -1,12 +1,15 @@
 package io.github.oni0nfr1.dynamicrider.client
 
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartDetector
+import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
+import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceClock
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.fabricmc.api.ClientModInitializer
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
 import net.minecraft.client.DeltaTracker
@@ -32,6 +35,8 @@ class DynamicRiderClient : ClientModInitializer {
             field?.enable()
         }
 
+    val mountDetector = KartMountDetector(stateManager)
+
     override fun onInitializeClient() {
         _instance = this
         Ticker.init()
@@ -44,6 +49,19 @@ class DynamicRiderClient : ClientModInitializer {
                 this::drawHud
             )
         }
+        stateManager.recomposeIfDirty(this) {
+            ResourceStore.logger.info("successfully initialized dynrider")
+            mountDetector.playerMountStatus() // 의존관계 등록용. 읽은 값은 버림
+        }
+        ClientTickEvents.END_CLIENT_TICK.register { client ->
+            stateManager.recomposeIfDirty(this) {
+                currentScene = when (mountDetector.playerMountStatus()) {
+                    MountType.NOT_MOUNTED -> null
+                    MountType.MOUNTED     -> ExampleScene(stateManager)
+                    MountType.SPECTATOR   -> ExampleScene(stateManager)
+                }
+            }
+        }
     }
 
     fun drawHud(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
@@ -51,8 +69,6 @@ class DynamicRiderClient : ClientModInitializer {
     }
 
     fun initializeDetectors() {
-        KartDetector.init(stateManager)
-
         RankingManager.init(stateManager)
         RaceClock.init(stateManager)
     }
