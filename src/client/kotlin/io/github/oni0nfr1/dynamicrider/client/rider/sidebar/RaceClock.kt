@@ -35,21 +35,21 @@ object RaceClock {
     }
 
     fun poll() {
-        val sidebarTitle = SidebarProvider.readSidebarTitle()
-        if (sidebarTitle == null) {
-            racing.set(false)
-            return
-        }
-
-        racing.set(true)
-        time.mutateIfChanged {
-            try {
-                update(sidebarTitle)
-                return@mutateIfChanged true
-            } catch (err: Exception) {
-                return@mutateIfChanged false
-            }
-        }
+//        val sidebarTitle = SidebarProvider.readSidebarTitle()
+//        if (sidebarTitle == null) {
+//            racing.set(false)
+//            return
+//        }
+//
+//        racing.set(true)
+//        time.mutateIfChanged {
+//            try {
+//                update(sidebarTitle)
+//                return@mutateIfChanged true
+//            } catch (err: Exception) {
+//                return@mutateIfChanged false
+//            }
+//        }
     }
 
 }

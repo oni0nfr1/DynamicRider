@@ -3,7 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
-import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.KartRankingManager
 import io.github.oni0nfr1.dynamicrider.client.util.ordinal
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
@@ -43,9 +43,9 @@ class PlainRankingTable(
     var dotGap = 6
 
     var hide = false
-    override var ranking: List<RankingManager.RankingEntry> = emptyList()
-    override var racers: LinkedHashMap<UUID, RankingManager.Racer> = linkedMapOf()
-    override var eliminated: LinkedHashMap<UUID, RankingManager.ElimReason> = linkedMapOf()
+    override var ranking: List<KartRankingManager.RankingEntry> = emptyList()
+    override var racers: LinkedHashMap<UUID, KartRankingManager.Racer> = linkedMapOf()
+    override var eliminated: LinkedHashMap<UUID, KartRankingManager.ElimReason> = linkedMapOf()
     override var alive: LinkedHashSet<UUID> = linkedSetOf()
 
     override fun resolveSize() {

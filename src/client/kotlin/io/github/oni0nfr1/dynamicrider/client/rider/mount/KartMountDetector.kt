@@ -43,7 +43,6 @@ class KartMountDetector(
 
         val oldIds = passengersByKartId.put(kartId, newIds) ?: emptySet()
 
-        // ★ 이번 패킷에서 "이 카트에서 내려간" 승객만
         val removedIds = oldIds.asSequence()
             .filter { it !in newIds }
             .toSet()

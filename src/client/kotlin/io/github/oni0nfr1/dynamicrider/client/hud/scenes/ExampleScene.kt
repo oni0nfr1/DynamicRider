@@ -15,7 +15,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
-import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RankingManager
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.KartRankingManager
 import org.joml.Vector2i
 
 class ExampleScene(
@@ -52,11 +52,11 @@ class ExampleScene(
     }
 
     val rankingTable: RankingTable = PlainRankingTable(stateManager) {
-        hide = RankingManager.isTimeAttack()
-        ranking = RankingManager.ranking()
-        racers = RankingManager.racers()
-        eliminated = RankingManager.eliminated()
-        alive = RankingManager.alive()
+        hide = rankingManager.isTimeAttack()
+        ranking = rankingManager.ranking()
+        racers = rankingManager.racers()
+        eliminated = rankingManager.eliminated()
+        alive = rankingManager.alive()
 
         screenAnchor = HudAnchor.MIDDLE_LEFT
         elementAnchor = HudAnchor.MIDDLE_LEFT
@@ -75,6 +75,7 @@ class ExampleScene(
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
     val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
+    val rankingManager: KartRankingManager = KartRankingManager(stateManager)
 
     override fun enable() {
         VanillaSuppression.suppressVanillaKartState = true
@@ -84,5 +85,6 @@ class ExampleScene(
         VanillaSuppression.suppressVanillaKartState = false
         gaugeTracker.close()
         nitroCounter.close()
+        rankingManager.close()
     }
 }
