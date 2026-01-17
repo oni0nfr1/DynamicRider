@@ -1,14 +1,14 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.sidebar
 
-import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
 import io.github.oni0nfr1.dynamicrider.client.event.RiderPlayerInfoRemoveCallback
 import io.github.oni0nfr1.dynamicrider.client.event.RiderPlayerInfoUpdateCallback
-import io.github.oni0nfr1.dynamicrider.client.event.RiderSetSidebarContentCallback
+import io.github.oni0nfr1.dynamicrider.client.event.RiderRankingUpdateCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
+import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.minecraft.client.Minecraft
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
 import net.minecraft.world.level.GameType
@@ -42,9 +42,9 @@ class KartRankingManager(
     val ranking: MutableState<List<RankingEntry>>
         = mutableStateOf(stateManager, emptyList())
     val isTimeAttack: MutableState<Boolean>
-        = mutableStateOf(stateManager, false)
+        = mutableStateOf(stateManager, true)
 
-    private val sidebarListener = RiderSetSidebarContentCallback.EVENT.register { sidebar ->
+    private val sidebarListener = RiderRankingUpdateCallback.EVENT.register { sidebar ->
         updateRanking(sidebar)
         HandleResult.PASS
     }
@@ -69,7 +69,13 @@ class KartRankingManager(
     }
 
     init {
-        startRace(captureParticipantsNow())
+        // 디바운싱 (다른 유저 탑승 패킷 수신이 늦어지는 상황 대응)
+        Ticker.runTaskLater(delay = 0) {
+            startRace(captureParticipantsNow())
+            val snapshot = SidebarSnapshot.fromMcClient()
+                ?: error("[KartRankingManager] Fatal: invalid instantiation detected")
+            updateRanking(snapshot)
+        }
     }
 
     fun startRace(participants: Collection<Racer>) {
@@ -147,12 +153,12 @@ class KartRankingManager(
     }
 
     private fun buildOnlineNameToUuidMap(): Map<String, UUID> {
-        val mc = Minecraft.getInstance()
-        val conn = mc.connection ?: return emptyMap()
+        val client = Minecraft.getInstance()
+        val connection = client.connection ?: return emptyMap()
 
         val map = HashMap<String, UUID>()
 
-        for (info in conn.onlinePlayers) {
+        for (info in connection.onlinePlayers) {
             val profile = info.profile
             map[profile.name] = profile.id
         }
@@ -160,18 +166,15 @@ class KartRankingManager(
     }
 
     private fun captureParticipantsNow(): List<Racer> {
-        val dynrider = DynamicRiderClient.instance
         val client = Minecraft.getInstance()
-        val level = client.level ?: return emptyList()
+        val connection = client.connection ?: return emptyList()
 
-        val mountedEntities = dynrider.mountDetector.mountedEntityIds.silentRead()
-
-        return level.players()
+        return connection.onlinePlayers
             .filter {
-                it.id in mountedEntities
+                it.gameMode != GameType.SPECTATOR
             }
             .map {
-                val p = it.gameProfile
+                val p = it.profile
                 Racer(p.id, p.name)
             }
     }

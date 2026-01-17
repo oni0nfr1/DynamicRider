@@ -95,7 +95,7 @@ object Ticker {
             try {
                 task.action()
             } catch (t: Throwable) {
-                ResourceStore.logger.error("Ticker task failed", t)
+                ResourceStore.logger.error("[DynamicRider] Ticker task failed", t)
             }
 
             val p = task.period

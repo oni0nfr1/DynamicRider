@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.util
 
 import io.github.oni0nfr1.dynamicrider.client.event.Kart
+import io.github.oni0nfr1.dynamicrider.client.rider.Millis
 import net.minecraft.world.entity.Entity
 
 fun Int.ordinal(): String {
@@ -16,3 +17,10 @@ fun Int.ordinal(): String {
 fun Entity?.isKart(): Boolean {
     return this != null && this is Kart
 }
+
+val Millis.minutes: Int
+    get() = (this / 60000).toInt()
+val Millis.seconds: Int
+    get() = ((this % 60000) / 1000).toInt()
+val Millis.milliseconds: Int
+    get() = (this % 1000).toInt()

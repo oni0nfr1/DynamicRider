@@ -1,17 +1,23 @@
 package io.github.oni0nfr1.dynamicrider.client
 
+import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
+import io.github.oni0nfr1.dynamicrider.client.config.DynRiderKeybinds
+import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback
+import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceStartCallback
+import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
+import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
-import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceClock
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
 import net.minecraft.client.DeltaTracker
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.resources.ResourceLocation
 
@@ -28,6 +34,7 @@ class DynamicRiderClient : ClientModInitializer {
     val hudId: ResourceLocation
         = ResourceLocation.fromNamespaceAndPath(ResourceStore.MOD_ID, "hud")
 
+    var raceSession: RaceSession? = null
     var currentScene: HudScene? = null
         set(value) {
             field?.disable()
@@ -40,7 +47,11 @@ class DynamicRiderClient : ClientModInitializer {
     override fun onInitializeClient() {
         instance = this
         Ticker.init()
-        initializeDetectors()
+        DynRiderKeybinds.init()
+
+        ClientTickEvents.END_CLIENT_TICK.register(this::onClientTickEnd)
+        RiderRaceStartCallback.EVENT.register(this::onRaceStart)
+        RiderRaceEndCallback.EVENT.register(this::onRaceEnd)
 
         HudLayerRegistrationCallback.EVENT.register { drawerWrapper ->
             drawerWrapper.attachLayerBefore(
@@ -49,23 +60,33 @@ class DynamicRiderClient : ClientModInitializer {
                 this::drawHud
             )
         }
-        ClientTickEvents.END_CLIENT_TICK.register {
-            stateManager.recomposeIfDirty(this) {
-                currentScene = when (mountDetector.playerMountStatus()) {
-                    MountType.NOT_MOUNTED -> null
-                    MountType.MOUNTED     -> ExampleScene(stateManager)
-                    MountType.SPECTATOR   -> ExampleScene(stateManager)
-                }
-            }
-        }
+
         ResourceStore.logger.info("[DynamicRider] Load Complete.")
     }
 
     fun drawHud(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
+        if (!DynRiderConfig.hudVisible) return
         currentScene?.draw(guiGraphics, deltaTracker)
     }
 
-    fun initializeDetectors() {
-        RaceClock.init(stateManager)
+    fun onClientTickEnd(client: Minecraft) {
+        stateManager.recomposeIfDirty(this) {
+            currentScene = when (mountDetector.playerMountStatus()) {
+                MountType.NOT_MOUNTED -> null
+                MountType.MOUNTED     -> ExampleScene(stateManager)
+                MountType.SPECTATOR   -> ExampleScene(stateManager)
+            }
+        }
+    }
+
+    fun onRaceStart(): HandleResult {
+        raceSession = RaceSession(stateManager)
+        return HandleResult.PASS
+    }
+
+    fun onRaceEnd(): HandleResult {
+        raceSession?.close()
+        raceSession = null
+        return HandleResult.PASS
     }
 }

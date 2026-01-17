@@ -1,54 +1,53 @@
 package io.github.oni0nfr1.dynamicrider.client.rider
 
-import net.minecraft.network.chat.Component
+import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import java.lang.System.currentTimeMillis
 
-data class RaceTime(
-    var minutes: Int = 0,
-    var seconds: Int = 0,
-    var milliseconds: Int = 0,
-) {
-    companion object {
-        val sidebarRegex = Regex("""^(\d{1,2}):([0-5]\d)\.(\d{3})$""")
-    }
+typealias Millis = Long
 
-    private var lastUpdated: Long = currentTimeMillis()
-    val updateTimeDelta: Long
-        get() = currentTimeMillis() - lastUpdated
+class RaceTime {
+    var rawTotalMillis: Millis = 0
+    private var lastUpdatedSystemTime: Millis = 0
 
-    var totalMillis: Int
-        get() = minutes * 60000 + seconds * 1000 + milliseconds
-        set(value) {
-            minutes =  value / 60000
-            seconds = (value % 60000) / 1000
-            milliseconds = value % 1000
+    fun updateFromSidebar(raw: String) {
+        if (raw.length < 7) return
+
+        try {
+            var minutes: Int
+            var seconds: Int
+            var milliseconds: Int
+
+            val colonIdx = raw.indexOf(':')
+            val dotIdx = raw.indexOf('.')
+
+            if (colonIdx != -1 && dotIdx != -1) {
+                minutes = parsePosInt(raw, 0, colonIdx)
+                seconds = parsePosInt(raw, colonIdx + 1, dotIdx)
+                milliseconds = parsePosInt(raw, dotIdx + 1, raw.length)
+
+                this.rawTotalMillis = (minutes * 60000L) + (seconds * 1000L) + milliseconds
+                this.lastUpdatedSystemTime = currentTimeMillis()
+            }
+        } catch (e: Exception) {
+            ResourceStore.logger.warn("RaceTime: Parse Failed", e)
         }
-
-    fun update(
-        component: Component,
-        regex: Regex = sidebarRegex
-    ) {
-        val raw = component.string
-        val match = regex.matchEntire(raw)
-            ?: throw IllegalArgumentException("Invalid time format: $raw")
-
-        minutes = match.groupValues[1].toInt()
-        seconds = match.groupValues[2].toInt()
-        milliseconds = match.groupValues[3].toInt()
-        lastUpdated = currentTimeMillis()
     }
 
-    override fun toString(): String {
-        return "$minutes:$seconds.$milliseconds"
+    private fun parsePosInt(src: String, start: Int, end: Int): Int {
+        var res = 0
+        for (i in start until end) {
+            val c = src[i]
+            if (c in '0'..'9') {
+                res = res * 10 + (c - '0')
+            }
+        }
+        return res
     }
 
-    fun toInterpolatedString(): String {
-        val dt = updateTimeDelta
-        val interpolated = totalMillis + dt
-        val min =  interpolated / 60000
-        val sec = (interpolated % 60000) / 1000
-        val ms =   interpolated % 1000
-
-        return "$min:$sec.$ms"
-    }
+    val interpolatedTotalMillis: Millis
+        get() {
+            if (lastUpdatedSystemTime == 0L) return rawTotalMillis
+            val delta = currentTimeMillis() - lastUpdatedSystemTime
+            return rawTotalMillis + delta
+        }
 }

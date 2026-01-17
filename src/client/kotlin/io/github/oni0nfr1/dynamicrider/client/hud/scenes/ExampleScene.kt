@@ -1,26 +1,34 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
+import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
-import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.KartRankingManager
+import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
+import io.github.oni0nfr1.dynamicrider.client.util.milliseconds
+import io.github.oni0nfr1.dynamicrider.client.util.minutes
+import io.github.oni0nfr1.dynamicrider.client.util.seconds
 import org.joml.Vector2i
 
 class ExampleScene(
     override val stateManager: HudStateManager
 ): HudScene {
+    val dynRider: DynamicRiderClient
+        get() = DynamicRiderClient.instance
+
     val speedMeter: SpeedMeter = PlainSpeedMeter(stateManager) {
         speed = speedometer.speed()
         screenAnchor = HudAnchor.BOTTOM_RIGHT
@@ -52,15 +60,33 @@ class ExampleScene(
     }
 
     val rankingTable: RankingTable = PlainRankingTable(stateManager) {
-        hide = rankingManager.isTimeAttack()
-        ranking = rankingManager.ranking()
-        racers = rankingManager.racers()
-        eliminated = rankingManager.eliminated()
-        alive = rankingManager.alive()
+        val raceSession = dynRider.raceSession
+        hide = raceSession?.rankingManager?.isTimeAttack?.invoke() ?: true
+        if (raceSession != null) {
+            ranking = raceSession.rankingManager.ranking()
+            racers = raceSession.rankingManager.racers()
+            eliminated = raceSession.rankingManager.eliminated()
+            alive = raceSession.rankingManager.alive()
+        }
 
         screenAnchor = HudAnchor.MIDDLE_LEFT
         elementAnchor = HudAnchor.MIDDLE_LEFT
         position = Vector2i(10, 0)
+    }
+
+    val timer: Timer = PlainTimer(stateManager) {
+        hide = !raceTimeParser.isRacing()
+
+        screenAnchor = HudAnchor.TOP_RIGHT
+        elementAnchor = HudAnchor.TOP_RIGHT
+        position = Vector2i(-10, 10)
+
+        if (!hide) {
+            val totalMillis = raceTimeParser.time().interpolatedTotalMillis
+            minutes = totalMillis.minutes
+            seconds = totalMillis.seconds
+            milliseconds = totalMillis.milliseconds
+        }
     }
 
     override val elements: MutableList<HudElement>
@@ -69,22 +95,22 @@ class ExampleScene(
             nitroSlot1,
             nitroSlot2,
             gaugeBar,
-            rankingTable
+            rankingTable,
+            timer
         )
 
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
     val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
-    val rankingManager: KartRankingManager = KartRankingManager(stateManager)
+    val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
 
     override fun enable() {
-        VanillaSuppression.suppressVanillaKartState = true
+
     }
 
     override fun disable() {
-        VanillaSuppression.suppressVanillaKartState = false
         gaugeTracker.close()
         nitroCounter.close()
-        rankingManager.close()
+        raceTimeParser.close()
     }
 }
