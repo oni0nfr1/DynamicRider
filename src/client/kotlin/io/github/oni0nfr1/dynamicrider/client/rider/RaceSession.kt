@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.rider
 
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.rider.chat.KartLapTimeManager
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.KartRankingManager
 import java.lang.AutoCloseable
 
@@ -14,8 +15,10 @@ import java.lang.AutoCloseable
  */
 class RaceSession(stateManager: HudStateManager): AutoCloseable {
     val rankingManager = KartRankingManager(stateManager)
+    val lapTimer = KartLapTimeManager(stateManager)
 
     override fun close() {
         rankingManager.close()
+        lapTimer.close()
     }
 }

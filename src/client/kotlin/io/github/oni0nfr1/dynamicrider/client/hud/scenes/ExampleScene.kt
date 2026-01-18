@@ -7,7 +7,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainTimer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
@@ -74,19 +74,29 @@ class ExampleScene(
         position = Vector2i(10, 0)
     }
 
-    val timer: Timer = PlainTimer(stateManager) {
-        hide = !raceTimeParser.isRacing()
-
-        screenAnchor = HudAnchor.TOP_RIGHT
-        elementAnchor = HudAnchor.TOP_RIGHT
-        position = Vector2i(-10, 10)
-
+    val timer: Timer = TimerWithLap(stateManager) {
+        val raceSession = dynRider.raceSession
+        hide = !raceTimeParser.isRacing() || raceSession == null
         if (!hide) {
+            // hide가 false면 raceSession은 null이 아닐 수밖에 없음
+            currentLap = raceSession!!.lapTimer.currentLap()
+            maxLap = raceSession.lapTimer.maxLap()
+
+            val bestTimeMillisRead = raceSession.lapTimer.bestTime()
+            val bestTimeTotalMillis = if (bestTimeMillisRead == Long.MAX_VALUE) 0 else bestTimeMillisRead
+            bestTimeMinutes = bestTimeTotalMillis.minutes
+            bestTimeSeconds = bestTimeTotalMillis.seconds
+            bestTimeMilliseconds = bestTimeTotalMillis.milliseconds
+
             val totalMillis = raceTimeParser.time().interpolatedTotalMillis
             minutes = totalMillis.minutes
             seconds = totalMillis.seconds
             milliseconds = totalMillis.milliseconds
         }
+
+        screenAnchor = HudAnchor.TOP_RIGHT
+        elementAnchor = HudAnchor.TOP_RIGHT
+        position = Vector2i(-10, 10)
     }
 
     override val elements: MutableList<HudElement>

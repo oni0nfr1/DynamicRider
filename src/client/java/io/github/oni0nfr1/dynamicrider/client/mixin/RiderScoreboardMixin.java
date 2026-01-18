@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import io.github.oni0nfr1.dynamicrider.client.event.*;
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.SidebarSnapshot;
+import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback.RaceEndReason;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.*;
@@ -59,7 +60,7 @@ public abstract class RiderScoreboardMixin {
         if (!wasTimerDisplay && isTimerDisplay) {
             RiderRaceStartCallback.EVENT.invoker().handle();
         } else if (wasTimerDisplay && !isTimerDisplay) {
-            RiderRaceEndCallback.EVENT.invoker().handle();
+            RiderRaceEndCallback.EVENT.invoker().handle(RaceEndReason.FINISH);
         }
 
         original.call(scoreboard, displaySlot, newObjective);
@@ -86,7 +87,7 @@ public abstract class RiderScoreboardMixin {
             );
 
         if (wasDisplayedInSidebar && RACE_TIMER_OBJECTIVE_NAME.equals(removedObjective.getName())) {
-            RiderRaceEndCallback.EVENT.invoker().handle();
+            RiderRaceEndCallback.EVENT.invoker().handle(RaceEndReason.FINISH);
         }
 
         original.call(scoreboard, removedObjective);
