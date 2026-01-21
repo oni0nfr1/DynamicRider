@@ -2,7 +2,6 @@ package io.github.oni0nfr1.dynamicrider.client.rider.chat
 
 import io.github.oni0nfr1.dynamicrider.client.rider.Millis
 import net.minecraft.network.chat.Component
-import net.minecraft.world.scores.Scoreboard
 
 data class LapMessage(
     val currentLap: Int,
@@ -11,8 +10,7 @@ data class LapMessage(
 ) {
     companion object {
         @JvmStatic
-        @Suppress("UNUSED_PARAMETER")
-        fun parseLapMessage(component: Component, scoreboard: Scoreboard): LapMessage? {
+        fun parseLapMessage(component: Component): LapMessage? {
             val raw = component.string.trim()
             val match = LAP_REGEX.matchEntire(raw) ?: return null
 

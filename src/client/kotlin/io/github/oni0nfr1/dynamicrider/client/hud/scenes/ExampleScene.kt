@@ -4,7 +4,8 @@ import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.HiddenNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
@@ -17,6 +18,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
+import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.milliseconds
 import io.github.oni0nfr1.dynamicrider.client.util.minutes
@@ -52,7 +54,18 @@ class ExampleScene(
         iconSize = 28
     }
 
-    val gaugeBar: GaugeBar = PlainGaugeBar(stateManager) {
+    val nitroSlot3: NitroSlot = HiddenNitroSlot(stateManager) {
+        occupied = nitroCounter.nitro() >= 3
+        screenAnchor = HudAnchor.TOP_LEFT
+        elementAnchor = HudAnchor.TOP_LEFT
+        position = Vector2i(110, 10)
+
+        iconSize = 28
+
+        hide = hide && !occupied // 한번 보여지면 계속 유지됨
+    }
+
+    val gaugeBar: GaugeBar = GradientGaugeBar(stateManager) {
         gauge = gaugeTracker.gauge()
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
@@ -77,6 +90,7 @@ class ExampleScene(
     val timer: Timer = TimerWithLap(stateManager) {
         val raceSession = dynRider.raceSession
         hide = !raceTimeParser.isRacing() || raceSession == null
+        hideBestTime = dynRider.mountDetector.playerMountStatus() == MountType.SPECTATOR
         if (!hide) {
             // hide가 false면 raceSession은 null이 아닐 수밖에 없음
             currentLap = raceSession!!.lapTimer.currentLap()
@@ -104,6 +118,7 @@ class ExampleScene(
             speedMeter,
             nitroSlot1,
             nitroSlot2,
+            nitroSlot3,
             gaugeBar,
             rankingTable,
             timer

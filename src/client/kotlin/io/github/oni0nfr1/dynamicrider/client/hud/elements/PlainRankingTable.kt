@@ -22,7 +22,7 @@ class PlainRankingTable(
     var font: Font = Minecraft.getInstance().font
 
     /** 전체 박스 폭 */
-    var width = 150
+    var width = 100
 
     /** 행 높이 */
     var rowPadding = 2

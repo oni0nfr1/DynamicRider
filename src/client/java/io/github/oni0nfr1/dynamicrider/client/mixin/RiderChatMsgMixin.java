@@ -16,17 +16,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPacketListener.class)
 public abstract class RiderChatMsgMixin {
 
-    @Final
-    @Shadow
-    private Scoreboard scoreboard;
-
     @Inject(method = "handleSystemChat", at = @At("TAIL"))
     private void onSystemChat(
             ClientboundSystemChatPacket packet,
             CallbackInfo ci
     ) {
         Component component = packet.content();
-        LapMessage msg = LapMessage.parseLapMessage(component, scoreboard);
+        LapMessage msg = LapMessage.parseLapMessage(component);
         if (msg == null) return;
 
         RiderLapFinishCallback.EVENT.invoker().handle(msg);

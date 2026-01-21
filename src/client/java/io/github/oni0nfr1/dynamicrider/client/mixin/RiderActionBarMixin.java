@@ -33,7 +33,7 @@ public abstract class RiderActionBarMixin {
             HandleResult result = RiderActionBarCallback.EVENT.invoker().handle(self, component, raw);
 
             boolean shouldCallOriginal = (result != HandleResult.FAILURE) &&
-                    !VanillaSuppression.getSuppressVanillaKartState();
+                    !VanillaSuppression.suppressVanillaKartState;
             if (shouldCallOriginal) {
                 original.call(instance, component, bl);
             }

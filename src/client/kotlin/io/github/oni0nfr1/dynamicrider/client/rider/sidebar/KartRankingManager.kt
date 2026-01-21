@@ -8,7 +8,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
-import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.minecraft.client.Minecraft
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
 import net.minecraft.world.level.GameType
@@ -69,13 +68,10 @@ class KartRankingManager(
     }
 
     init {
-        // 디바운싱 (다른 유저 탑승 패킷 수신이 늦어지는 상황 대응)
-        Ticker.runTaskLater(delay = 0) {
-            startRace(captureParticipantsNow())
-            val snapshot = SidebarSnapshot.fromMcClient()
-                ?: error("[KartRankingManager] Fatal: invalid instantiation detected")
-            updateRanking(snapshot)
-        }
+        startRace(captureParticipantsNow())
+        val snapshot = SidebarSnapshot.fromMcClient()
+            ?: error("[KartRankingManager] Fatal: invalid instantiation detected")
+        updateRanking(snapshot)
     }
 
     fun startRace(participants: Collection<Racer>) {

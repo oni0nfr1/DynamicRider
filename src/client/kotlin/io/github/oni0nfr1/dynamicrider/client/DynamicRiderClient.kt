@@ -5,20 +5,17 @@ import io.github.oni0nfr1.dynamicrider.client.config.DynRiderKeybinds
 import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback
 import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback.RaceEndReason
 import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceStartCallback
-import io.github.oni0nfr1.dynamicrider.client.event.RiderLapFinishCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
 import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
-import io.github.oni0nfr1.dynamicrider.client.rider.chat.LapMessage
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
-import io.github.oni0nfr1.dynamicrider.client.util.debugInfo
+import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
@@ -26,7 +23,6 @@ import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.multiplayer.ClientPacketListener
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 
 class DynamicRiderClient : ClientModInitializer {
@@ -66,18 +62,12 @@ class DynamicRiderClient : ClientModInitializer {
             )
         }
 
-        ResourceStore.logger.info("[DynamicRider] Load Complete.")
+        infoLog("Load Complete.")
     }
 
     fun registerEvents() {
         ClientPlayConnectionEvents.DISCONNECT.register(this::onClientDisconnect)
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTickEnd)
-        ClientReceiveMessageEvents.GAME.register { component, _ ->
-            dispatchLapMessage(component)
-        }
-        ClientReceiveMessageEvents.CHAT.register { component, _, _, _, _ ->
-            dispatchLapMessage(component)
-        }
 
         RiderRaceStartCallback.EVENT.register(this::onRaceStart)
         RiderRaceEndCallback.EVENT.register(this::onRaceEnd)
@@ -101,18 +91,8 @@ class DynamicRiderClient : ClientModInitializer {
     ////////////////////////////////// Event Handlers //////////////////////////////////
 
     fun onClientDisconnect(listener: ClientPacketListener, client: Minecraft) {
-        ResourceStore.logger.debugInfo("[DynamicRider] Race ended due to client disconnection")
-        RiderRaceEndCallback.EVENT.invoker().handle(RaceEndReason.DISCONNECT)
-    }
-
-    fun onGameMessage(component: Component, isActionbar: Boolean) {
-
-    }
-
-    private fun dispatchLapMessage(component: Component) {
-        val scoreboard = Minecraft.getInstance().level?.scoreboard ?: return
-        val msg = LapMessage.parseLapMessage(component, scoreboard) ?: return
-        RiderLapFinishCallback.EVENT.invoker().handle(msg)
+        // 메인 스레드에서 호출
+        client.execute { RiderRaceEndCallback.EVENT.invoker().handle(RaceEndReason.DISCONNECT) }
     }
 
     fun onRaceStart(): HandleResult {

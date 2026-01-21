@@ -3,7 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.event
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.impl.RiderEvent
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
-import io.github.oni0nfr1.dynamicrider.client.util.debugInfo
+import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 
 /**
  * 레이싱(타임어택, 라이센스, 멀티플레이 모두 포함)이 종료되었을 때 호출.
@@ -22,7 +22,11 @@ fun interface RiderRaceEndCallback {
         @JvmField
         val EVENT = RiderEvent(logger = ResourceStore.logger) { listeners, callSafely ->
             RiderRaceEndCallback { reason ->
-                ResourceStore.logger.debugInfo("[DynamicRider] Race Ended.")
+                when (reason) {
+                    RaceEndReason.DISCONNECT -> debugLog("Race ended due to client disconnection")
+                    RaceEndReason.FINISH -> debugLog("Race Ended.")
+                    RaceEndReason.OTHER -> debugLog("Race Ended by unknown reason.")
+                }
                 for (listener in listeners) { callSafely(listener) { listener.handle(reason) } }
                 HandleResult.PASS
             }

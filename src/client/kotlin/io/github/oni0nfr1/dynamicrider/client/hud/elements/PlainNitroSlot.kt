@@ -8,7 +8,7 @@ import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
 
-class PlainNitroSlot(
+open class PlainNitroSlot(
     manager: HudStateManager,
     composer: PlainNitroSlot.() -> Unit
 ): HudElementImpl<PlainNitroSlot>(manager, composer), NitroSlot {
@@ -19,6 +19,8 @@ class PlainNitroSlot(
     var boxPadding = 5
     var boxColor = 0x80000000.toInt()
 
+    var hide = false
+
     override fun resolveSize() {
         val size = iconSize + boxPadding * 2
         setSize(size, size)
@@ -28,6 +30,7 @@ class PlainNitroSlot(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
+        if (hide) return
         guiGraphics.fill(0, 0, size.x, size.y, boxColor)
         if (occupied) {
             guiGraphics.blit(

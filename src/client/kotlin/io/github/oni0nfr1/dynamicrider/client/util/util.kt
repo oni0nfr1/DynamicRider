@@ -1,9 +1,9 @@
 package io.github.oni0nfr1.dynamicrider.client.util
 
+import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.Kart
 import io.github.oni0nfr1.dynamicrider.client.rider.Millis
 import net.minecraft.world.entity.Entity
-import org.slf4j.Logger
 
 fun Int.ordinal(): String {
     val suffix = when (this % 10) {
@@ -26,7 +26,15 @@ val Millis.seconds: Int
 val Millis.milliseconds: Int
     get() = (this % 1000).toInt()
 
-fun Logger.debugInfo(msg: String) {
+fun debugLog(msg: String) {
     if (!DynRiderJvmFlags.devMode) return
-    this.info(msg)
+    ResourceStore.logger.info("[DYNRIDER_DEBUG] $msg")
+}
+
+fun infoLog(msg: String) {
+    ResourceStore.logger.info("[DynamicRider] $msg")
+}
+
+fun ColorFromRGB(r: Int, g: Int, b: Int): Int {
+    return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
 }

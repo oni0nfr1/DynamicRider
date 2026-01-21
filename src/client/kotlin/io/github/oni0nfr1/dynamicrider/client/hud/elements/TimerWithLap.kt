@@ -27,7 +27,9 @@ class TimerWithLap(
 
     var minWidth: Int = 100
     var txtColor: Int = 0xffffffff.toInt()
+
     var hide: Boolean = false
+    var hideBestTime: Boolean = false
 
     private companion object {
         const val PADDING_PX = 6
@@ -134,16 +136,18 @@ class TimerWithLap(
         )
         cursorYpx += fontRenderer.lineHeight + LINE_GAP_PX
 
-        drawLabelAndValue(
-            guiGraphics = guiGraphics,
-            fontRenderer = fontRenderer,
-            labelText = "BEST / ",
-            valueText = bestValueText,
-            xPx = paddingLeftPx,
-            yPx = cursorYpx,
-            labelColor = labelColor,
-            valueColor = valueColor
-        )
+        if (!hideBestTime) {
+            drawLabelAndValue(
+                guiGraphics = guiGraphics,
+                fontRenderer = fontRenderer,
+                labelText = "BEST / ",
+                valueText = bestValueText,
+                xPx = paddingLeftPx,
+                yPx = cursorYpx,
+                labelColor = labelColor,
+                valueColor = valueColor
+            )
+        }
     }
 
     private fun drawLabelAndValue(
