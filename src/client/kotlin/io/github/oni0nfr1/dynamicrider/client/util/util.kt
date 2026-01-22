@@ -35,6 +35,10 @@ fun infoLog(msg: String) {
     ResourceStore.logger.info("[DynamicRider] $msg")
 }
 
+fun warnLog(msg: String) {
+    ResourceStore.logger.warn("[DynamicRider] $msg")
+}
+
 fun ColorFromRGB(r: Int, g: Int, b: Int): Int {
     return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
 }

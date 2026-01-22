@@ -1,6 +1,13 @@
 {
   "key.category.dynrider": "DynamicRider",
   "key.dynrider.toggle_hud": "HUD 토글",
-  "dynrider.hud.enabled": "DynamicRider HUD 활성화됨",
-  "dynrider.hud.disabled": "DynamicRider HUD 비활성화됨"
+  "dynrider.hud.enabled": "DynamicRider HUD 보이기",
+  "dynrider.hud.disabled": "DynamicRider HUD 숨기기",
+  "dynamicrider.config.main.title": "DynamicRider 설정",
+  "dynamicrider.config.enabled": "모드 활성화",
+  "dynamicrider.config.font": "HUD 글꼴",
+  "dynamicrider.config.save": "저장",
+  "dynamicrider.config.cancel": "취소",
+  "dynrider.font.vanilla": "기본",
+  "dynrider.font.nexon_lv2": "넥슨 레벨2"
 }

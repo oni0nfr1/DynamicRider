@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements
 
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.graphics.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker
@@ -58,12 +59,7 @@ class PlainTimer(
         pose.pushPose()
         pose.translate(boxPadding.toFloat(), boxPadding.toFloat(), 0f)
         pose.scale(fontScale, fontScale, 1f)
-        guiGraphics.drawString(
-            Minecraft.getInstance().font,
-            timeString,
-            0, 0,
-            txtColor
-        )
+        guiGraphics.textWithDynriderFont(0, 0, txtColor, timeString)
         pose.popPose()
     }
 

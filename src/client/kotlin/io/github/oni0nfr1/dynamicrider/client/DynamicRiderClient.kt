@@ -6,7 +6,7 @@ import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback
 import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback.RaceEndReason
 import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.ExampleScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.DefaultScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
 import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
@@ -23,7 +23,6 @@ import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.multiplayer.ClientPacketListener
-import net.minecraft.resources.ResourceLocation
 
 class DynamicRiderClient : ClientModInitializer {
 
@@ -35,8 +34,6 @@ class DynamicRiderClient : ClientModInitializer {
     }
 
     val stateManager = HudStateManager()
-    val hudId: ResourceLocation
-        = ResourceLocation.fromNamespaceAndPath(ResourceStore.MOD_ID, "hud")
 
     var raceSession: RaceSession? = null
     var currentScene: HudScene? = null
@@ -49,15 +46,21 @@ class DynamicRiderClient : ClientModInitializer {
     val mountDetector = KartMountDetector(stateManager)
 
     override fun onInitializeClient() {
+        // Bootstrap
         instance = this
         Ticker.init()
-        DynRiderKeybinds.init()
-        registerEvents()
 
+        // Load Config File
+        DynRiderConfig.load()
+        DynRiderConfig.apply(DynRiderConfig.currentData)
+        DynRiderKeybinds.init()
+
+        // register default events
+        registerEvents()
         HudLayerRegistrationCallback.EVENT.register { drawerWrapper ->
             drawerWrapper.attachLayerBefore(
                 IdentifiedLayer.CHAT,
-                hudId,
+                ResourceStore.hudId,
                 this::drawHud
             )
         }
@@ -82,8 +85,8 @@ class DynamicRiderClient : ClientModInitializer {
         stateManager.recomposeIfDirty(this) {
             currentScene = when (mountDetector.playerMountStatus()) {
                 MountType.NOT_MOUNTED -> null
-                MountType.MOUNTED     -> ExampleScene(stateManager)
-                MountType.SPECTATOR   -> ExampleScene(stateManager)
+                MountType.MOUNTED     -> DefaultScene(stateManager)
+                MountType.SPECTATOR   -> DefaultScene(stateManager)
             }
         }
     }

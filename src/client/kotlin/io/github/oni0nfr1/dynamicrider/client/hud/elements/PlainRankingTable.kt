@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements
 
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.graphics.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.KartRankingManager
@@ -74,11 +75,12 @@ class PlainRankingTable(
         )
         val myRank = ranking.firstOrNull { it.racer.uuid == myUuid }?.rank
         val headerText = "${myRank?.ordinal() ?: "--"} / ${racers.size}"
-        guiGraphics.drawString(
-            font,
+        guiGraphics.textWithDynriderFont(
+            paddingX,
+            y + rowPadding,
+            defaultTextColor,
             headerText,
-            paddingX, y + rowPadding,
-            defaultTextColor, shadow
+            shadow
         )
         y += rowHeight
 
@@ -107,11 +109,12 @@ class PlainRankingTable(
 
             val nameX = dotX + dotSize + dotGap
             val nameY = rowY + (rowHeight - font.lineHeight) / 2
-            guiGraphics.drawString(
-                font,
-                entry.displayName,
-                nameX, nameY,
-                defaultTextColor, shadow
+            guiGraphics.textWithDynriderFont(
+                nameX,
+                nameY,
+                defaultTextColor,
+                entry.displayName.string,
+                shadow
             )
 
             rowY += rowHeight

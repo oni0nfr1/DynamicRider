@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements
 
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.graphics.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker
@@ -109,7 +110,7 @@ class TimerWithLap(
         poseStack.pushPose()
         poseStack.translate(paddingLeftPx.toDouble(), cursorYpx.toDouble(), 0.0)
         poseStack.scale(LAP_SCALE, LAP_SCALE, 1.0f)
-        guiGraphics.drawString(fontRenderer, lapMainText, 0, 0, valueColor, true)
+        guiGraphics.textWithDynriderFont(0, 0, valueColor, lapMainText, true)
         poseStack.popPose()
 
         val suffixXpx = paddingLeftPx + lapMainWidthPx.toInt() + LAP_SUFFIX_GAP_PX
@@ -119,7 +120,7 @@ class TimerWithLap(
         poseStack.pushPose()
         poseStack.translate(suffixXpx.toDouble(), suffixYpx.toDouble(), 0.0)
         poseStack.scale(LAP_SUFFIX_SCALE, LAP_SUFFIX_SCALE, 1.0f)
-        guiGraphics.drawString(fontRenderer, lapSuffixText, 0, 0, valueColor, true)
+        guiGraphics.textWithDynriderFont(0, 0, valueColor, lapSuffixText, true)
         poseStack.popPose()
 
         cursorYpx += bigLapHeightPx.toInt() + AFTER_LAP_GAP_PX
@@ -160,9 +161,9 @@ class TimerWithLap(
         labelColor: Int,
         valueColor: Int
     ) {
-        guiGraphics.drawString(fontRenderer, labelText, xPx, yPx, labelColor, true)
+        guiGraphics.textWithDynriderFont(xPx, yPx, labelColor, labelText, true)
         val valueStartXpx = xPx + fontRenderer.width(labelText)
-        guiGraphics.drawString(fontRenderer, valueText, valueStartXpx, yPx, valueColor, true)
+        guiGraphics.textWithDynriderFont(valueStartXpx, yPx, valueColor, valueText, true)
     }
 
     private fun formatTime(

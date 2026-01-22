@@ -2,5 +2,12 @@
   "key.category.dynrider": "DynamicRider",
   "key.dynrider.toggle_hud": "toggle HUD",
   "dynrider.hud.enabled": "DynamicRider HUD Enabled",
-  "dynrider.hud.disabled": "DynamicRider HUD Disabled"
+  "dynrider.hud.disabled": "DynamicRider HUD Hidden",
+  "dynamicrider.config.main.title": "DynamicRider Settings",
+  "dynamicrider.config.enabled": "enable DynamicRider",
+  "dynamicrider.config.font": "HUD Font",
+  "dynamicrider.config.save": "Save",
+  "dynamicrider.config.cancel": "Discard",
+  "dynrider.font.vanilla": "Minecraft Vanilla",
+  "dynrider.font.nexon_lv2": "Nexon Level2"
 }

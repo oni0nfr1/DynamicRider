@@ -25,7 +25,7 @@ import io.github.oni0nfr1.dynamicrider.client.util.minutes
 import io.github.oni0nfr1.dynamicrider.client.util.seconds
 import org.joml.Vector2i
 
-class ExampleScene(
+class DefaultScene(
     override val stateManager: HudStateManager
 ): HudScene {
     val dynRider: DynamicRiderClient
