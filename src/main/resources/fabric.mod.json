@@ -15,6 +15,9 @@
     ],
     "main": [
       "io.github.oni0nfr1.dynamicrider.DynamicRider"
+    ],
+    "modmenu": [
+      "io.github.oni0nfr1.dynamicrider.client.config.modmenu.ModMenuIntegration"
     ]
   },
   "mixins": [
@@ -28,5 +31,14 @@
     "fabric-language-kotlin": ">=${kotlin_loader_version}",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "links": {
+        "dynrider.link.github": "https://github.com/oni0nfr1/DynamicRider"
+      },
+      "badges": [],
+      "update_checker": true
+    }
   }
 }

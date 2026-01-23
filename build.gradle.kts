@@ -42,6 +42,10 @@ repositories {
     // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
+
+    maven("https://maven.terraformersmc.com/") {
+        name = "Terraformers"
+    }
 }
 
 dependencies {
@@ -53,6 +57,8 @@ dependencies {
 
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
     modImplementation("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
+    modCompileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+    modLocalRuntime("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
     include("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
 }
 

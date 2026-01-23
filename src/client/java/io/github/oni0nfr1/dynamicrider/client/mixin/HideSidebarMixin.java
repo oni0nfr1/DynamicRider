@@ -28,7 +28,7 @@ public abstract class HideSidebarMixin {
     ) {
         if (
             objective.getName().equals(RACE_TIMER_OBJECTIVE_NAME)
-            && VanillaSuppression.suppressVanillaSidebarRanking
+            && VanillaSuppression.getSuppressVanillaSidebarRanking()
         ) {
             ci.cancel();
         }

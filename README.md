@@ -1,9 +1,11 @@
 # DynamicRider
 
-### 마크라이더를 위한 HUD 모드  
-카트라이더 : 마인크래프트 맵 및 데이터팩을 사용할 때 더욱 원작과 비슷한 UI를 보여줍니다.
+마크라이더를 위한 HUD 모드
+본 모드는 카트라이더 : 마인크래프트 맵 및 데이터팩을 이용할 때 더욱 깔끔하고 보기 좋은 HUD를 제공하며,
+이외에도 카트 엔진 적용 커맨드의 간소화와 같은 간단한 편의성 기능들을 포함합니다.
 
-현재는 개발 중으로 공식 빌드를 배포하지 않습니다.
+This mode provides a cleaner and better-looking HUD when using the KartRider: Minecraft map and data pack,
+as well as simple convenience features such as simplifying cart engine application commands.
 
 이 프로젝트는 **Nexon Games**의 의사에 따라 사전 예고 없이 중단 및 숨김 처리될 수 있으니, 숙지 바랍니다.
 

@@ -10,6 +10,7 @@ import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.DefaultScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.SpectateScene
 import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
@@ -87,7 +88,7 @@ class DynamicRiderClient : ClientModInitializer {
     }
 
     fun drawHud(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        if (!DynRiderConfig.hudVisible) return
+        if (!DynRiderConfig.hudVisible || !DynRiderConfig.isModEnabled) return
         currentScene?.draw(guiGraphics, deltaTracker)
     }
 
@@ -96,7 +97,7 @@ class DynamicRiderClient : ClientModInitializer {
             currentScene = when (mountDetector.playerMountStatus()) {
                 MountType.NOT_MOUNTED -> null
                 MountType.MOUNTED     -> DefaultScene(stateManager)
-                MountType.SPECTATOR   -> DefaultScene(stateManager)
+                MountType.SPECTATOR   -> SpectateScene(stateManager)
             }
         }
     }

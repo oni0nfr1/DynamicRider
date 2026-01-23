@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.config
 
+import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 import kotlinx.serialization.json.Json
 import net.fabricmc.loader.api.FabricLoader
@@ -24,10 +25,17 @@ object DynRiderConfig {
     var currentData: DynRiderConfigData = DynRiderConfigData()
         private set
 
-    @Volatile
-    var hudVisible: Boolean = true
+    //////////////////// 실제 반영되는 설정값들 ////////////////////////
+
     var isModEnabled: Boolean = true
+        set(value) {
+            VanillaSuppression.suppressionEnabled = value
+            field = value
+        }
+    var hudVisible: Boolean = true
     var hudFont: FontStyle = FontStyle.VANILLA
+
+    /////////////////////////////////////////////////////////////////
 
     fun load() {
         currentData = try {

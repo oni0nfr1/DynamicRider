@@ -11,9 +11,12 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
 
-// T: 이 클래스를 상속하는 클래스 자신의 타입을 넘겨주면 됨
-// composer는 해당 클래스의 모든 프로퍼티에 접근할 필요가 있으므로,
-// 클래스 선언시에 T를 넘겨주어 그 프로퍼티에 접근할 수 있게 만듬
+/**
+ * T: 이 클래스를 상속하는 클래스 자신의 타입을 넘겨주면 됨
+ *
+ * composer는 해당 클래스의 모든 프로퍼티에 접근할 필요가 있으므로,
+ * 클래스 선언시에 T를 넘겨주어 그 프로퍼티에 접근할 수 있게 만듬
+ */
 abstract class HudElementImpl<T: HudElement>(
     val stateManager: HudStateManager,
     val composer: T.() -> Unit

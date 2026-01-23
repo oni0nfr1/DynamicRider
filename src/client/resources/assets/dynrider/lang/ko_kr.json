@@ -10,5 +10,6 @@
   "dynamicrider.config.cancel": "취소",
   "dynrider.font.vanilla": "기본",
   "dynrider.font.nexon_lv2": "넥슨 레벨2",
-  "dynrider.font.kart_gothic": "넥슨 카트 고딕"
+  "dynrider.font.kart_gothic": "넥슨 카트 고딕",
+  "dynrider.link.github": "GitHub에서 소스 보기"
 }

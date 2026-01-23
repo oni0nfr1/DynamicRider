@@ -1,19 +1,19 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
@@ -21,7 +21,7 @@ import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 import org.joml.Vector2i
 
-class DefaultScene(
+class SpectateScene(
     override val stateManager: HudStateManager
 ): HudScene {
     val dynRider: DynamicRiderClient
@@ -83,7 +83,7 @@ class DefaultScene(
         position = Vector2i(10, 0)
     }
 
-    val timer: Timer = TimerWithLap(stateManager) {
+    val timer: Timer = PlainTimer(stateManager) {
         val raceSession = dynRider.raceSession
         hide = !raceTimeParser.isRacing() || raceSession == null
         if (!hide) {
@@ -91,10 +91,6 @@ class DefaultScene(
                 warnLog("Timer element is not hidden but race session is null.")
                 warnLog("Timer hiding logic must have gone wrong... or concurrency issue.")
             }
-            currentLap = raceSession.lapTimer.currentLap()
-            maxLap = raceSession.lapTimer.maxLap()
-
-            bestTimeTotalMillis = raceSession.lapTimer.bestTime() ?: 0L
             time = raceTimeParser.time()
         }
 
@@ -104,15 +100,15 @@ class DefaultScene(
     }
 
     override val elements: MutableList<HudElement>
-        = mutableListOf(
-            speedMeter,
-            nitroSlot1,
-            nitroSlot2,
-            nitroSlot3,
-            gaugeBar,
-            rankingTable,
-            timer
-        )
+    = mutableListOf(
+        speedMeter,
+        nitroSlot1,
+        nitroSlot2,
+        nitroSlot3,
+        gaugeBar,
+        rankingTable,
+        timer
+    )
 
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
