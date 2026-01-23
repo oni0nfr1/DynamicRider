@@ -9,5 +9,6 @@
   "dynamicrider.config.save": "Save",
   "dynamicrider.config.cancel": "Discard",
   "dynrider.font.vanilla": "Minecraft Vanilla",
-  "dynrider.font.nexon_lv2": "Nexon Level2"
+  "dynrider.font.nexon_lv2": "Nexon Level2",
+  "dynrider.font.kart_gothic": "Nexon Kart Gothic"
 }

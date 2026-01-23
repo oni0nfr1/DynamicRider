@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation
 enum class FontStyle(val fontId: ResourceLocation?, val key: String) {
     VANILLA(null, "vanilla"),
 
+    KART_GOTHIC(ResourceLocation.fromNamespaceAndPath("dynrider", "kart_gothic"), "kart_gothic"),
     NEXON_LV2(ResourceLocation.fromNamespaceAndPath("dynrider", "nexon_lv2"), "nexon_lv2");
 
     val style: Style

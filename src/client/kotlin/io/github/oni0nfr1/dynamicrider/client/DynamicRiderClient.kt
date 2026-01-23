@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client
 
+import io.github.oni0nfr1.dynamicrider.client.command.Commands
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderKeybinds
 import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback
@@ -14,7 +15,9 @@ import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
+import io.github.oni0nfr1.korigadier.api.korigadier
 import net.fabricmc.api.ClientModInitializer
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
@@ -63,6 +66,13 @@ class DynamicRiderClient : ClientModInitializer {
                 ResourceStore.hudId,
                 this::drawHud
             )
+        }
+
+        // register commands
+        ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
+            korigadier(dispatcher) {
+                include(Commands.setEngineCommand)
+            }
         }
 
         infoLog("Load Complete.")

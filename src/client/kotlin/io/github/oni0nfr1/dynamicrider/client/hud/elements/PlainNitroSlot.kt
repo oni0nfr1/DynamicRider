@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderType
 
 open class PlainNitroSlot(
     manager: HudStateManager,
+    var hide: Boolean = false,
     composer: PlainNitroSlot.() -> Unit
 ): HudElementImpl<PlainNitroSlot>(manager, composer), NitroSlot {
 
@@ -18,8 +19,6 @@ open class PlainNitroSlot(
     var iconSize = 32
     var boxPadding = 5
     var boxColor = 0x80000000.toInt()
-
-    var hide = false
 
     override fun resolveSize() {
         val size = iconSize + boxPadding * 2

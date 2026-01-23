@@ -8,6 +8,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
+import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.minecraft.client.Minecraft
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
 import net.minecraft.world.level.GameType
@@ -43,38 +44,47 @@ class KartRankingManager(
     val isTimeAttack: MutableState<Boolean>
         = mutableStateOf(stateManager, true)
 
-    private val sidebarListener = RiderRankingUpdateCallback.EVENT.register { sidebar ->
-        updateRanking(sidebar)
-        HandleResult.PASS
-    }
+    private var sidebarListener: AutoCloseable? = null
+    private var playerRemoveListener: AutoCloseable? = null
+    private var playerUpdateListener: AutoCloseable? = null
 
-    private val playerRemoveListener = RiderPlayerInfoRemoveCallback.EVENT.register { profileIds ->
-        for (id in profileIds) {
-            markEliminated(id, ElimReason.DISCONNECT)
-        }
-        HandleResult.PASS
-    }
+    // 서버 접속 -> 유저 정보 수신 사이 시간을 주기 위한 디바운싱
+    private var initTask = Ticker.runTaskLater(3) {
+        sidebarListener = RiderRankingUpdateCallback.EVENT.register(this::onSidebarChange)
+        playerRemoveListener = RiderPlayerInfoRemoveCallback.EVENT.register(this::onPlayerRemove)
+        playerUpdateListener = RiderPlayerInfoUpdateCallback.EVENT.register(this::onPlayerUpdate)
 
-    private val playerUpdateListener = RiderPlayerInfoUpdateCallback.EVENT.register { packet ->
-        if (!packet.actions().contains(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE))
-            return@register HandleResult.PASS
-
-        for (e in packet.entries()) {
-            if (e.gameMode() == GameType.SPECTATOR) {
-                markEliminated(e.profileId(), ElimReason.SPECTATOR)
-            }
-        }
-        HandleResult.PASS
-    }
-
-    init {
         startRace(captureParticipantsNow())
         val snapshot = SidebarSnapshot.fromMcClient()
             ?: error("[KartRankingManager] Fatal: invalid instantiation detected")
         updateRanking(snapshot)
     }
 
-    fun startRace(participants: Collection<Racer>) {
+    private fun onSidebarChange(sidebar: SidebarSnapshot): HandleResult {
+        updateRanking(sidebar)
+        return HandleResult.PASS
+    }
+
+    private fun onPlayerRemove(profileIds: List<UUID>): HandleResult {
+        for (id in profileIds) {
+            markEliminated(id, ElimReason.DISCONNECT)
+        }
+        return HandleResult.PASS
+    }
+
+    private fun onPlayerUpdate(packet: ClientboundPlayerInfoUpdatePacket): HandleResult {
+        if (!packet.actions().contains(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE))
+            return HandleResult.PASS
+
+        for (e in packet.entries()) {
+            if (e.gameMode() == GameType.SPECTATOR) {
+                markEliminated(e.profileId(), ElimReason.SPECTATOR)
+            }
+        }
+        return HandleResult.PASS
+    }
+
+    private fun startRace(participants: Collection<Racer>) {
         racers.mutate {
             clear()
             for (p in participants) put(p.uuid, p)
@@ -88,14 +98,14 @@ class KartRankingManager(
         ranking.set(emptyList())
     }
 
-    fun endRace() {
+    private fun endRace() {
         racers.mutate { clear() }
         eliminated.mutate { clear() }
         alive.mutate { clear() }
         ranking.set(emptyList())
     }
 
-    fun markEliminated(uuid: UUID, reason: ElimReason) {
+    private fun markEliminated(uuid: UUID, reason: ElimReason) {
         val racersMap = racers.value
         if (!racersMap.containsKey(uuid)) return
 
@@ -108,7 +118,7 @@ class KartRankingManager(
         alive.mutateIfChanged { remove(uuid) }
     }
 
-    fun updateRanking(snapshot: SidebarSnapshot) {
+    private fun updateRanking(snapshot: SidebarSnapshot) {
         val nameToUuid = buildOnlineNameToUuidMap()
 
         val aliveSet = alive.value
@@ -176,9 +186,12 @@ class KartRankingManager(
     }
 
     override fun close() {
-        sidebarListener.close()
-        playerRemoveListener.close()
-        playerUpdateListener.close()
+        // 경기 진행 중 서버 접속 후 3틱 내에 경기가 끝나는 상황 대응
+        initTask.cancel()
+
+        sidebarListener?.close()
+        playerRemoveListener?.close()
+        playerUpdateListener?.close()
         endRace()
     }
 }

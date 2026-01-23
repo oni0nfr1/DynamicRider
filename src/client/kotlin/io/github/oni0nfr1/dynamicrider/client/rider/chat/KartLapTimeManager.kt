@@ -13,13 +13,16 @@ class KartLapTimeManager(
 
     val maxLap = MutableState<Int?>(stateManager, null)
     val currentLap = MutableState(stateManager, 1)
-    val bestTime = MutableState(stateManager, Long.MAX_VALUE)
+    val bestTime = MutableState<Millis?>(stateManager, null)
     val lapTimes = MutableState(stateManager, mutableListOf<Millis>())
 
     val lapTimeListener = RiderLapFinishCallback.EVENT.register { msg ->
+        val currentBestTime = bestTime.silentRead() ?: Millis.MAX_VALUE
+
         maxLap.set(msg.maxLap)
         currentLap.set(msg.currentLap + 1)
-        if (msg.timeMillis < bestTime.silentRead()) bestTime.set(msg.timeMillis)
+        if (msg.timeMillis < currentBestTime) bestTime.set(msg.timeMillis)
+
         lapTimes.mutate { addLast(msg.timeMillis) }
         HandleResult.PASS
     }

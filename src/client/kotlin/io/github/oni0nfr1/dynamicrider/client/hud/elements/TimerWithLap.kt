@@ -4,6 +4,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.graphics.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.rider.Millis
+import io.github.oni0nfr1.dynamicrider.client.rider.RaceTime
+import io.github.oni0nfr1.dynamicrider.client.util.milliseconds
+import io.github.oni0nfr1.dynamicrider.client.util.minutes
+import io.github.oni0nfr1.dynamicrider.client.util.seconds
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
@@ -15,13 +20,9 @@ class TimerWithLap(
     composer: TimerWithLap.() -> Unit
 ) : HudElementImpl<TimerWithLap>(stateManager, composer), Timer {
 
-    override var minutes: Int = 0
-    override var seconds: Int = 0
-    override var milliseconds: Int = 0
+    override var time: RaceTime = RaceTime()
 
-    var bestTimeMinutes: Int = 0
-    var bestTimeSeconds: Int = 0
-    var bestTimeMilliseconds: Int = 0
+    var bestTimeTotalMillis: Millis = 0
 
     var currentLap: Int = 1
     var maxLap: Int? = null
@@ -49,8 +50,8 @@ class TimerWithLap(
         val lapMainText = currentLap.coerceAtLeast(0).toString()
         val lapSuffixText = maxLap?.let { " /${it.coerceAtLeast(0)}" }.orEmpty()
 
-        val timeValueText = formatTime(minutes, seconds, milliseconds)
-        val bestValueText = formatTime(bestTimeMinutes, bestTimeSeconds, bestTimeMilliseconds)
+        val timeValueText = formatTime(time.interpolatedTotalMillis)
+        val bestValueText = formatTime(bestTimeTotalMillis)
 
         val timeLabelText = "TIME / "
         val bestLabelText = "BEST / "
@@ -95,8 +96,8 @@ class TimerWithLap(
         val lapMainText = currentLap.coerceAtLeast(0).toString()
         val lapSuffixText = maxLap?.let { " /${it.coerceAtLeast(0)}" } ?: "Lap"
 
-        val timeValueText = formatTime(minutes, seconds, milliseconds)
-        val bestValueText = formatTime(bestTimeMinutes, bestTimeSeconds, bestTimeMilliseconds)
+        val timeValueText = formatTime(time.interpolatedTotalMillis)
+        val bestValueText = formatTime(bestTimeTotalMillis)
 
         val labelColor = withSameAlpha(txtColor, 0x00B0B0B0) // TIME/BEST 라벨용 약간 회색
         val valueColor = txtColor
@@ -167,17 +168,15 @@ class TimerWithLap(
     }
 
     private fun formatTime(
-        minuteValue: Int,
-        secondValue: Int,
-        millisecondValue: Int
+        millis: Millis,
     ): String {
-        val safeMinutes = minuteValue.coerceAtLeast(0)
-        val safeSeconds = secondValue.coerceIn(0, 59)
-        val safeMillis = millisecondValue.coerceIn(0, 999)
+        val minutes = millis.minutes
+        val seconds = millis.seconds
+        val milliseconds  = millis.milliseconds
 
-        val minuteText = safeMinutes.toString().padStart(2, '0')
-        val secondText = safeSeconds.toString().padStart(2, '0')
-        val milliText = safeMillis.toString().padStart(3, '0')
+        val minuteText = minutes.toString().padStart(2, '0')
+        val secondText = seconds.toString().padStart(2, '0')
+        val milliText  = milliseconds.toString().padStart(3, '0')
 
         return "$minuteText:$secondText:$milliText"
     }

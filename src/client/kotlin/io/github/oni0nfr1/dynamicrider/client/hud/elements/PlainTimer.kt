@@ -4,6 +4,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.graphics.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.rider.Millis
+import io.github.oni0nfr1.dynamicrider.client.rider.RaceTime
+import io.github.oni0nfr1.dynamicrider.client.util.milliseconds
+import io.github.oni0nfr1.dynamicrider.client.util.minutes
+import io.github.oni0nfr1.dynamicrider.client.util.seconds
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -17,10 +22,7 @@ class PlainTimer(
     composer: PlainTimer.() -> Unit,
 ): HudElementImpl<PlainTimer>(manager, composer), Timer {
 
-    override var minutes: Int = 0
-    override var seconds: Int = 0
-    override var milliseconds: Int = 0
-
+    override var time: RaceTime = RaceTime()
     private val timeStrBuf = charArrayOf('0', '0', ':', '0', '0', ':', '0', '0', '0')
 
     var boxSizeX = 0
@@ -53,7 +55,7 @@ class PlainTimer(
         deltaTracker: DeltaTracker
     ) {
         if (hide) return
-        val timeString = buildTimeString()
+        val timeString = buildTimeString(time.interpolatedTotalMillis)
         guiGraphics.fill(0, 0, boxSizeX, boxSizeY, bgColor)
         val pose = guiGraphics.pose()
         pose.pushPose()
@@ -63,10 +65,12 @@ class PlainTimer(
         pose.popPose()
     }
 
-    private fun buildTimeString(): String {
-        val mins = minutes.coerceIn(0, 99)
-        val secs = seconds.coerceIn(0, 59)
-        val millis = milliseconds.coerceIn(0, 999)
+    private fun buildTimeString(
+        millis: Millis
+    ): String {
+        val mins = millis.minutes.coerceIn(0, 99)
+        val secs = millis.seconds.coerceIn(0, 59)
+        val millis = millis.milliseconds.coerceIn(0, 999)
 
         timeStrBuf[0] = digit(mins / 10)
         timeStrBuf[1] = digit(mins % 10)

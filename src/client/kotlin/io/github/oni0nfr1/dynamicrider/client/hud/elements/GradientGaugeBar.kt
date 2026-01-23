@@ -4,7 +4,7 @@ import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.util.ColorFromRGB
+import io.github.oni0nfr1.dynamicrider.client.util.colorFromRGB
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.exp
@@ -27,11 +27,11 @@ class GradientGaugeBar(
     var smoothing = 1.0
 
     var gradientStops: List<Pair<Int, Int>> = listOf(
-        0   to ColorFromRGB(255, 255, 255),
-        30  to ColorFromRGB(255, 232, 161),
-        60  to ColorFromRGB(255, 192,  64),
-        90  to ColorFromRGB(255,  94,  24),
-        120 to ColorFromRGB(255,   0,   0),
+        0   to colorFromRGB(255, 255, 255),
+        30  to colorFromRGB(255, 232, 161),
+        60  to colorFromRGB(255, 192,  64),
+        90  to colorFromRGB(255,  94,  24),
+        120 to colorFromRGB(255,   0,   0),
     )
 
     private var targetGauge = 0.0

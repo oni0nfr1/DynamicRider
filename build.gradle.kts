@@ -52,6 +52,8 @@ dependencies {
     modImplementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
 
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+    modImplementation("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
+    include("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
 }
 
 tasks.processResources {

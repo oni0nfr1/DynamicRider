@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.event.util
 
-import net.fabricmc.loader.api.FabricLoader
+import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
 
 enum class ListenerExceptionPolicy {
     THROW,
@@ -9,7 +9,7 @@ enum class ListenerExceptionPolicy {
 
     companion object {
         val default: ListenerExceptionPolicy
-            = if (FabricLoader.getInstance().isDevelopmentEnvironment) THROW
+            = if (DynRiderJvmFlags.devMode) THROW
               else LOG_AND_PASS
     }
 
