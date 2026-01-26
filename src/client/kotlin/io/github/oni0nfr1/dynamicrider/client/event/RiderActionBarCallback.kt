@@ -3,7 +3,6 @@ package io.github.oni0nfr1.dynamicrider.client.event
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.impl.RiderEvent
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
-import net.minecraft.client.multiplayer.ClientPacketListener
 import net.minecraft.network.chat.Component
 
 /**
@@ -16,7 +15,6 @@ import net.minecraft.network.chat.Component
  */
 fun interface RiderActionBarCallback {
     fun handle(
-        packetListener: ClientPacketListener,
         text: Component,
         raw: String,
     ): HandleResult
@@ -25,9 +23,9 @@ fun interface RiderActionBarCallback {
 
         @JvmField
         val EVENT = RiderEvent(logger = ResourceStore.logger) { listeners, callSafely ->
-            RiderActionBarCallback { packetListener, text, raw ->
+            RiderActionBarCallback { text, raw ->
                 for (listener in listeners) {
-                    val result = callSafely(listener) { listener.handle(packetListener, text, raw) }
+                    val result = callSafely(listener) { listener.handle(text, raw) }
                     when (result) {
                         HandleResult.FAILURE -> return@RiderActionBarCallback HandleResult.FAILURE
                         HandleResult.SUCCESS -> return@RiderActionBarCallback HandleResult.SUCCESS

@@ -22,7 +22,7 @@ class KartGaugeTracker(
             ?: TextColor.fromRgb(0xFFAA00)
     }
 
-    private val eventListener: AutoCloseable = RiderActionBarCallback.EVENT.register { _, text, _ ->
+    private val eventListener: AutoCloseable = RiderActionBarCallback.EVENT.register { text, _ ->
         updateGauge(text)
         HandleResult.PASS
     }

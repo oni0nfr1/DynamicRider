@@ -32,6 +32,7 @@ class DynamicRiderClient : ClientModInitializer {
 
     companion object {
         private var _instance: DynamicRiderClient? = null
+        @JvmStatic
         var instance: DynamicRiderClient
             get() = _instance ?: error("DynamicRider Mod not initialized!")
             private set(value) { _instance = value }

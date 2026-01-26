@@ -5,8 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "HideSidebarMixin",
+    "HudSuppressionMixin",
     "PauseScreenMixin",
-    "RiderActionBarMixin",
     "RiderChatMsgMixin",
     "RiderMountMixin",
     "RiderScoreboardMixin",

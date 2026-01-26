@@ -14,7 +14,7 @@ class KartSpeedometer(
         val speedRegex = Regex("""(\d{1,4})(?:\.(\d))?\s*km\s*/?\s*h""", RegexOption.IGNORE_CASE)
     }
 
-    private val eventListener = RiderActionBarCallback.EVENT.register { _, _, raw ->
+    private val eventListener = RiderActionBarCallback.EVENT.register { _, raw ->
         updateSpeed(raw)
         HandleResult.PASS
     }

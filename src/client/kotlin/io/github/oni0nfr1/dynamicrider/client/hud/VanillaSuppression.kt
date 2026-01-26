@@ -8,5 +8,4 @@ object VanillaSuppression {
         get() = field && suppressionEnabled
     @JvmStatic var suppressVanillaSidebarRanking = true
         get() = field && suppressionEnabled
-
 }

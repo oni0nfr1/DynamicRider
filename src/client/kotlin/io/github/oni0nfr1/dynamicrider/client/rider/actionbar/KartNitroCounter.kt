@@ -18,7 +18,7 @@ class KartNitroCounter(
         val gearRegex = Regex("""(\d+)\s*단""", RegexOption.IGNORE_CASE)
     }
 
-    private val eventListener = RiderActionBarCallback.EVENT.register { _, _, raw ->
+    private val eventListener = RiderActionBarCallback.EVENT.register { _, raw ->
         updateNitro(raw)
         HandleResult.PASS
     }
