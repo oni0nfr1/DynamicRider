@@ -23,6 +23,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
+import net.fabricmc.fabric.api.client.rendering.v1.LayeredDrawerWrapper
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -32,6 +33,8 @@ class DynamicRiderClient : ClientModInitializer {
 
     companion object {
         private var _instance: DynamicRiderClient? = null
+
+        @JvmStatic
         var instance: DynamicRiderClient
             get() = _instance ?: error("DynamicRider Mod not initialized!")
             private set(value) { _instance = value }
@@ -61,13 +64,7 @@ class DynamicRiderClient : ClientModInitializer {
 
         // register default events
         registerEvents()
-        HudLayerRegistrationCallback.EVENT.register { drawerWrapper ->
-            drawerWrapper.attachLayerBefore(
-                IdentifiedLayer.CHAT,
-                ResourceStore.hudId,
-                this::drawHud
-            )
-        }
+        HudLayerRegistrationCallback.EVENT.register(this::registerHud)
 
         // register commands
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
@@ -85,6 +82,14 @@ class DynamicRiderClient : ClientModInitializer {
 
         RiderRaceStartCallback.EVENT.register(this::onRaceStart)
         RiderRaceEndCallback.EVENT.register(this::onRaceEnd)
+    }
+
+    fun registerHud(layeredDrawer: LayeredDrawerWrapper) {
+        layeredDrawer.attachLayerBefore(
+            IdentifiedLayer.CHAT,
+            ResourceStore.hudId,
+            this::drawHud
+        )
     }
 
     fun drawHud(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {

@@ -2,9 +2,9 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
@@ -27,11 +27,13 @@ class DefaultScene(
     val dynRider: DynamicRiderClient
         get() = DynamicRiderClient.instance
 
-    val speedMeter: SpeedMeter = PlainSpeedMeter(stateManager) {
+    val speedMeter: SpeedMeter = JiuTachometer(stateManager) {
         speed = speedometer.speed()
-        screenAnchor = HudAnchor.BOTTOM_RIGHT
-        elementAnchor = HudAnchor.BOTTOM_RIGHT
-        position = Vector2i(-10, -10)
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position = Vector2i(0, 0)
+
+        glow = speed >= 100
     }
 
     val nitroSlot1: NitroSlot = PlainNitroSlot(stateManager) {

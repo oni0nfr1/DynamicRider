@@ -11,6 +11,8 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
 
+typealias Composer<T> = T.() -> Unit
+
 /**
  * T: 이 클래스를 상속하는 클래스 자신의 타입을 넘겨주면 됨
  *
@@ -19,7 +21,7 @@ import org.joml.Vector3f
  */
 abstract class HudElementImpl<T: HudElement>(
     val stateManager: HudStateManager,
-    val composer: T.() -> Unit
+    val composer: Composer<T>
 ): HudElement {
 
     override var screenAnchor: HudAnchor = HudAnchor.TOP_LEFT

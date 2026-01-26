@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.util
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.Kart
 import io.github.oni0nfr1.dynamicrider.client.rider.Millis
+import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.Entity
 
 fun Int.ordinal(): String {
@@ -41,4 +42,17 @@ fun warnLog(msg: String) {
 
 fun colorFromRGB(r: Int, g: Int, b: Int): Int {
     return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
+}
+
+fun colorFromARGB(a: Int, r: Int, g: Int, b: Int): Int {
+    return (a shl 24) or (r shl 16) or (g shl 8) or b
+}
+
+fun Int.applyAlphaToColor(alpha: Int): Int {
+    val alphaRemoved = (this shl 8) shr 8
+    return alphaRemoved or (alpha shl 24)
+}
+
+fun dsegText(text: String): Component {
+    return Component.literal(text).withStyle{ it.withFont(ResourceStore.dseg_font) }
 }

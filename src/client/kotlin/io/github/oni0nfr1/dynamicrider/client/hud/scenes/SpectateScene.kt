@@ -29,9 +29,9 @@ class SpectateScene(
 
     val speedMeter: SpeedMeter = PlainSpeedMeter(stateManager) {
         speed = speedometer.speed()
-        screenAnchor = HudAnchor.BOTTOM_RIGHT
-        elementAnchor = HudAnchor.BOTTOM_RIGHT
-        position = Vector2i(-10, -10)
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position = Vector2i(0, -10)
     }
 
     val nitroSlot1: NitroSlot = PlainNitroSlot(stateManager) {

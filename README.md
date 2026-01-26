@@ -49,6 +49,8 @@ as well as simple convenience features such as simplifying cart engine applicati
 GPL 라이선스에 따라 타인에게 본 저작물 또는 그 수정본의 바이너리를 제공할 때 소스 코드와 변경 내역을 함께 제공하여야 합니다.  
 자세한 내용은 **LICENSE.txt**를 확인해 주시기 바랍니다.
 
-또한 넥슨과 관련된 리소스들은 [넥슨 브랜드 아이덴티티 가이드라인](https://brand.nexon.com/ko/ci-brand-guidelines/)을 참고해주시기 바랍니다.
+리소스에 대한 라이선스는 다음과 같습니다.
+DSEG7 Classic Bold Italic - SIL Open Font License 1.1 
+이외 넥슨과 관련된 리소스들은 [넥슨 브랜드 아이덴티티 가이드라인](https://brand.nexon.com/ko/ci-brand-guidelines/)을 참고해주시기 바랍니다.
 
 **라이선스가 명시되지 않은 리소스들**에 대해서는 **모든 권리가 보호됩니다(All Rights Reserved)**. 이용을 위해서는 리소스 원저작자와 상의해 보시기 바랍니다.
