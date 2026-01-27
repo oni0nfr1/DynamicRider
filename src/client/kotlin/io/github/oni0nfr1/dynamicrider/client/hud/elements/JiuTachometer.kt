@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements
 
+import io.github.oni0nfr1.dynamicrider.client.command.DebugVariables
 import io.github.oni0nfr1.dynamicrider.client.graphics.drawJiuEngineArcGlow
 import io.github.oni0nfr1.dynamicrider.client.graphics.drawJiuEngineArcGlowEmpty
 import io.github.oni0nfr1.dynamicrider.client.graphics.drawSpeed7Seg
@@ -117,8 +118,8 @@ class JiuTachometer(
         )
 
         val centerX = WIDTH / 2f
-        val slotTopWidth = 50f
-        val slotBottomWidth = 44f
+        val slotTopWidth = DebugVariables.iconSlotTopWidth.toFloat()
+        val slotBottomWidth = DebugVariables.iconSlotBottomWidth.toFloat()
         guiGraphics.fillRoundedTrapezoid(
             centerX - slotTopWidth / 2f,
             25f,
