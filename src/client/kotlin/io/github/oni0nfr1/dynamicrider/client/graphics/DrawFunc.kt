@@ -23,6 +23,8 @@ import org.joml.Vector2f
 /*
     렌더 관련 함수들이 들어갑니다.
     좀더 다양한 디자인 구현을 위해 커스텀 draw call이 추가될 수도 있습니다.
+
+    반쯤 버려졌습니다 ㅠㅠ
 */
 
 fun GuiGraphics.textWithDynriderFont(

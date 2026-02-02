@@ -10,27 +10,44 @@ class DebugVarRegistry {
 
     private val logger = ResourceStore.logger
 
-    // TODO: Korigadier에 Args.long/float/double 추가 후 코덱 넣어두기
     private val codecs: List<VarCodec> = listOf(
         VarCodec(
             javaFieldType = Int::class.javaPrimitiveType!!,
             argumentType = Args.int(),
             readAny = { ctx, arg -> ctx.get<Int>(arg) },
-            writeAny = { field, owner, value -> field.setInt(owner, value as Int) }
+            writeAny = { field, owner, value -> field.setInt(owner, value as Int) },
+        ),
+        VarCodec(
+            javaFieldType = Long::class.javaPrimitiveType!!,
+            argumentType = Args.long(),
+            readAny = { ctx, arg -> ctx.get<Long>(arg) },
+            writeAny = { field, owner, value -> field.set(owner, value as Long) },
+        ),
+        VarCodec(
+            javaFieldType = Float::class.javaPrimitiveType!!,
+            argumentType = Args.float(),
+            readAny = { ctx, arg -> ctx.get<Float>(arg) },
+            writeAny = { field, owner, value -> field.set(owner, value as Float) },
+        ),
+        VarCodec(
+            javaFieldType = Double::class.javaPrimitiveType!!,
+            argumentType = Args.double(),
+            readAny = { ctx, arg -> ctx.get<Double>(arg) },
+            writeAny = { field, owner, value -> field.set(owner, value as Double) },
         ),
         VarCodec(
             javaFieldType = Boolean::class.javaPrimitiveType!!,
             argumentType = Args.bool(),
             readAny = { ctx, arg -> ctx.get<Boolean>(arg) },
-            writeAny = { field, owner, value -> field.setBoolean(owner, value as Boolean) }
+            writeAny = { field, owner, value -> field.setBoolean(owner, value as Boolean) },
         ),
         VarCodec(
             javaFieldType = String::class.java,
             argumentType = Args.greedy(),
             readAny = { ctx, arg -> ctx.get<String>(arg) },
             writeAny = { field, owner, value -> field.set(owner, value as String) },
-            formatAny = { field, owner -> "\"${field.get(owner) as String}\"" }
-        )
+            formatAny = { field, owner -> "\"${field.get(owner) as String}\"" },
+        ),
     )
 
     private val varsByName: LinkedHashMap<String, RegisteredVar> = linkedMapOf()

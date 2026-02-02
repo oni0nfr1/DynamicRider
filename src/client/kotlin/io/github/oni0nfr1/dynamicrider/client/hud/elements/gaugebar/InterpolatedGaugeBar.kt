@@ -1,16 +1,16 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.elements
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.exp
 
-class PlainGaugeBar(
+class InterpolatedGaugeBar(
     manager: HudStateManager,
-    composer: PlainGaugeBar.() -> Unit
-) : HudElementImpl<PlainGaugeBar>(manager, composer), GaugeBar {
+    composer: InterpolatedGaugeBar.() -> Unit
+) : HudElementImpl<InterpolatedGaugeBar>(manager, composer), GaugeBar {
 
     var thickness = 8
     var width = 125

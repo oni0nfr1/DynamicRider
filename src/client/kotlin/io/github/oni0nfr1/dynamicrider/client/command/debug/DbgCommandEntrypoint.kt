@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.command.debug
 
 import com.mojang.brigadier.Command
-import io.github.oni0nfr1.korigadier.api.KRootScope
+import io.github.oni0nfr1.korigadier.api.builder.KRootScope
 
 fun <S> KRootScope<S>.registerDbgVariables(
     registry: DebugVarRegistry,

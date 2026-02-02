@@ -1,10 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
+import io.github.oni0nfr1.dynamicrider.client.command.DebugVariables
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.GradientGaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.JiuTachometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.PlainGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
@@ -19,7 +21,6 @@ import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
-import org.joml.Vector2i
 
 class DefaultScene(
     override val stateManager: HudStateManager
@@ -31,7 +32,8 @@ class DefaultScene(
         speed = speedometer.speed()
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
-        position = Vector2i(0, 0)
+        position.x = 0
+        position.y = 0
 
         glow = speed >= 100
     }
@@ -40,7 +42,8 @@ class DefaultScene(
         occupied = nitroCounter.nitro() >= 1
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
-        position = Vector2i(10, 10)
+        position.x = 10
+        position.y = 10
         iconSize = 32
     }
 
@@ -48,7 +51,8 @@ class DefaultScene(
         occupied = nitroCounter.nitro() >= 2
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
-        position = Vector2i(62, 10)
+        position.x = 62
+        position.y = 10
         iconSize = 28
     }
 
@@ -56,7 +60,8 @@ class DefaultScene(
         occupied = nitroCounter.nitro() >= 3
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
-        position = Vector2i(110, 10)
+        position.x = 110
+        position.y = 10
 
         iconSize = 28
 
@@ -67,7 +72,36 @@ class DefaultScene(
         gauge = gaugeTracker.gauge()
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
-        position = Vector2i(0, -75)
+        position.x = 0
+        position.y = -75
+    }
+
+    val teamBoostGauge: GaugeBar = PlainGaugeBar(stateManager) {
+        gaugeColor = 0xFF0000FF.toInt()
+
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position.x = 0
+        position.y = -68
+
+        width = 120f
+        thickness = 5f
+
+        gauge = DebugVariables.teamBoostGauge
+    }
+
+    val expGaugeBar: GaugeBar = PlainGaugeBar(stateManager) {
+        gaugeColor = 0xFF00C800.toInt()
+
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position.x = 0
+        position.y = -61
+
+        width = 120f
+        thickness = 5f
+
+        gauge = DebugVariables.expGauge
     }
 
     val rankingTable: RankingTable = PlainRankingTable(stateManager) {
@@ -82,27 +116,32 @@ class DefaultScene(
 
         screenAnchor = HudAnchor.MIDDLE_LEFT
         elementAnchor = HudAnchor.MIDDLE_LEFT
-        position = Vector2i(10, 0)
+        position.x = 10
+        position.y = 0
     }
 
     val timer: Timer = TimerWithLap(stateManager) {
         val raceSession = dynRider.raceSession
         hide = !raceTimeParser.isRacing() || raceSession == null
-        if (!hide) {
-            require(raceSession != null) {
-                warnLog("Timer element is not hidden but race session is null.")
-                warnLog("Timer hiding logic must have gone wrong... or concurrency issue.")
-            }
-            currentLap = raceSession.lapTimer.currentLap()
-            maxLap = raceSession.lapTimer.maxLap()
+        try {
+            if (!hide) {
+                require(raceSession != null) {
+                    "Timer element is not hidden but race session is null."
+                }
+                currentLap = raceSession.lapTimer.currentLap()
+                maxLap = raceSession.lapTimer.maxLap()
 
-            bestTimeTotalMillis = raceSession.lapTimer.bestTime() ?: 0L
-            time = raceTimeParser.time()
+                bestTimeTotalMillis = raceSession.lapTimer.bestTime() ?: 0L
+                time = raceTimeParser.time()
+            }
+        } catch (exception: Exception) {
+            warnLog(exception.toString())
         }
 
         screenAnchor = HudAnchor.TOP_RIGHT
         elementAnchor = HudAnchor.TOP_RIGHT
-        position = Vector2i(-10, 10)
+        position.x = -10
+        position.y = 10
     }
 
     override val elements: MutableList<HudElement>
@@ -112,6 +151,8 @@ class DefaultScene(
             nitroSlot2,
             nitroSlot3,
             gaugeBar,
+            teamBoostGauge,
+            expGaugeBar,
             rankingTable,
             timer
         )

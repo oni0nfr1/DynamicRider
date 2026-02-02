@@ -1,15 +1,14 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.elements
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter
 
-import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.graphics.textWithDynriderFont
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.ceil
 import kotlin.math.max
-
 
 class PlainSpeedMeter(
     manager: HudStateManager,

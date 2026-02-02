@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.command
 
+import com.mojang.brigadier.Command
 import io.github.oni0nfr1.korigadier.api.Args
 import io.github.oni0nfr1.korigadier.api.fragment
 import io.github.oni0nfr1.korigadier.api.get
@@ -38,7 +39,7 @@ object Commands {
                 executes { ctx ->
                     val engineNumber = ctx.get<Int>("engine-number")
                     sendCommand("trigger setengine set $engineNumber")
-                    1
+                    Command.SINGLE_SUCCESS
                 }
             }
 
@@ -46,7 +47,7 @@ object Commands {
                 literal(engine.first) {
                     executes {
                         sendCommand("trigger setengine set ${engine.second}")
-                        1
+                        Command.SINGLE_SUCCESS
                     }
                 }
             }
@@ -57,7 +58,7 @@ object Commands {
                 executes { ctx ->
                     val engineNumber = ctx.get<Int>("engine-number")
                     sendCommand("trigger setengine set $engineNumber")
-                    1
+                    Command.SINGLE_SUCCESS
                 }
             }
 
@@ -65,7 +66,7 @@ object Commands {
                 literal(engine.first) {
                     executes {
                         sendCommand("trigger setengine set ${engine.second}")
-                        1
+                        Command.SINGLE_SUCCESS
                     }
                 }
             }

@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.elements
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
 import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
@@ -29,9 +29,9 @@ class GradientGaugeBar(
     var gradientStops: List<Pair<Int, Int>> = listOf(
         0   to colorFromRGB(255, 255, 255),
         30  to colorFromRGB(255, 232, 161),
-        60  to colorFromRGB(255, 192,  64),
-        90  to colorFromRGB(255,  94,  24),
-        120 to colorFromRGB(255,   0,   0),
+        60  to colorFromRGB(255, 192, 64),
+        90  to colorFromRGB(255, 94, 24),
+        120 to colorFromRGB(255, 0, 0),
     )
 
     private var targetGauge = 0.0
