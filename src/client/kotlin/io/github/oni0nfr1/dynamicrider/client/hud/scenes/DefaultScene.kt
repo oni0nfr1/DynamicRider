@@ -19,6 +19,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
+import io.github.oni0nfr1.dynamicrider.client.rider.exp.KartExpProgressReader
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 
@@ -101,7 +102,7 @@ class DefaultScene(
         width = 120f
         thickness = 5f
 
-        gauge = DebugVariables.expGauge
+        gauge = expProgressReader.progress().toDouble()
     }
 
     val rankingTable: RankingTable = PlainRankingTable(stateManager) {
@@ -161,6 +162,7 @@ class DefaultScene(
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
     val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
     val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
+    val expProgressReader: KartExpProgressReader = KartExpProgressReader(stateManager)
 
     override fun enable() {
 
@@ -171,5 +173,6 @@ class DefaultScene(
         nitroCounter.close()
         speedometer.close()
         raceTimeParser.close()
+        expProgressReader.close()
     }
 }

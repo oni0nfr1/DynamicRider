@@ -8,6 +8,7 @@
     "PauseScreenMixin",
     "RiderChatMsgMixin",
     "RiderMountMixin",
+    "RiderExperienceMixin",
     "RiderScoreboardMixin",
     "RiderSpectateMixin"
   ],
