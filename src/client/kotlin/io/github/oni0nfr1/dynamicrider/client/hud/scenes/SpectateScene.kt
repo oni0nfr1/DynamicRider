@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaug
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainTimer
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.InterpolatedGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
@@ -18,8 +17,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
-import io.github.oni0nfr1.dynamicrider.client.rider.bossbar.KartTeamBoostTracker
-import io.github.oni0nfr1.dynamicrider.client.rider.exp.KartExpProgressReader
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 
@@ -77,40 +74,6 @@ class SpectateScene(
         position.y = -75
     }
 
-    val teamBoostGauge: GaugeBar = InterpolatedGaugeBar(stateManager) {
-        gaugeColor = 0xFF0000FF.toInt()
-        targetGaugeColor = 0x00000000
-
-        screenAnchor = HudAnchor.BOTTOM_CENTER
-        elementAnchor = HudAnchor.BOTTOM_CENTER
-        position.x = 0
-        position.y = -68
-
-        smoothing = 3.0
-        width = 120
-        thickness = 5
-        padding = 0
-
-        gauge = teamBoostTracker.gauge().toDouble()
-    }
-
-    val expGaugeBar: GaugeBar = InterpolatedGaugeBar(stateManager) {
-        gaugeColor = 0xFF00C800.toInt()
-        targetGaugeColor = 0x00000000
-
-        screenAnchor = HudAnchor.BOTTOM_CENTER
-        elementAnchor = HudAnchor.BOTTOM_CENTER
-        position.x = 0
-        position.y = -61
-
-        smoothing = 3.0
-        width = 120
-        thickness = 5
-        padding = 0
-
-        gauge = expProgressReader.progress().toDouble()
-    }
-
     val rankingTable: RankingTable = PlainRankingTable(stateManager) {
         val raceSession = dynRider.raceSession
         hide = raceSession?.rankingManager?.isTimeAttack?.invoke() ?: true
@@ -154,15 +117,11 @@ class SpectateScene(
         nitroSlot2,
         nitroSlot3,
         gaugeBar,
-        teamBoostGauge,
-        expGaugeBar,
         rankingTable,
         timer
     )
 
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
-    val teamBoostTracker: KartTeamBoostTracker = KartTeamBoostTracker(stateManager)
-    val expProgressReader: KartExpProgressReader = KartExpProgressReader(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
     val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
     val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
@@ -173,8 +132,6 @@ class SpectateScene(
 
     override fun disable() {
         gaugeTracker.close()
-        teamBoostTracker.close()
-        expProgressReader.close()
         nitroCounter.close()
         speedometer.close()
         raceTimeParser.close()

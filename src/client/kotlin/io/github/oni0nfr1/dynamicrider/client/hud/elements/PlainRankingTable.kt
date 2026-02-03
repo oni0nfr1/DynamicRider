@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import java.util.UUID
+import kotlin.math.max
 
 class PlainRankingTable(
     manager: HudStateManager,
@@ -20,15 +21,15 @@ class PlainRankingTable(
     /** 텍스트 */
     var defaultTextColor = 0xFFFFFF
     var shadow = true
-    var font: Font = Minecraft.getInstance().font
+    var fontManager: Font = Minecraft.getInstance().font
 
     /** 전체 박스 폭 */
-    var width = 100
+    var minWidth = 100
 
     /** 행 높이 */
     var rowPadding = 2
     val rowHeight
-        get() = font.lineHeight + rowPadding * 2
+        get() = fontManager.lineHeight + rowPadding * 2
 
     /** padding */
     var paddingX = 6
@@ -52,8 +53,13 @@ class PlainRankingTable(
     override fun resolveSize() {
         val rows = racers.size
         val headerH = rowHeight + 2
-        val h = paddingY * 2 + headerH + rows * rowHeight
-        setSize(width, h)
+
+        val nameMinWidth = racers.values.map { it.name }
+            .minOfOrNull { fontManager.width(it) } ?: 0
+
+        val width = max(minWidth, nameMinWidth + paddingX * 2)
+        val height = paddingY * 2 + headerH + rows * rowHeight
+        setSize(width, height)
     }
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
@@ -108,7 +114,7 @@ class PlainRankingTable(
             )
 
             val nameX = dotX + dotSize + dotGap
-            val nameY = rowY + (rowHeight - font.lineHeight) / 2
+            val nameY = rowY + (rowHeight - fontManager.lineHeight) / 2
             guiGraphics.textWithDynriderFont(
                 nameX,
                 nameY,
