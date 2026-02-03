@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.sidebar
 
-import io.github.oni0nfr1.dynamicrider.client.event.RiderPlayerInfoRemoveCallback
-import io.github.oni0nfr1.dynamicrider.client.event.RiderPlayerInfoUpdateCallback
-import io.github.oni0nfr1.dynamicrider.client.event.RiderRankingUpdateCallback
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderPlayerInfoRemoveCallback
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderPlayerInfoUpdateCallback
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRankingUpdateCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState

@@ -2,9 +2,9 @@ package io.github.oni0nfr1.dynamicrider.client.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import io.github.oni0nfr1.dynamicrider.client.event.*;
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.*;
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.SidebarSnapshot;
-import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback.RaceEndReason;
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallback.RaceEndReason;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.protocol.game.*;

@@ -6,9 +6,9 @@ import io.github.oni0nfr1.dynamicrider.client.command.debug.DebugVarRegistry
 import io.github.oni0nfr1.dynamicrider.client.command.debug.registerDbgVariables
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderKeybinds
-import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback
-import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceEndCallback.RaceEndReason
-import io.github.oni0nfr1.dynamicrider.client.event.RiderRaceStartCallback
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallback
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallback.RaceEndReason
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.DefaultScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager

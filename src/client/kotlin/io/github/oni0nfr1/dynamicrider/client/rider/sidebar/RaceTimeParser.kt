@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.sidebar
 
-import io.github.oni0nfr1.dynamicrider.client.event.RiderTimerUpdateCallback
+import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderTimerUpdateCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState

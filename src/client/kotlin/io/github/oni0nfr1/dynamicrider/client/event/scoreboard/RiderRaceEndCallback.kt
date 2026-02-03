@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.event
+package io.github.oni0nfr1.dynamicrider.client.event.scoreboard
 
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.impl.RiderEvent
@@ -27,7 +27,9 @@ fun interface RiderRaceEndCallback {
                     RaceEndReason.FINISH -> debugLog("Race Ended.")
                     RaceEndReason.OTHER -> debugLog("Race Ended by unknown reason.")
                 }
-                for (listener in listeners) { callSafely(listener) { listener.handle(reason) } }
+                for (listener in listeners) {
+                    callSafely(listener) { listener.handle(reason) }
+                }
                 HandleResult.PASS
             }
         }

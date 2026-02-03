@@ -10,5 +10,9 @@ object VanillaSuppression {
         get() = field && suppressionEnabled
     @JvmStatic var suppressVanillaHotbar = true
         get() = field && suppressionEnabled
+    @JvmStatic var suppressTeamBoosterBossbar = true
+        get() = field && suppressionEnabled
+    @JvmStatic var suppressSpectateInfo = false
+        get() = field && suppressionEnabled
 
 }

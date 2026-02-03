@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.event
+package io.github.oni0nfr1.dynamicrider.client.event.scoreboard
 
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.impl.RiderEvent
@@ -23,7 +23,9 @@ fun interface RiderRaceStartCallback {
         val EVENT = RiderEvent(logger = ResourceStore.logger) { listeners, callSafely ->
             RiderRaceStartCallback {
                 debugLog("Race Start.")
-                for (listener in listeners) { callSafely(listener) { listener.handle() } }
+                for (listener in listeners) {
+                    callSafely(listener) { listener.handle() }
+                }
                 HandleResult.PASS
             }
         }
