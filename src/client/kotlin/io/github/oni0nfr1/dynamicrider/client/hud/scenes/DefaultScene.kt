@@ -1,15 +1,14 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
-import io.github.oni0nfr1.dynamicrider.client.command.DebugVariables
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.PlainGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.InterpolatedGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
@@ -19,6 +18,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
+import io.github.oni0nfr1.dynamicrider.client.rider.bossbar.KartTeamBoostTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.exp.KartExpProgressReader
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
@@ -77,30 +77,36 @@ class DefaultScene(
         position.y = -75
     }
 
-    val teamBoostGauge: GaugeBar = PlainGaugeBar(stateManager) {
+    val teamBoostGauge: GaugeBar = InterpolatedGaugeBar(stateManager) {
         gaugeColor = 0xFF0000FF.toInt()
+        targetGaugeColor = 0x00000000
 
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
         position.x = 0
         position.y = -68
 
-        width = 120f
-        thickness = 5f
+        smoothing = 3.0
+        width = 120
+        thickness = 5
+        padding = 0
 
-        gauge = DebugVariables.teamBoostGauge
+        gauge = teamBoostTracker.gauge().toDouble()
     }
 
-    val expGaugeBar: GaugeBar = PlainGaugeBar(stateManager) {
+    val expGaugeBar: GaugeBar = InterpolatedGaugeBar(stateManager) {
         gaugeColor = 0xFF00C800.toInt()
+        targetGaugeColor = 0x00000000
 
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
         position.x = 0
         position.y = -61
 
-        width = 120f
-        thickness = 5f
+        smoothing = 3.0
+        width = 120
+        thickness = 5
+        padding = 0
 
         gauge = expProgressReader.progress().toDouble()
     }
@@ -159,10 +165,11 @@ class DefaultScene(
         )
 
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
+    val teamBoostTracker: KartTeamBoostTracker = KartTeamBoostTracker(stateManager)
+    val expProgressReader: KartExpProgressReader = KartExpProgressReader(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
     val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
     val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
-    val expProgressReader: KartExpProgressReader = KartExpProgressReader(stateManager)
 
     override fun enable() {
 
@@ -170,6 +177,7 @@ class DefaultScene(
 
     override fun disable() {
         gaugeTracker.close()
+        teamBoostTracker.close()
         nitroCounter.close()
         speedometer.close()
         raceTimeParser.close()

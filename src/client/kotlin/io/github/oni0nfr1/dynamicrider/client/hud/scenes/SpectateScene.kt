@@ -5,8 +5,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.PlainSpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainTimer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.InterpolatedGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
@@ -17,9 +18,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
+import io.github.oni0nfr1.dynamicrider.client.rider.bossbar.KartTeamBoostTracker
+import io.github.oni0nfr1.dynamicrider.client.rider.exp.KartExpProgressReader
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
-import org.joml.Vector2i
 
 class SpectateScene(
     override val stateManager: HudStateManager
@@ -27,18 +29,22 @@ class SpectateScene(
     val dynRider: DynamicRiderClient
         get() = DynamicRiderClient.instance
 
-    val speedMeter: SpeedMeter = PlainSpeedMeter(stateManager) {
+    val speedMeter: SpeedMeter = JiuTachometer(stateManager) {
         speed = speedometer.speed()
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
-        position = Vector2i(0, -10)
+        position.x = 0
+        position.y = 0
+
+        glow = speed >= 100
     }
 
     val nitroSlot1: NitroSlot = PlainNitroSlot(stateManager) {
         occupied = nitroCounter.nitro() >= 1
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
-        position = Vector2i(10, 10)
+        position.x = 10
+        position.y = 10
         iconSize = 32
     }
 
@@ -46,7 +52,8 @@ class SpectateScene(
         occupied = nitroCounter.nitro() >= 2
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
-        position = Vector2i(62, 10)
+        position.x = 62
+        position.y = 10
         iconSize = 28
     }
 
@@ -54,7 +61,8 @@ class SpectateScene(
         occupied = nitroCounter.nitro() >= 3
         screenAnchor = HudAnchor.TOP_LEFT
         elementAnchor = HudAnchor.TOP_LEFT
-        position = Vector2i(110, 10)
+        position.x = 110
+        position.y = 10
 
         iconSize = 28
 
@@ -65,7 +73,42 @@ class SpectateScene(
         gauge = gaugeTracker.gauge()
         screenAnchor = HudAnchor.BOTTOM_CENTER
         elementAnchor = HudAnchor.BOTTOM_CENTER
-        position = Vector2i(0, -75)
+        position.x = 0
+        position.y = -75
+    }
+
+    val teamBoostGauge: GaugeBar = InterpolatedGaugeBar(stateManager) {
+        gaugeColor = 0xFF0000FF.toInt()
+        targetGaugeColor = 0x00000000
+
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position.x = 0
+        position.y = -68
+
+        smoothing = 3.0
+        width = 120
+        thickness = 5
+        padding = 0
+
+        gauge = teamBoostTracker.gauge().toDouble()
+    }
+
+    val expGaugeBar: GaugeBar = InterpolatedGaugeBar(stateManager) {
+        gaugeColor = 0xFF00C800.toInt()
+        targetGaugeColor = 0x00000000
+
+        screenAnchor = HudAnchor.BOTTOM_CENTER
+        elementAnchor = HudAnchor.BOTTOM_CENTER
+        position.x = 0
+        position.y = -61
+
+        smoothing = 3.0
+        width = 120
+        thickness = 5
+        padding = 0
+
+        gauge = expProgressReader.progress().toDouble()
     }
 
     val rankingTable: RankingTable = PlainRankingTable(stateManager) {
@@ -80,23 +123,28 @@ class SpectateScene(
 
         screenAnchor = HudAnchor.MIDDLE_LEFT
         elementAnchor = HudAnchor.MIDDLE_LEFT
-        position = Vector2i(10, 0)
+        position.x = 10
+        position.y = 0
     }
 
     val timer: Timer = PlainTimer(stateManager) {
         val raceSession = dynRider.raceSession
         hide = !raceTimeParser.isRacing() || raceSession == null
-        if (!hide) {
-            require(raceSession != null) {
-                warnLog("Timer element is not hidden but race session is null.")
-                warnLog("Timer hiding logic must have gone wrong... or concurrency issue.")
+        try {
+            if (!hide) {
+                require(raceSession != null) {
+                    "Timer element is not hidden but race session is null."
+                }
+                time = raceTimeParser.time()
             }
-            time = raceTimeParser.time()
+        } catch (exception: Exception) {
+            warnLog(exception.toString())
         }
 
         screenAnchor = HudAnchor.TOP_RIGHT
         elementAnchor = HudAnchor.TOP_RIGHT
-        position = Vector2i(-10, 10)
+        position.x = -10
+        position.y = 10
     }
 
     override val elements: MutableList<HudElement>
@@ -106,11 +154,15 @@ class SpectateScene(
         nitroSlot2,
         nitroSlot3,
         gaugeBar,
+        teamBoostGauge,
+        expGaugeBar,
         rankingTable,
         timer
     )
 
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
+    val teamBoostTracker: KartTeamBoostTracker = KartTeamBoostTracker(stateManager)
+    val expProgressReader: KartExpProgressReader = KartExpProgressReader(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
     val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
     val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
@@ -121,6 +173,8 @@ class SpectateScene(
 
     override fun disable() {
         gaugeTracker.close()
+        teamBoostTracker.close()
+        expProgressReader.close()
         nitroCounter.close()
         speedometer.close()
         raceTimeParser.close()
