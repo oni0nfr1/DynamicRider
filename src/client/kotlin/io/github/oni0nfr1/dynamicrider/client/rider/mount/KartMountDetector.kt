@@ -2,9 +2,12 @@ package io.github.oni0nfr1.dynamicrider.client.rider.mount
 
 import io.github.oni0nfr1.dynamicrider.client.event.RiderMountCallback
 import io.github.oni0nfr1.dynamicrider.client.event.RiderSpectateCallback
+import io.github.oni0nfr1.dynamicrider.client.event.attribute.RiderAttrCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
+import io.github.oni0nfr1.dynamicrider.client.rider.KartEngine
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
 import io.github.oni0nfr1.dynamicrider.client.util.isKart
 import net.minecraft.client.Minecraft
@@ -18,8 +21,21 @@ class KartMountDetector(
 
     val mountedEntityIds = mutableStateOf(stateManager, mutableSetOf<Int>())
     val playerMountStatus = mutableStateOf(stateManager, MountType.NOT_MOUNTED)
+    val currentEngine: MutableState<KartEngine?>
 
     private val passengersByKartId = mutableMapOf<Int, MutableSet<Int>>()
+
+    init {
+        val engineCode = RiderAttrCallback.KART_ENGINE_REAL.currentValue
+        currentEngine = if (engineCode != null) {
+            mutableStateOf(
+                stateManager,
+                KartEngine.getByCode(engineCode.toInt())
+            )
+        } else {
+            mutableStateOf(stateManager, null)
+        }
+    }
 
     val mountListener = RiderMountCallback.EVENT.register { vehicle, passengers ->
         updateMount(vehicle, passengers)
@@ -28,6 +44,13 @@ class KartMountDetector(
 
     val spectateListener = RiderSpectateCallback.EVENT.register { player, target ->
         checkCamera(player, target)
+        HandleResult.PASS
+    }
+
+    val engineListener = RiderAttrCallback.KART_ENGINE_REAL.register { value ->
+        val engineCode = value.toInt() + 10
+        val engine = KartEngine.getByCode(engineCode)
+        currentEngine.set(engine)
         HandleResult.PASS
     }
 
@@ -80,5 +103,6 @@ class KartMountDetector(
     override fun close() {
         mountListener.close()
         spectateListener.close()
+        engineListener.close()
     }
 }

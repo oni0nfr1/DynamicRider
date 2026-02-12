@@ -1,27 +1,33 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.TimerWithLap
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.InterpolatedGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.impl.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartSpeedometer
 import io.github.oni0nfr1.dynamicrider.client.rider.bossbar.KartTeamBoostTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.exp.KartExpProgressReader
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.RaceTimeParser
+import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
+import io.github.oni0nfr1.dynamicrider.client.util.debugLog
+import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
+import net.minecraft.client.Minecraft
+import net.minecraft.world.entity.ai.attributes.Attributes
 
 class DefaultScene(
     override val stateManager: HudStateManager
@@ -168,11 +174,29 @@ class DefaultScene(
     val teamBoostTracker: KartTeamBoostTracker = KartTeamBoostTracker(stateManager)
     val expProgressReader: KartExpProgressReader = KartExpProgressReader(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
-    val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
+    val speedometer: KartSpeedometer = KartSpeedometer(stateManager)
     val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
 
     override fun enable() {
+        if (DynRiderJvmFlags.devMode) Ticker.runTaskLater(60) {
+            val client = Minecraft.getInstance()
+            val attrInst = client.player?.getAttribute(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
+                ?: return@runTaskLater
+            debugLog("modifiers detected from EXPLOSION_KNOCKBACK_RESISTANCE")
+            for (modifier in attrInst.modifiers) {
+                debugLog("${modifier.id}: ${modifier.amount}")
+            }
 
+            // 2026-02-12 기준 id 리스트
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] modifiers detected from EXPLOSION_KNOCKBACK_RESISTANCE
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:kart-engine: 5.0
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:kart-performance-limit-level: 0.0
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:dualboost-state: 0.0
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:max-lap: 2.0
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:kart-engine-real: 5.0
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:active-instant-boost: 0.0
+            // [02:51:50] [Render thread/INFO]: [DYNRIDER_DEBUG] minecraft:is-drifting: 0.0
+        }
     }
 
     override fun disable() {

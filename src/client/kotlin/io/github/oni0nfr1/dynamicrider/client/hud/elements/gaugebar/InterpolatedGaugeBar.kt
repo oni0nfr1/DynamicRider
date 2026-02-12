@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
-import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker

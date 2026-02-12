@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.impl
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.impl
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement

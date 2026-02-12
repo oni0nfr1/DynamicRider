@@ -2,10 +2,10 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scenes
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.PlainTimer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
@@ -13,6 +13,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.RankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.impl.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartGaugeTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.actionbar.KartNitroCounter
@@ -123,7 +124,7 @@ class SpectateScene(
 
     val gaugeTracker: KartGaugeTracker = KartGaugeTracker(stateManager)
     val nitroCounter: KartNitroCounter = KartNitroCounter(stateManager)
-    val speedometer:  KartSpeedometer  = KartSpeedometer(stateManager)
+    val speedometer: KartSpeedometer = KartSpeedometer(stateManager)
     val raceTimeParser: RaceTimeParser = RaceTimeParser(stateManager)
 
     override fun enable() {

@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.chat
 
 import io.github.oni0nfr1.dynamicrider.client.event.RiderLapFinishCallback
+import io.github.oni0nfr1.dynamicrider.client.event.attribute.RiderAttrCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
@@ -11,7 +12,7 @@ class KartLapTimeManager(
     override val stateManager: HudStateManager
 ): RiderBackend, AutoCloseable {
 
-    val maxLap = MutableState<Int?>(stateManager, null)
+    val maxLap = MutableState(stateManager, RiderAttrCallback.MAX_LAP.currentValue?.toInt())
     val currentLap = MutableState(stateManager, 1)
     val bestTime = MutableState<Millis?>(stateManager, null)
     val lapTimes = MutableState(stateManager, mutableListOf<Millis>())
@@ -27,7 +28,13 @@ class KartLapTimeManager(
         HandleResult.PASS
     }
 
+    val maxLapListener = RiderAttrCallback.MAX_LAP.register { value ->
+        maxLap.set(value.toInt())
+        HandleResult.PASS
+    }
+
     override fun close() {
         lapTimeListener.close()
+        maxLapListener.close()
     }
 }

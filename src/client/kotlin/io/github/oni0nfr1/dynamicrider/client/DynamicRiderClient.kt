@@ -10,14 +10,15 @@ import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallb
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallback.RaceEndReason
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.DefaultScene
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.impl.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.SpectateScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.mountSceneByEngine
 import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
+import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.korigadier.api.korigadier
@@ -42,7 +43,10 @@ class DynamicRiderClient : ClientModInitializer {
         @JvmStatic
         var instance: DynamicRiderClient
             get() = _instance ?: error("DynamicRider Mod not initialized!")
-            private set(value) { _instance = value }
+            private set(value) {
+                if (_instance != null) throw IllegalStateException("DynamicRider Mod has already been initialized!")
+                _instance = value
+            }
     }
 
     val stateManager = HudStateManager()
@@ -118,10 +122,14 @@ class DynamicRiderClient : ClientModInitializer {
 
     fun onClientTickEnd(client: Minecraft) {
         stateManager.recomposeIfDirty(this) {
-            currentScene = when (mountDetector.playerMountStatus()) {
-                MountType.NOT_MOUNTED -> null
-                MountType.MOUNTED     -> DefaultScene(stateManager)
-                MountType.SPECTATOR   -> SpectateScene(stateManager)
+            Ticker.runTaskLater(1) { // 안정적인 엔진 인식을 위한 디바운싱
+                val engine = mountDetector.currentEngine()
+                debugLog("detected engine: $engine")
+                currentScene = when (mountDetector.playerMountStatus()) {
+                    MountType.NOT_MOUNTED -> null
+                    MountType.MOUNTED     -> mountSceneByEngine(stateManager, engine)
+                    MountType.SPECTATOR   -> SpectateScene(stateManager)
+                }
             }
         }
     }

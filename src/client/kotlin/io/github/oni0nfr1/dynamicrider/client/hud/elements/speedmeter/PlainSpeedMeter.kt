@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.textWithDynriderFont
-import io.github.oni0nfr1.dynamicrider.client.hud.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker

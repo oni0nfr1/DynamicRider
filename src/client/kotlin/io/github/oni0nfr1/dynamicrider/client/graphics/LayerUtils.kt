@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.graphics
 
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.impl.HudScene
 import net.fabricmc.fabric.api.client.rendering.v1.LayeredDrawerWrapper
 
 // TODO

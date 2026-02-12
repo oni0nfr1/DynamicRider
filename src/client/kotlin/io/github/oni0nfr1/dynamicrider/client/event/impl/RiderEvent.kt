@@ -6,7 +6,7 @@ import io.github.oni0nfr1.dynamicrider.client.event.util.ListenerExceptionPolicy
 import org.slf4j.Logger
 import java.util.concurrent.CopyOnWriteArrayList
 
-class RiderEvent<T : Any>(
+open class RiderEvent<T : Any>(
     private val logger: Logger,
     private val exceptionPolicy: ListenerExceptionPolicy = ListenerExceptionPolicy.default,
     invokerFactory: (Iterable<T>, (T, () -> HandleResult) -> HandleResult) -> T,
