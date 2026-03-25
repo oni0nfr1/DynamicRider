@@ -3,10 +3,11 @@ package io.github.oni0nfr1.dynamicrider.client.event.attribute
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.impl.RiderEvent
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
+import io.github.oni0nfr1.dynamicrider.client.util.isClientPlayerId
 import net.minecraft.resources.ResourceLocation
 
 fun interface RiderAttrCallback {
-    fun handle(value: Double): HandleResult
+    fun handle(entityId: Int, value: Double): HandleResult
 
     companion object {
         @JvmField val KART_ENGINE = Event(
@@ -45,21 +46,34 @@ fun interface RiderAttrCallback {
     ): RiderEvent<RiderAttrCallback>(
         logger = ResourceStore.logger,
         invokerFactory = { listeners, callSafely ->
-            RiderAttrCallback { value ->
+            RiderAttrCallback { entityId, value ->
                 for (listener in listeners) {
-                    callSafely(listener) { listener.handle(value) }
+                    callSafely(listener) { listener.handle(entityId, value) }
                 }
                 HandleResult.PASS
             }
         }
     ), AutoCloseable {
-        var currentValue: Double? = null
+        val valueByEntityId: HashMap<Int, Double> = hashMapOf()
+        var myValue: Double? = null
 
-        private val packetListener = parentEvent.register { modifiers ->
+        private val packetListener = parentEvent.register { entity, modifiers ->
+            val entityId = entity.id
+            if (isClientPlayerId(entityId)) updateMine(entityId, modifiers)
+
             val amount = modifiers[modifierId] ?: return@register HandleResult.PASS
-            if (currentValue != amount) {
-                currentValue = amount
-                invoker().handle(amount)
+            if (valueByEntityId[entityId] != amount) {
+                valueByEntityId[entityId] = amount
+                invoker().handle(entityId, amount)
+            }
+            HandleResult.PASS
+        }
+
+        private fun updateMine(entityId: Int, modifiers : Map<ResourceLocation, Double>) {
+            val amount = modifiers[modifierId] ?: return
+            if (myValue != amount) {
+                myValue = amount
+                invoker().handle(entityId, amount)
             }
             HandleResult.PASS
         }

@@ -7,12 +7,13 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.rider.Millis
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
+import io.github.oni0nfr1.dynamicrider.client.util.isClientPlayerId
 
 class KartLapTimeManager(
     override val stateManager: HudStateManager
 ): RiderBackend, AutoCloseable {
 
-    val maxLap = MutableState(stateManager, RiderAttrCallback.MAX_LAP.currentValue?.toInt())
+    val maxLap = MutableState(stateManager, RiderAttrCallback.MAX_LAP.myValue?.toInt())
     val currentLap = MutableState(stateManager, 1)
     val bestTime = MutableState<Millis?>(stateManager, null)
     val lapTimes = MutableState(stateManager, mutableListOf<Millis>())
@@ -28,7 +29,9 @@ class KartLapTimeManager(
         HandleResult.PASS
     }
 
-    val maxLapListener = RiderAttrCallback.MAX_LAP.register { value ->
+    val maxLapListener = RiderAttrCallback.MAX_LAP.register { entityId, value ->
+        if (!isClientPlayerId(entityId)) return@register HandleResult.PASS
+
         maxLap.set(value.toInt())
         HandleResult.PASS
     }

@@ -77,7 +77,7 @@ public abstract class HudSuppressionMixin {
         KartMountDetector mountDetector = dynrider.getMountDetector();
         MountType mounted = mountDetector.getPlayerMountStatus().invoke();
 
-        boolean shouldShow = mounted == MountType.NOT_MOUNTED || !VanillaSuppression.getSuppressVanillaHotbar();
+        boolean shouldShow = mounted instanceof MountType.NotMounted || !VanillaSuppression.getSuppressVanillaHotbar();
         if (!shouldShow) ci.cancel();
     }
 
@@ -95,7 +95,7 @@ public abstract class HudSuppressionMixin {
         KartMountDetector mountDetector = dynrider.getMountDetector();
         MountType mounted = mountDetector.getPlayerMountStatus().invoke();
 
-        boolean shouldShow = mounted == MountType.NOT_MOUNTED || !VanillaSuppression.getSuppressVanillaHotbar();
+        boolean shouldShow = mounted instanceof MountType.NotMounted || !VanillaSuppression.getSuppressVanillaHotbar();
         if (!shouldShow) ci.cancel();
     }
 }

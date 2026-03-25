@@ -1,11 +1,14 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
 import com.mojang.math.Axis
+import io.github.oni0nfr1.dynamicrider.client.graphics.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.util.colorFromRGB
 import net.minecraft.client.DeltaTracker
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.exp
 
@@ -13,6 +16,18 @@ class GradientGaugeBar(
     manager: HudStateManager,
     composer: GradientGaugeBar.() -> Unit
 ) : HudElementImpl<GradientGaugeBar>(manager, composer), GaugeBar {
+
+    companion object {
+        val client: Minecraft by lazy { Minecraft.getInstance() }
+        val fontManager: Font = client.font
+
+        const val N2O_LABEL_TEXT = "N2O"
+
+        val N20_LABEL_WIDTH: Int by lazy {
+            fontManager.width(N2O_LABEL_TEXT)
+        }
+    }
+
 
     var thickness = 8
     var width = 120
@@ -65,6 +80,19 @@ class GradientGaugeBar(
 
         val targetStops = gradientStops.map { (off, color) -> off to withAlpha(color, targetGaugeAlpha) }
         val gaugeStops  = gradientStops.map { (off, color) -> off to withAlpha(color, gaugeAlpha) }
+
+        val labelScale = thickness / fontManager.lineHeight.toFloat()
+
+        val pose = guiGraphics.pose()
+        pose.pushPose()
+        pose.translate(-N20_LABEL_WIDTH * labelScale, 0f, 0f)
+        guiGraphics.drawScaledText(
+            -padding, padding,
+            labelScale,
+            N2O_LABEL_TEXT,
+            0x80FFFFFF.toInt(),
+        )
+        pose.popPose()
 
         drawMultiStopGradientGauge(
             guiGraphics = guiGraphics,

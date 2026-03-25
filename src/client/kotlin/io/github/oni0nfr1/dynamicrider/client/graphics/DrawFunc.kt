@@ -27,6 +27,26 @@ import org.joml.Vector2f
     반쯤 버려졌습니다 ㅠㅠ
 */
 
+fun GuiGraphics.drawScaledText(
+    x: Int,
+    y: Int,
+    scaleFactor: Float,
+    text: String,
+    argbColor: Int = 0xFFFFFFFF.toInt(),
+    shadow: Boolean = true
+) {
+    val pose = this.pose()
+    val transform = Matrix4f()
+    transform.translate(x.toFloat(), y.toFloat(), 0f)
+    transform.scale(scaleFactor, scaleFactor, 1f)
+
+    pose.pushPose()
+    pose.mulPose(transform)
+
+    this.textWithDynriderFont(0, 0, argbColor, text, shadow)
+    pose.popPose()
+}
+
 fun GuiGraphics.textWithDynriderFont(
     x: Int,
     y: Int,

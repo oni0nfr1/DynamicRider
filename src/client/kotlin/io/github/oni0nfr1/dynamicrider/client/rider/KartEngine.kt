@@ -2,15 +2,15 @@ package io.github.oni0nfr1.dynamicrider.client.rider
 
 enum class KartEngine(val engineCode: Int, val isDummy: Boolean, val engineName: String) {
     // 공식 엔진
-    PRO(18, false, "pro"),
-    NEW(13, false, "new"),
-    JIU(12, false, "jiu"),
     X(10, false, "x"),
-    V1(15, false, "v1"),
     EX(11, false, "ex"),
-    LEGACY(17, false, "1.0"),
+    JIU(12, false, "jiu"),
+    NEW(13, false, "new"),
     Z7(14, false, "z7"),
+    V1(15, false, "v1"),
     A2(16, false, "a2"),
+    LEGACY(17, false, "1.0"),
+    PRO(18, false, "pro"),
     RUSHPLUS(19, false, "rush+"),
     CHARGE(20, false, "charge"),
 
@@ -29,5 +29,7 @@ enum class KartEngine(val engineCode: Int, val isDummy: Boolean, val engineName:
         fun getByCode(engineCode: Int): KartEngine? {
             return byEngineCode[engineCode]
         }
+
+        fun rawModifierToCode(raw: Double) = raw.toInt() + 10
     }
 }

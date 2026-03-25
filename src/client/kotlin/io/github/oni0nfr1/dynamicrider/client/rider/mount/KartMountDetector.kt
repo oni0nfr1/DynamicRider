@@ -9,6 +9,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.MutableState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.mutableStateOf
 import io.github.oni0nfr1.dynamicrider.client.rider.KartEngine
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
+import io.github.oni0nfr1.dynamicrider.client.util.isClientPlayerId
 import io.github.oni0nfr1.dynamicrider.client.util.isKart
 import net.minecraft.client.Minecraft
 import net.minecraft.world.entity.Entity
@@ -20,14 +21,15 @@ class KartMountDetector(
 ) : RiderBackend, AutoCloseable {
 
     val mountedEntityIds = mutableStateOf(stateManager, mutableSetOf<Int>())
-    val playerMountStatus = mutableStateOf(stateManager, MountType.NOT_MOUNTED)
-    val currentEngine: MutableState<KartEngine?>
+    val playerMountStatus = mutableStateOf<MountType>(stateManager, MountType.NotMounted())
+    val myCurrentEngine: MutableState<KartEngine?>
 
     private val passengersByKartId = mutableMapOf<Int, MutableSet<Int>>()
+    private val engineByEntityId = mutableMapOf<Int, KartEngine?>()
 
     init {
-        val engineCode = RiderAttrCallback.KART_ENGINE_REAL.currentValue
-        currentEngine = if (engineCode != null) {
+        val engineCode = RiderAttrCallback.KART_ENGINE_REAL.myValue
+        myCurrentEngine = if (engineCode != null) {
             mutableStateOf(
                 stateManager,
                 KartEngine.getByCode(engineCode.toInt())
@@ -47,18 +49,25 @@ class KartMountDetector(
         HandleResult.PASS
     }
 
-    val engineListener = RiderAttrCallback.KART_ENGINE_REAL.register { value ->
-        val engineCode = value.toInt() + 10
+    val engineListener = RiderAttrCallback.KART_ENGINE_REAL.register { entityId, value ->
+        val engineCode = KartEngine.rawModifierToCode(value)
         val engine = KartEngine.getByCode(engineCode)
-        currentEngine.set(engine)
+
+        if (isClientPlayerId(entityId)) {
+            myCurrentEngine.set(engine)
+        }
+
+        engineByEntityId[entityId] = engine
         HandleResult.PASS
     }
 
     private fun updateMount(vehicle: Entity, passengers: Array<Entity?>) {
+        // 탑승 패킷 이벤트가 왔을 경우 호출됩니다.
         val client = Minecraft.getInstance()
         val level = client.level ?: return
         val kartId = vehicle.id
 
+        //
         val newIds = passengers.asSequence()
             .filterNotNull()
             .map { it.id }
@@ -85,18 +94,18 @@ class KartMountDetector(
         val currentStatus = playerMountStatus.silentRead()
         val isMounted = player != null && mountedEntityIds.silentRead().contains(player.id)
 
-        if (isMounted) playerMountStatus.set(MountType.MOUNTED)
-        else if (currentStatus == MountType.MOUNTED) playerMountStatus.set(MountType.NOT_MOUNTED)
+        if (isMounted) playerMountStatus.set(MountType.Mounted(null))
+        else if (currentStatus is MountType.Mounted) playerMountStatus.set(MountType.NotMounted())
     }
 
     private fun checkCamera(player: Player, target: Entity) {
         val mounted = mountedEntityIds.silentRead().contains(target.id)
 
         if (mounted) {
-            if (player === target) playerMountStatus.set(MountType.MOUNTED)
-            else playerMountStatus.set(MountType.SPECTATOR)
+            if (player === target) playerMountStatus.set(MountType.Mounted(null))
+            else playerMountStatus.set(MountType.Spectator())
         } else {
-            playerMountStatus.set(MountType.NOT_MOUNTED)
+            playerMountStatus.set(MountType.NotMounted())
         }
     }
 

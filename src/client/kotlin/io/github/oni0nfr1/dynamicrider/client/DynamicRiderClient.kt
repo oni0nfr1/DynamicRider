@@ -122,13 +122,15 @@ class DynamicRiderClient : ClientModInitializer {
 
     fun onClientTickEnd(client: Minecraft) {
         stateManager.recomposeIfDirty(this) {
+            val engine = mountDetector.myCurrentEngine()
+            val mountStatus = mountDetector.playerMountStatus()
+
             Ticker.runTaskLater(1) { // 안정적인 엔진 인식을 위한 디바운싱
-                val engine = mountDetector.currentEngine()
-                debugLog("detected engine: $engine")
-                currentScene = when (mountDetector.playerMountStatus()) {
-                    MountType.NOT_MOUNTED -> null
-                    MountType.MOUNTED     -> mountSceneByEngine(stateManager, engine)
-                    MountType.SPECTATOR   -> SpectateScene(stateManager)
+                if (mountStatus is MountType.NotMounted) debugLog("detected engine: $engine")
+                currentScene = when (mountStatus) {
+                    is MountType.NotMounted -> null
+                    is MountType.Mounted -> mountSceneByEngine(stateManager, engine)
+                    is MountType.Spectator -> SpectateScene(stateManager)
                 }
             }
         }
