@@ -1,7 +1,9 @@
 package io.github.oni0nfr1.dynamicrider.client.hud
 
+import kotlinx.serialization.Serializable
 import org.joml.Vector2i
 
+@Serializable
 enum class HudAnchor {
     TOP_LEFT,
     TOP_CENTER,

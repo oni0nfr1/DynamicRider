@@ -1,71 +1,101 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.dsl
 
-import io.github.oni0nfr1.dynamicrider.client.ResourceStore
-import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.gaugebar.GaugeBarBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.gaugebar.GaugeBarSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.impl.HudElementImpl
-import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
-import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
-import net.fabricmc.fabric.api.client.rendering.v1.LayeredDrawerWrapper
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.hudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.mount
+import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
-import org.joml.Vector2i
 
 object SomeObject {
-    val valueToRead: Int = 0
+    var valueToRead: Int = 0
+
+    fun increase() {
+        valueToRead += 1
+    }
 }
 
-class SomeElementBuilder : ElementDataBuilder<SomeElementBuilder, SomeElement>() {
+class SomeElementBuilder : HudElementBuilder<SomeElementSpec>() {
     var a = 0
-    lateinit var valueToRead: () -> Int
+
+    override fun build(layout: HudLayoutSpec): SomeElementSpec {
+        return SomeElementSpec(
+            layout = layout,
+            a = a,
+        )
+    }
 }
 
+@kotlinx.serialization.Serializable
+data class SomeElementSpec(
+    override val layout: HudLayoutSpec,
+    val a: Int,
+) : HudElementSpec<SomeElement>() {
+    override fun create(): SomeElement = SomeElement(this)
+}
 
-class SomeElement(val builder: SomeElementBuilder) : HudElementImpl<SomeElementBuilder, SomeElement>(builder) {
-    val a = builder.a
-    val valueToRead: Int
-        get() = builder.valueToRead()
+class SomeElement(
+    spec: SomeElementSpec,
+) : HudElementImpl(spec.layout) {
+    val a: Int = spec.a
+    val currentValue: Int by SomeObject::valueToRead
+
+    private fun renderText(): String = "a=$a, value=$currentValue"
 
     override fun resolveSize() {
-        TODO("Not yet implemented")
+        val font = net.minecraft.client.Minecraft.getInstance().font
+        val text = renderText()
+        setSize(font.width(text), font.lineHeight)
     }
 
     override fun render(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
-        TODO("Not yet implemented")
-    }
-}
-
-fun foo() {
-    HudApiTest.element = element<SomeElementBuilder, SomeElement> {
-        layout {
-            screenAnchor = HudAnchor.BOTTOM_CENTER
-            elementAnchor = HudAnchor.BOTTOM_CENTER
-            position = Vector2i(0, -10)
-        }
-        a = 10
-        valueToRead = SomeObject::valueToRead
-    }
-
-    HudLayerRegistrationCallback.EVENT.register(HudApiTest::registerHud)
-}
-
-object HudApiTest {
-    var element: SomeElement? = null
-
-    fun registerHud(layeredDrawer: LayeredDrawerWrapper) {
-        layeredDrawer.attachLayerBefore(
-            IdentifiedLayer.CHAT,
-            ResourceStore.hudId,
-            this::drawHud,
+        val text = renderText()
+        guiGraphics.drawString(
+            net.minecraft.client.Minecraft.getInstance().font,
+            text,
+            0,
+            0,
+            0xFFFFFF,
         )
     }
-
-    fun drawHud(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        if (!DynRiderConfig.hudVisible || !DynRiderConfig.isModEnabled) return
-        element?.draw(guiGraphics, deltaTracker)
-    }
 }
 
+fun someScene(): HudScene =
+    hudScene {
+        onEnable {
+            SomeObject.increase()
+        }
+
+        element<GaugeBarBuilder, GaugeBarSpec> {
+            layout {
+                screenAnchor = HudAnchor.BOTTOM_CENTER
+                elementAnchor = HudAnchor.BOTTOM_CENTER
+                y = -75
+            }
+
+            width = 120
+            thickness = 8
+            padding = 2
+            smoothing = 3.0
+        }
+
+        element<SomeElementBuilder, SomeElementSpec> {
+            layout {
+                screenAnchor = HudAnchor.BOTTOM_CENTER
+                elementAnchor = HudAnchor.BOTTOM_CENTER
+                y = -90
+            }
+            a = 10
+        }
+    }
+
+fun someMountedScene(stateManager: HudStateManager) = someScene().mount(stateManager)

@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.impl
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.dsl.ElementDataBuilder
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.dsl.ElementLayoutBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -11,34 +11,22 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
 
-abstract class HudElementImpl<BUILDER, SELF>(
-    builder: BUILDER
-)
-    where
-        BUILDER : ElementDataBuilder<BUILDER, SELF>,
-        SELF : HudElementImpl<BUILDER, SELF>
-{
-    private var screenAnchor: HudAnchor = builder.layout.screenAnchor
-    private var elementAnchor: HudAnchor = builder.layout.elementAnchor
-    private var scale: Vector2f = builder.layout.scale
-    private var position: Vector2i = builder.layout.position
-    private var zIndex: Float = builder.layout.zIndex
-
-    init {
-        setLayout(builder.layout)
-    }
-
-    fun setLayout(layout: ElementLayoutBuilder) {
-        screenAnchor = layout.screenAnchor
-        elementAnchor = layout.elementAnchor
-        scale = layout.scale
-        position = layout.position
-        zIndex = layout.zIndex
-    }
+abstract class HudElementImpl(
+    layout: HudLayoutSpec,
+) : HudElement {
+    override var screenAnchor: HudAnchor = layout.screenAnchor
+    override var elementAnchor: HudAnchor = layout.elementAnchor
+    override var scale: Vector2f = layout.toScale()
+    override var position: Vector2i = layout.toPosition()
+    override var zIndex: Float = layout.zIndex
 
     private val transform = Matrix4f()
     protected val size = Vector2i()
     private val renderPosition = Vector3f()
+
+    protected fun setSize(width: Int, height: Int) {
+        size.set(width, height)
+    }
 
     private fun updateTransform() {
         transform.identity()
@@ -46,7 +34,7 @@ abstract class HudElementImpl<BUILDER, SELF>(
         transform.scale(scale.x, scale.y, 1f)
     }
 
-    fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
+    override fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
         resolveSize()
 
         val window = Minecraft.getInstance().window
