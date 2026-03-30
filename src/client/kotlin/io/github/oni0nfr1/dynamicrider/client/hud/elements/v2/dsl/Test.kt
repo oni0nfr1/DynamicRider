@@ -4,8 +4,14 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.gaugebar.GaugeBarBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.gaugebar.GaugeBarSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.nitroslot.PlainNitroSlotBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.nitroslot.PlainNitroSlotSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.speedmeter.JiuTachometerBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.speedmeter.JiuTachometerSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.timer.HudTimerBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.timer.HudTimerSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.hudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.mount
@@ -75,6 +81,13 @@ fun someScene(): HudScene =
             SomeObject.increase()
         }
 
+        element<JiuTachometerBuilder, JiuTachometerSpec> {
+            layout {
+                screenAnchor = HudAnchor.BOTTOM_CENTER
+                elementAnchor = HudAnchor.BOTTOM_CENTER
+            }
+        }
+
         element<GaugeBarBuilder, GaugeBarSpec> {
             layout {
                 screenAnchor = HudAnchor.BOTTOM_CENTER
@@ -86,6 +99,55 @@ fun someScene(): HudScene =
             thickness = 8
             padding = 2
             smoothing = 3.0
+        }
+
+        element<PlainNitroSlotBuilder, PlainNitroSlotSpec> {
+            layout {
+                screenAnchor = HudAnchor.TOP_LEFT
+                elementAnchor = HudAnchor.TOP_LEFT
+                x = 10
+                y = 10
+            }
+
+            slotIndex = 1
+            iconSize = 32
+        }
+
+        element<PlainNitroSlotBuilder, PlainNitroSlotSpec> {
+            layout {
+                screenAnchor = HudAnchor.TOP_LEFT
+                elementAnchor = HudAnchor.TOP_LEFT
+                x = 62
+                y = 10
+            }
+
+            slotIndex = 2
+            iconSize = 28
+        }
+
+        element<PlainNitroSlotBuilder, PlainNitroSlotSpec> {
+            layout {
+                screenAnchor = HudAnchor.TOP_LEFT
+                elementAnchor = HudAnchor.TOP_LEFT
+                x = 110
+                y = 10
+            }
+
+            slotIndex = 3
+            iconSize = 28
+            hideUntilOccupied = true
+            keepVisibleAfterOccupied = true
+        }
+
+        element<HudTimerBuilder, HudTimerSpec> {
+            layout {
+                screenAnchor = HudAnchor.TOP_RIGHT
+                elementAnchor = HudAnchor.TOP_RIGHT
+                x = -10
+                y = 10
+            }
+
+            minWidth = 100
         }
 
         element<SomeElementBuilder, SomeElementSpec> {
