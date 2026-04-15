@@ -3,9 +3,31 @@ package io.github.oni0nfr1.dynamicrider.client.util
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.event.Kart
 import io.github.oni0nfr1.dynamicrider.client.rider.Millis
+import net.fabricmc.fabric.api.event.Event
+import net.fabricmc.fabric.api.event.EventFactory
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.world.entity.Entity
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
+
+internal inline fun <reified T> createEvent(noinline invokerFactory: (Array<T>) -> T): Event<T> {
+    return EventFactory.createArrayBacked(T::class.java, invokerFactory)
+}
+
+internal object MCClient : ReadOnlyProperty<Any, Minecraft> {
+    @Volatile
+    private var client: Minecraft? = null
+
+    override fun getValue(thisRef: Any, property: KProperty<*>): Minecraft {
+        if (client == null) {
+            client = Minecraft.getInstance()
+                ?: throw IllegalStateException("Minecraft not initialized. this property should not be read that early.")
+            return client!!
+        }
+        return client!!
+    }
+}
 
 fun Int.ordinal(): String {
     val suffix = when (this % 10) {

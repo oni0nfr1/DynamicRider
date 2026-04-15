@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.serialization") version "2.3.0"
-    id("fabric-loom") version "1.14-SNAPSHOT"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.20"
+    id("fabric-loom") version "1.15-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -43,6 +43,7 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
 
+    mavenLocal()
     maven("https://maven.terraformersmc.com/") {
         name = "Terraformers"
     }
@@ -60,6 +61,9 @@ dependencies {
     modCompileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
     modLocalRuntime("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
     include("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
+
+    modCompileOnly("io.github.oni0nfr1:skidmc:${project.property("skidmc_version")}")
+    include("io.github.oni0nfr1:skidmc:${project.property("skidmc_version")}")
 }
 
 tasks.processResources {
@@ -74,7 +78,8 @@ tasks.processResources {
                 "version" to project.version,
                 "minecraft_version" to project.property("minecraft_version"),
                 "loader_version" to project.property("loader_version"),
-                "kotlin_loader_version" to project.property("kotlin_loader_version")
+                "kotlin_loader_version" to project.property("kotlin_loader_version"),
+                "skidmc_version" to project.property("skidmc_version")
             )
         )
     }

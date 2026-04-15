@@ -16,6 +16,7 @@ enum class KartEngine(val engineCode: Int, val isDummy: Boolean, val engineName:
 
     // 더미 엔진
     N1(1000, true, "n1"),
+    RX(1001, true, "rx"),
     KEY(1002, true, "key"),
     MK(1003, true, "mk"),
     BOAT(1004, true, "boat"),

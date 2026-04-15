@@ -10,21 +10,28 @@ import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallb
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallback.RaceEndReason
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
+import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.impl.HudScene
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.SpectateScene
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.mountSceneByEngine
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.makeScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scenes.makeSpectateScene
 import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType
+import io.github.oni0nfr1.dynamicrider.client.rider.v2.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.korigadier.api.korigadier
+import io.github.oni0nfr1.skid.client.api.engine.KartEngine
+import io.github.oni0nfr1.skid.client.api.events.KartMountEvents
+import io.github.oni0nfr1.skid.client.api.events.KartTachometerEvents
+import io.github.oni0nfr1.skid.client.api.kart.Kart
+import io.github.oni0nfr1.skid.client.api.kart.KartEntity
+import io.github.oni0nfr1.skid.client.api.kart.kartEngineType
+import io.github.oni0nfr1.skid.client.api.kart.subject
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
@@ -34,6 +41,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.multiplayer.ClientPacketListener
 import net.minecraft.network.chat.Component
+import net.minecraft.world.entity.player.Player
 
 class DynamicRiderClient : ClientModInitializer {
 
@@ -101,11 +109,22 @@ class DynamicRiderClient : ClientModInitializer {
 
     fun registerEvents() {
         ClientPlayConnectionEvents.DISCONNECT.register(this::onClientDisconnect)
-        ClientTickEvents.END_CLIENT_TICK.register(this::onClientTickEnd)
 
         RiderRaceStartCallback.EVENT.register(this::onRaceStart)
         RiderRaceEndCallback.EVENT.register(this::onRaceEnd)
+
+        KartMountEvents.MOUNT.register(this::onKartMount)
+        KartMountEvents.DISMOUNT.register(this::onKartDismount)
+        KartMountEvents.SPECTATE.register(this::onKartSpectate)
+
+        KartTachometerEvents.RECEIVE.register(this::onTachometerMatch)
+
+        RiderBackendRegistry.init()
     }
+
+    fun onTachometerMatch(kart: Kart, engine: KartEngine, text: Component): KartTachometerEvents.Result
+    =   if (VanillaSuppression.suppressVanillaKartState) KartTachometerEvents.Result.BLOCK
+        else KartTachometerEvents.Result.SHOW
 
     fun registerHud(layeredDrawer: LayeredDrawerWrapper) {
         layeredDrawer.attachLayerBefore(
@@ -120,25 +139,36 @@ class DynamicRiderClient : ClientModInitializer {
         currentScene?.draw(guiGraphics, deltaTracker)
     }
 
-    fun onClientTickEnd(client: Minecraft) {
-        stateManager.recomposeIfDirty(this) {
-            val engine = mountDetector.myCurrentEngine()
-            val mountStatus = mountDetector.playerMountStatus()
+    fun onKartMount(kartEntity: KartEntity, rider: Player) {
+        val client = Minecraft.getInstance()
+        if (client.player?.subject != rider) return
 
-            Ticker.runTaskLater(1) { // 안정적인 엔진 인식을 위한 디바운싱
-                if (mountStatus is MountType.NotMounted) debugLog("detected engine: $engine")
-                currentScene = when (mountStatus) {
-                    is MountType.NotMounted -> null
-                    is MountType.Mounted -> mountSceneByEngine(stateManager, engine)
-                    is MountType.Spectator -> SpectateScene(stateManager)
-                }
-            }
-        }
+        val engineType = client.kartEngineType
+
+        debugLog("detected engine: ${engineType?.engineName}")
+        currentScene = if (engineType != null) makeScene(engineType) else null
+    }
+
+    fun onKartDismount(kartEntity: KartEntity, rider: Player) {
+        val client = Minecraft.getInstance()
+        if (client.player?.subject != rider) return
+
+        currentScene = null
+    }
+
+    fun onKartSpectate(kartEntity: KartEntity, spectator: Player, rider: Player) {
+        val client = Minecraft.getInstance()
+        if (client.player != spectator || client.player?.subject != rider) return
+
+        val engineType = client.kartEngineType
+
+        debugLog("detected engine: ${engineType?.engineName}")
+        currentScene = if (engineType != null) makeSpectateScene(engineType) else null
     }
 
     ////////////////////////////////// Event Handlers //////////////////////////////////
 
-    fun onClientDisconnect(listener: ClientPacketListener, client: Minecraft) {
+    fun onClientDisconnect(packetListener: ClientPacketListener, client: Minecraft) {
         // 메인 스레드에서 호출
         client.execute { RiderRaceEndCallback.EVENT.invoker().handle(RaceEndReason.DISCONNECT) }
     }

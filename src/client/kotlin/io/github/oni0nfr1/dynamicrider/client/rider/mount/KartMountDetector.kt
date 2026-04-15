@@ -11,6 +11,7 @@ import io.github.oni0nfr1.dynamicrider.client.rider.KartEngine
 import io.github.oni0nfr1.dynamicrider.client.rider.RiderBackend
 import io.github.oni0nfr1.dynamicrider.client.util.isClientPlayerId
 import io.github.oni0nfr1.dynamicrider.client.util.isKart
+import io.github.oni0nfr1.skid.client.api.kart.kartEngineType
 import net.minecraft.client.Minecraft
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
@@ -28,11 +29,11 @@ class KartMountDetector(
     private val engineByEntityId = mutableMapOf<Int, KartEngine?>()
 
     init {
-        val engineCode = RiderAttrCallback.KART_ENGINE_REAL.myValue
+        val engineCode = Minecraft.getInstance().kartEngineType?.engineCode
         myCurrentEngine = if (engineCode != null) {
             mutableStateOf(
                 stateManager,
-                KartEngine.getByCode(engineCode.toInt())
+                KartEngine.getByCode(engineCode)
             )
         } else {
             mutableStateOf(stateManager, null)

@@ -4,8 +4,10 @@ import io.github.oni0nfr1.dynamicrider.client.graphics.drawSpeed7Seg
 import io.github.oni0nfr1.dynamicrider.client.graphics.fillRoundedTrapezoid
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
-import io.github.oni0nfr1.dynamicrider.client.rider.v2.actionbar.KartSpeedometer
+import io.github.oni0nfr1.skid.client.api.tachometer.RegularKartTachometer
+import io.github.oni0nfr1.skid.client.api.tachometer.tachometerOrNull
 import net.minecraft.client.DeltaTracker
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
@@ -35,7 +37,10 @@ class JiuTachometer(
     var unitText: String = spec.unitText
     var slotOverlayColor: Int = spec.slotOverlayColor
 
-    override var speed: Int by KartSpeedometer::speed
+    override val speed: Int
+        get() = Minecraft.getInstance().tachometerOrNull?.access {
+            if (this is RegularKartTachometer) speed.toInt() else null
+        } ?: 0
 
     private var glow: Boolean = false
         set(value) {

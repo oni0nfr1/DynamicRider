@@ -4,15 +4,16 @@ import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.graphics.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar as GaugeBarElement
-import io.github.oni0nfr1.dynamicrider.client.rider.v2.actionbar.KartGaugeTracker
+import io.github.oni0nfr1.skid.client.api.tachometer.NitroTachometer
+import io.github.oni0nfr1.skid.client.api.tachometer.tachometerOrNull
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.exp
 
-class GaugeBar(
-    spec: GaugeBarSpec,
+class GradientGaugeBar(
+    spec: GradientGaugeBarSpec,
 ) : HudElementImpl(spec.layout), GaugeBarElement {
     companion object {
         val client: Minecraft by lazy { Minecraft.getInstance() }
@@ -32,9 +33,12 @@ class GaugeBar(
     var gaugeAlpha: Int = spec.gaugeAlpha
     var targetGaugeAlpha: Int = spec.targetGaugeAlpha
     var smoothing: Double = spec.smoothing
-    var gradientStops: List<GaugeBarStopSpec> = spec.gradientStops
+    var gradientStops: List<GradientGaugeBarStopSpec> = spec.gradientStops
 
-    override var gauge: Double by KartGaugeTracker::gauge
+    override val gauge: Double
+        get() = Minecraft.getInstance().tachometerOrNull?.access {
+            if (this is NitroTachometer) gauge else 0.0
+        } ?: 0.0
     private var displayGauge: Double = 0.0
 
     override fun resolveSize() {

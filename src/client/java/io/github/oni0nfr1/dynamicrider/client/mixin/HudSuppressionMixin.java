@@ -1,15 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
 import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient;
-import io.github.oni0nfr1.dynamicrider.client.event.RiderActionBarCallback;
-import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult;
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector;
 import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -23,27 +20,28 @@ public abstract class HudSuppressionMixin {
     @Unique
     private static final String RACE_TIMER_OBJECTIVE_NAME = "timerdisplay";
 
-    @Inject(
-            method = "setOverlayMessage",
-            at = @At("HEAD"),
-            cancellable = true
-    )
-    private void cancelActionBarMsg(
-            Component component,
-            boolean bl,
-            CallbackInfo ci
-    ) {
-        String raw = component.getString();
-        if (raw.contains("km/h")) {
-            HandleResult result = RiderActionBarCallback.EVENT.invoker().handle(component, raw);
-
-            boolean shouldCallOriginal = (result != HandleResult.FAILURE) &&
-                    !VanillaSuppression.getSuppressVanillaKartState();
-            if (!shouldCallOriginal) {
-                ci.cancel();
-            }
-        }
-    }
+//    현재 이 믹스인은 SkidMC와 충돌 가능성이 있으며, 곧 제거될 예정이며 더이상 메인 모드 흐름에 포함되지 않으므로 주석 처리되었습니다.
+//    @Inject(
+//            method = "setOverlayMessage",
+//            at = @At("HEAD"),
+//            cancellable = true
+//    )
+//    private void cancelActionBarMsg(
+//            Component component,
+//            boolean bl,
+//            CallbackInfo ci
+//    ) {
+//        String raw = component.getString();
+//        if (raw.contains("km/h")) {
+//            HandleResult result = RiderActionBarCallback.EVENT.invoker().handle(component, raw);
+//
+//            boolean shouldCallOriginal = (result != HandleResult.FAILURE) &&
+//                    !VanillaSuppression.getSuppressVanillaKartState();
+//            if (!shouldCallOriginal) {
+//                ci.cancel();
+//            }
+//        }
+//    }
 
     @Inject(
             method = "displayScoreboardSidebar",

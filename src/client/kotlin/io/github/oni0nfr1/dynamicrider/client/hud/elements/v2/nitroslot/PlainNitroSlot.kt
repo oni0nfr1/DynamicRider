@@ -3,8 +3,10 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.nitroslot
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.v2.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
-import io.github.oni0nfr1.dynamicrider.client.rider.v2.actionbar.KartNitroCounter
+import io.github.oni0nfr1.skid.client.api.tachometer.NitroTachometer
+import io.github.oni0nfr1.skid.client.api.tachometer.tachometerOrNull
 import net.minecraft.client.DeltaTracker
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
 
@@ -53,7 +55,11 @@ class PlainNitroSlot(
     }
 
     private fun syncState() {
-        occupied = KartNitroCounter.nitro >= slotIndex
+        val client = Minecraft.getInstance()
+        val nitro = client.tachometerOrNull?.access {
+            if (this is NitroTachometer) nitro else null
+        } ?: 0
+        occupied = nitro >= slotIndex
         if (occupied) {
             hasEverBeenOccupied = true
         }
