@@ -45,11 +45,7 @@ public abstract class BossbarSuppressionMixin {
     @Unique
     private static boolean shouldHideBossBar(LerpingBossEvent bossEvent) {
         String titlePlain = bossEvent.getName().getString();
-        if (
-                titlePlain.equals(TEAM_NITRO_TITLE)
-                && VanillaSuppression.getSuppressTeamBoosterBossbar()
-        ) return true;
-
-        return false;
+        return titlePlain.equals(TEAM_NITRO_TITLE)
+                && VanillaSuppression.getSuppressTeamBoosterBossbar();
     }
 }

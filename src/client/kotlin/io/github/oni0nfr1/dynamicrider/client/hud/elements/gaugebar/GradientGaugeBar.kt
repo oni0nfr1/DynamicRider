@@ -3,9 +3,9 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.graphics.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.util.colorFromRGB
+import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
+import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar as GaugeBarElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
@@ -13,56 +13,41 @@ import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.exp
 
 class GradientGaugeBar(
-    manager: HudStateManager,
-    composer: GradientGaugeBar.() -> Unit
-) : HudElementImpl<GradientGaugeBar>(manager, composer), GaugeBar {
-
+    spec: GradientGaugeBarSpec,
+    kart: KartRef.Specific<NitroEngine>,
+) : HudElementImpl<NitroEngine>(spec.layout, kart), GaugeBarElement {
     companion object {
         val client: Minecraft by lazy { Minecraft.getInstance() }
         val fontManager: Font = client.font
 
         const val N2O_LABEL_TEXT = "N2O"
 
-        val N20_LABEL_WIDTH: Int by lazy {
+        val N2O_LABEL_WIDTH: Int by lazy {
             fontManager.width(N2O_LABEL_TEXT)
         }
     }
 
+    var thickness: Int = spec.thickness
+    var width: Int = spec.width
+    var padding: Int = spec.padding
+    var boxColor: Int = spec.boxColor
+    var gaugeAlpha: Int = spec.gaugeAlpha
+    var targetGaugeAlpha: Int = spec.targetGaugeAlpha
+    var smoothing: Double = spec.smoothing
+    var gradientStops: List<GradientGaugeBarStopSpec> = spec.gradientStops
 
-    var thickness = 8
-    var width = 120
-    var padding = 2
-
-    var boxColor = 0x80000000.toInt()
-
-    var gaugeAlpha = 0xFF
-    var targetGaugeAlpha = 0x80
-
-    /** 보간 속도(클수록 더 빨리 따라감). */
-    var smoothing = 1.0
-
-    var gradientStops: List<Pair<Int, Int>> = listOf(
-        0   to colorFromRGB(255, 255, 255),
-        30  to colorFromRGB(255, 232, 161),
-        60  to colorFromRGB(255, 192, 64),
-        90  to colorFromRGB(255, 94, 24),
-        120 to colorFromRGB(255, 0, 0),
-    )
-
-    private var targetGauge = 0.0
-    private var displayGauge = 0.0
-
-    override var gauge: Double
-        get() = targetGauge
-        set(value) {
-            targetGauge = value.coerceIn(0.0, 1.0)
-        }
+    override val gauge: Double
+        get() = kart.accessEngine { engine ->
+            engine.tachometer?.gauge
+        } ?: 0.0
+    private var displayGauge: Double = 0.0
 
     override fun resolveSize() {
         setSize(width + padding * 2, thickness + padding * 2)
     }
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
+        val targetGauge = gauge.coerceIn(0.0, 1.0)
         val dtTicks = deltaTracker.realtimeDeltaTicks.toDouble()
         val follow = 1.0 - exp(-smoothing * dtTicks)
         displayGauge += (targetGauge - displayGauge) * follow
@@ -70,24 +55,20 @@ class GradientGaugeBar(
 
         guiGraphics.fill(0, 0, size.x, size.y, boxColor)
 
-        val barLeftX = padding
-        val barTopY = padding
-        val barWidthPx = width
-        val barHeightPx = thickness
+        val targetFilledWidth = (width * targetGauge).toInt().coerceIn(0, width)
+        val filledWidth = (width * displayGauge).toInt().coerceIn(0, width)
 
-        val targetFilledWidth = (barWidthPx * targetGauge).toInt().coerceIn(0, barWidthPx)
-        val filledWidth = (barWidthPx * displayGauge).toInt().coerceIn(0, barWidthPx)
-
-        val targetStops = gradientStops.map { (off, color) -> off to withAlpha(color, targetGaugeAlpha) }
-        val gaugeStops  = gradientStops.map { (off, color) -> off to withAlpha(color, gaugeAlpha) }
+        val targetStops = gradientStops.map { it.offset to withAlpha(it.color, targetGaugeAlpha) }
+        val gaugeStops = gradientStops.map { it.offset to withAlpha(it.color, gaugeAlpha) }
 
         val labelScale = thickness / fontManager.lineHeight.toFloat()
 
         val pose = guiGraphics.pose()
         pose.pushPose()
-        pose.translate(-N20_LABEL_WIDTH * labelScale, 0f, 0f)
+        pose.translate(-N2O_LABEL_WIDTH * labelScale, 0f, 0f)
         guiGraphics.drawScaledText(
-            -padding, padding,
+            -padding,
+            padding,
             labelScale,
             N2O_LABEL_TEXT,
             0x80FFFFFF.toInt(),
@@ -96,22 +77,22 @@ class GradientGaugeBar(
 
         drawMultiStopGradientGauge(
             guiGraphics = guiGraphics,
-            barLeftX = barLeftX,
-            barTopY = barTopY,
-            barWidthPx = barWidthPx,
-            barHeightPx = barHeightPx,
+            barLeftX = padding,
+            barTopY = padding,
+            barWidthPx = width,
+            barHeightPx = thickness,
             filledWidthPx = targetFilledWidth,
-            stops = targetStops
+            stops = targetStops,
         )
 
         drawMultiStopGradientGauge(
             guiGraphics = guiGraphics,
-            barLeftX = barLeftX,
-            barTopY = barTopY,
-            barWidthPx = barWidthPx,
-            barHeightPx = barHeightPx,
+            barLeftX = padding,
+            barTopY = padding,
+            barWidthPx = width,
+            barHeightPx = thickness,
             filledWidthPx = filledWidth,
-            stops = gaugeStops
+            stops = gaugeStops,
         )
     }
 
@@ -122,7 +103,7 @@ class GradientGaugeBar(
         barWidthPx: Int,
         barHeightPx: Int,
         filledWidthPx: Int,
-        stops: List<Pair<Int, Int>>
+        stops: List<Pair<Int, Int>>,
     ) {
         if (barWidthPx <= 0 || barHeightPx <= 0) return
         if (filledWidthPx <= 0) return
@@ -131,17 +112,16 @@ class GradientGaugeBar(
         val barRightXExclusive = barLeftX + barWidthPx
         val filledRightXExclusive = (barLeftX + filledWidthPx).coerceAtMost(barRightXExclusive)
 
-        // 오프셋 오름차순 정렬 + 0 이상 보정
         val sorted = stops
             .map { (offset, color) -> offset.coerceAtLeast(0) to color }
             .sortedBy { it.first }
 
-        // 시작점이 0이 아니면 0을 강제로 넣어줌(안 넣으면 왼쪽이 비는 구간 생김)
         val normalized = if (sorted.first().first != 0) {
             listOf(0 to sorted.first().second) + sorted
-        } else sorted
+        } else {
+            sorted
+        }
 
-        // 각 구간을 차례대로 그리기
         for (i in 0 until normalized.size - 1) {
             val (offA, colorA) = normalized[i]
             val (offB, colorB) = normalized[i + 1]
@@ -149,7 +129,6 @@ class GradientGaugeBar(
             val xA = (barLeftX + offA).coerceIn(barLeftX, barRightXExclusive)
             val xB = (barLeftX + offB).coerceIn(barLeftX, barRightXExclusive)
 
-            // 이 구간이 채워진 범위 밖이면 스킵
             val segStart = xA.coerceAtMost(filledRightXExclusive)
             val segEnd = xB.coerceAtMost(filledRightXExclusive)
             if (segEnd <= segStart) continue
@@ -161,11 +140,10 @@ class GradientGaugeBar(
                 widthPx = segEnd - segStart,
                 heightPx = barHeightPx,
                 leftColor = colorA,
-                rightColor = colorB
+                rightColor = colorB,
             )
         }
 
-        // 마지막 스톱 이후는 마지막 색으로 고정(채워진 부분까지)
         val lastOff = normalized.last().first
         val lastColor = normalized.last().second
         val lastStart = (barLeftX + lastOff).coerceIn(barLeftX, barRightXExclusive)
@@ -182,7 +160,7 @@ class GradientGaugeBar(
         widthPx: Int,
         heightPx: Int,
         leftColor: Int,
-        rightColor: Int
+        rightColor: Int,
     ) {
         if (widthPx <= 0 || heightPx <= 0) return
 

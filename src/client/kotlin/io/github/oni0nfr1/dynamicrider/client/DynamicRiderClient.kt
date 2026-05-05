@@ -11,23 +11,28 @@ import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallb
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.config.HudSceneKey
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.config.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.config.HudSceneResolver
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.v2.HudScene
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.makeScene
-import io.github.oni0nfr1.dynamicrider.client.hud.scenes.makeSpectateScene
-import io.github.oni0nfr1.dynamicrider.client.rider.RaceSession
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector
-import io.github.oni0nfr1.dynamicrider.client.rider.v2.RiderBackendRegistry
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.layouts.HudScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.makeScene
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.makeSpectateScene
+import io.github.oni0nfr1.dynamicrider.client.rider.legacy.RaceSession
+import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.korigadier.api.korigadier
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
+import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.events.KartMountEvents
 import io.github.oni0nfr1.skid.client.api.events.KartTachometerEvents
 import io.github.oni0nfr1.skid.client.api.kart.Kart
-import io.github.oni0nfr1.skid.client.api.kart.KartEntity
+import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.skid.client.api.kart.KartSaddleEntity
+import io.github.oni0nfr1.skid.client.api.kart.kart
 import io.github.oni0nfr1.skid.client.api.kart.kartEngineType
 import io.github.oni0nfr1.skid.client.api.kart.subject
 import net.fabricmc.api.ClientModInitializer
@@ -60,14 +65,15 @@ class DynamicRiderClient : ClientModInitializer {
     val stateManager = HudStateManager()
 
     var raceSession: RaceSession? = null
-    var currentScene: HudScene? = null
+    var currentSceneKey: HudSceneKey? = null
+        private set
+    private var currentSceneKart: KartRef.Specific<NitroEngine>? = null
+    var currentScene: HudScene<*>? = null
         set(value) {
             field?.disable()
             field = value
             field?.enable()
         }
-
-    val mountDetector = KartMountDetector(stateManager)
 
     override fun onInitializeClient() {
         // Bootstrap
@@ -87,6 +93,7 @@ class DynamicRiderClient : ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             korigadier(dispatcher) {
                 include(Commands.setEngineCommand)
+                include(Commands.uiCommand)
 
                 if (DynRiderJvmFlags.devMode) {
                     val registry = DebugVarRegistry().apply {
@@ -116,6 +123,7 @@ class DynamicRiderClient : ClientModInitializer {
         KartMountEvents.MOUNT.register(this::onKartMount)
         KartMountEvents.DISMOUNT.register(this::onKartDismount)
         KartMountEvents.SPECTATE.register(this::onKartSpectate)
+        KartMountEvents.SPECTATE_END.register(this::onKartSpectateEnd)
 
         KartTachometerEvents.RECEIVE.register(this::onTachometerMatch)
 
@@ -139,34 +147,63 @@ class DynamicRiderClient : ClientModInitializer {
         currentScene?.draw(guiGraphics, deltaTracker)
     }
 
-    fun onKartMount(kartEntity: KartEntity, rider: Player) {
+    fun onKartMount(kartEntity: KartSaddleEntity, rider: Player) {
         val client = Minecraft.getInstance()
         if (client.player?.subject != rider) return
 
         val engineType = client.kartEngineType
+        val sceneKart = kartEntity.kart?.access {
+            (engine as? NitroEngine)?.let { KartRef.specify(it) }
+        }
 
         debugLog("detected engine: ${engineType?.engineName}")
-        currentScene = if (engineType != null) makeScene(engineType) else null
+        currentSceneKey = engineType?.let { HudSceneKey(it, HudSceneMode.RIDE) }
+        currentSceneKart = sceneKart
+        currentScene = if (engineType != null && sceneKart != null) makeScene(engineType, sceneKart) else null
     }
 
-    fun onKartDismount(kartEntity: KartEntity, rider: Player) {
+    fun onKartDismount(kartEntity: KartSaddleEntity, rider: Player) {
         val client = Minecraft.getInstance()
         if (client.player?.subject != rider) return
 
+        currentSceneKey = null
+        currentSceneKart = null
         currentScene = null
     }
 
-    fun onKartSpectate(kartEntity: KartEntity, spectator: Player, rider: Player) {
+    fun onKartSpectate(kartEntity: KartSaddleEntity, spectator: Player, rider: Player) {
         val client = Minecraft.getInstance()
         if (client.player != spectator || client.player?.subject != rider) return
 
         val engineType = client.kartEngineType
+        val sceneKart = kartEntity.kart?.access {
+            (engine as? NitroEngine)?.let { KartRef.specify(it) }
+        }
 
         debugLog("detected engine: ${engineType?.engineName}")
-        currentScene = if (engineType != null) makeSpectateScene(engineType) else null
+        currentSceneKey = engineType?.let { HudSceneKey(it, HudSceneMode.SPECTATE) }
+        currentSceneKart = sceneKart
+        currentScene = if (engineType != null && sceneKart != null) makeSpectateScene(engineType, sceneKart) else null
+    }
+
+    fun onKartSpectateEnd(kartEntity: KartSaddleEntity, spectator: Player, rider: Player) {
+        val client = Minecraft.getInstance()
+        if (client.player?.subject != rider) return
+
+        currentSceneKey = null
+        currentSceneKart = null
+        currentScene = null
     }
 
     ////////////////////////////////// Event Handlers //////////////////////////////////
+
+    fun refreshCurrentScene(): Boolean {
+        val key = currentSceneKey ?: return false
+        val kart = currentSceneKart ?: return false
+
+        currentScene = HudSceneResolver.createScene(key.engine, key.mode, kart)
+        return true
+    }
 
     fun onClientDisconnect(packetListener: ClientPacketListener, client: Minecraft) {
         // 메인 스레드에서 호출

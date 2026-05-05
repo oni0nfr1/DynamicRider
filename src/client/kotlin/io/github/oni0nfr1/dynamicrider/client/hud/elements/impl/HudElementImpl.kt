@@ -1,8 +1,10 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.impl
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.spec.HudLayoutSpec
+import io.github.oni0nfr1.skid.client.api.engine.KartEngine
+import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -11,24 +13,15 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
 
-typealias Composer<T> = T.() -> Unit
-
-/**
- * T: 이 클래스를 상속하는 클래스 자신의 타입을 넘겨주면 됨
- *
- * composer는 해당 클래스의 모든 프로퍼티에 접근할 필요가 있으므로,
- * 클래스 선언시에 T를 넘겨주어 그 프로퍼티에 접근할 수 있게 만듬
- */
-abstract class HudElementImpl<T: HudElement>(
-    val stateManager: HudStateManager,
-    val composer: Composer<T>
-): HudElement {
-
-    override var screenAnchor: HudAnchor = HudAnchor.TOP_LEFT
-    override var elementAnchor: HudAnchor = HudAnchor.TOP_LEFT
-    override var scale: Vector2f = Vector2f(1f, 1f)
-    override var position: Vector2i = Vector2i(0, 0)
-    override var zIndex: Float = 0f
+abstract class HudElementImpl<E: KartEngine>(
+    layout: HudLayoutSpec,
+    val kart: KartRef.Specific<E>,
+) : HudElement<E> {
+    override var screenAnchor: HudAnchor = layout.screenAnchor
+    override var elementAnchor: HudAnchor = layout.elementAnchor
+    override var scale: Vector2f = layout.toScale()
+    override var position: Vector2i = layout.toPosition()
+    override var zIndex: Float = layout.zIndex
 
     private val transform = Matrix4f()
     protected val size = Vector2i()
@@ -45,11 +38,7 @@ abstract class HudElementImpl<T: HudElement>(
     }
 
     override fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        @Suppress("UNCHECKED_CAST")
-        stateManager.recomposeIfDirty(this) {
-            composer.invoke(this as T)
-            this.resolveSize()
-        }
+        resolveSize()
 
         val window = Minecraft.getInstance().window
         val screenWidth = window.guiScaledWidth
@@ -58,14 +47,10 @@ abstract class HudElementImpl<T: HudElement>(
         val screenPoint = screenAnchor.point(screenWidth, screenHeight)
         val elementPoint = elementAnchor.point(size.x, size.y)
 
-        val rx = screenPoint.x - elementPoint.x + position.x
-        val ry = screenPoint.y - elementPoint.y + position.y
+        val rx = position.x + screenPoint.x - (elementPoint.x * scale.x)
+        val ry = position.y + screenPoint.y - (elementPoint.y * scale.y)
 
-        renderPosition.set(
-            rx.toFloat(),
-            ry.toFloat(),
-            zIndex
-        )
+        renderPosition.set(rx, ry, zIndex)
         updateTransform()
 
         val pose = guiGraphics.pose()
@@ -79,5 +64,4 @@ abstract class HudElementImpl<T: HudElement>(
 
     abstract fun resolveSize()
     abstract fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker)
-
 }

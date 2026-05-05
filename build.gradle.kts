@@ -2,8 +2,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "2.3.20"
-    kotlin("plugin.serialization") version "2.3.20"
+    kotlin("jvm") version "2.3.0"
+    kotlin("plugin.serialization") version "2.3.0"
     id("fabric-loom") version "1.15-SNAPSHOT"
     id("maven-publish")
 }
@@ -62,8 +62,8 @@ dependencies {
     modLocalRuntime("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
     include("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
 
-    modCompileOnly("io.github.oni0nfr1:skidmc:${project.property("skidmc_version")}")
-    include("io.github.oni0nfr1:skidmc:${project.property("skidmc_version")}")
+    modCompileOnly("io.github.oni0nfr1:skid-api:${project.property("skidmc_version")}")
+    include("io.github.oni0nfr1:skid-api:${project.property("skidmc_version")}")
 }
 
 tasks.processResources {

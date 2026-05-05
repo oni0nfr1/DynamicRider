@@ -7,13 +7,9 @@
     "BossbarSuppressionMixin",
     "HudSuppressionMixin",
     "PauseScreenMixin",
-    "RiderAttrPacketMixin",
     "RiderBossbarMixin",
     "RiderChatMsgMixin",
-    "RiderExperienceMixin",
-    "RiderMountMixin",
-    "RiderScoreboardMixin",
-    "RiderSpectateMixin"
+    "RiderScoreboardMixin"
   ],
   "injectors": {
     "defaultRequire": 1

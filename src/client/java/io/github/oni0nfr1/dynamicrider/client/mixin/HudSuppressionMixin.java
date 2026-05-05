@@ -1,12 +1,13 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
-import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient;
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.KartMountDetector;
-import io.github.oni0nfr1.dynamicrider.client.rider.mount.MountType;
+import io.github.oni0nfr1.skid.client.api.kart.KartUtils;
+import io.github.oni0nfr1.skid.client.api.kart.MountType;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -71,11 +72,12 @@ public abstract class HudSuppressionMixin {
             DeltaTracker deltaTracker,
             CallbackInfo ci
     ) {
-        DynamicRiderClient dynrider = DynamicRiderClient.getInstance();
-        KartMountDetector mountDetector = dynrider.getMountDetector();
-        MountType mounted = mountDetector.getPlayerMountStatus().invoke();
+        Minecraft client = Minecraft.getInstance();
+        LocalPlayer player = client.player;
+        if (player == null) return;
+        MountType mountStatus = KartUtils.getMountStatus(player);
 
-        boolean shouldShow = mounted instanceof MountType.NotMounted || !VanillaSuppression.getSuppressVanillaHotbar();
+        boolean shouldShow = mountStatus instanceof MountType.Dismounted || !VanillaSuppression.getSuppressVanillaHotbar();
         if (!shouldShow) ci.cancel();
     }
 
@@ -89,11 +91,12 @@ public abstract class HudSuppressionMixin {
             DeltaTracker deltaTracker,
             CallbackInfo ci
     ) {
-        DynamicRiderClient dynrider = DynamicRiderClient.getInstance();
-        KartMountDetector mountDetector = dynrider.getMountDetector();
-        MountType mounted = mountDetector.getPlayerMountStatus().invoke();
+        Minecraft client = Minecraft.getInstance();
+        LocalPlayer player = client.player;
+        if (player == null) return;
+        MountType mountStatus = KartUtils.getMountStatus(player);
 
-        boolean shouldShow = mounted instanceof MountType.NotMounted || !VanillaSuppression.getSuppressVanillaHotbar();
+        boolean shouldShow = mountStatus instanceof MountType.Dismounted || !VanillaSuppression.getSuppressVanillaHotbar();
         if (!shouldShow) ci.cancel();
     }
 }

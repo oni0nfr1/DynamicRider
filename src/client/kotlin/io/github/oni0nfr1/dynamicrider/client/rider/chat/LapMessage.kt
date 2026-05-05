@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.chat
 
-import io.github.oni0nfr1.dynamicrider.client.rider.Millis
+import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
 import net.minecraft.network.chat.Component
 
 data class LapMessage(

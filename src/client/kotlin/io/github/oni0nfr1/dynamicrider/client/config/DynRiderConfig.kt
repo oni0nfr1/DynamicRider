@@ -1,6 +1,9 @@
 package io.github.oni0nfr1.dynamicrider.client.config
 
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.config.CustomSceneSelection
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.config.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.config.HudUiMode
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 import kotlinx.serialization.json.Json
 import net.fabricmc.loader.api.FabricLoader
@@ -82,6 +85,35 @@ object DynRiderConfig {
         hudFont = runCatching {
             FontStyle.valueOf(data.hudFont)
         }.getOrElse { FontStyle.VANILLA }
+    }
+
+    fun setUiMode(mode: HudUiMode) {
+        save(currentData.copy(uiMode = mode))
+    }
+
+    fun customSceneName(engineKey: String, mode: HudSceneMode): String? =
+        currentData.customScenes[engineKey.lowercase()]?.get(mode)
+
+    fun setCustomSceneName(engineKey: String, mode: HudSceneMode, name: String) {
+        val key = engineKey.lowercase()
+        val currentSelection = currentData.customScenes[key] ?: CustomSceneSelection()
+        save(
+            currentData.copy(
+                uiMode = HudUiMode.CUSTOM,
+                customScenes = currentData.customScenes + (key to currentSelection.with(mode, name))
+            )
+        )
+    }
+
+    fun removeCustomSceneName(engineKey: String, mode: HudSceneMode) {
+        val key = engineKey.lowercase()
+        val currentSelection = currentData.customScenes[key] ?: return
+        val nextSelection = currentSelection.without(mode)
+        val nextScenes =
+            if (nextSelection.isEmpty()) currentData.customScenes - key
+            else currentData.customScenes + (key to nextSelection)
+
+        save(currentData.copy(customScenes = nextScenes))
     }
 
 }
