@@ -1,18 +1,32 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot
 
-import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
+import net.minecraft.resources.ResourceLocation
 
 class PlainNitroSlot(
-    spec: PlainNitroSlotSpec,
+    spec: Spec,
     kart: KartRef.Specific<NitroEngine>
 ) : HudElementImpl<NitroEngine>(spec.layout, kart), NitroSlot {
+
+    companion object {
+        val BOOST_ICON = ResourceLocation.fromNamespaceAndPath(
+            "dynrider",
+            "textures/gui/boost_icon.png"
+        )
+    }
+
     var slotIndex: Int = spec.slotIndex
     var hideUntilOccupied: Boolean = spec.hideUntilOccupied
     var keepVisibleAfterOccupied: Boolean = spec.keepVisibleAfterOccupied
@@ -41,7 +55,7 @@ class PlainNitroSlot(
         if (occupied) {
             guiGraphics.blit(
                 RenderType::guiTextured,
-                ResourceStore.boosterIcon,
+                BOOST_ICON,
                 boxPadding,
                 boxPadding,
                 0f,
@@ -68,5 +82,43 @@ class PlainNitroSlot(
         if (!hideUntilOccupied) return false
         if (keepVisibleAfterOccupied) return !hasEverBeenOccupied
         return !occupied
+    }
+
+    @Serializable
+    @SerialName("PLAIN_NITRO_SLOT")
+    data class Spec(
+        override val layout: HudLayoutSpec,
+        val slotIndex: Int = 1,
+        val hideUntilOccupied: Boolean = false,
+        val keepVisibleAfterOccupied: Boolean = true,
+        val iconSize: Int = 32,
+        val boxPadding: Int = 5,
+        @Serializable(with = HexColorSerdes::class)
+        val boxColor: Int = 0x80000000.toInt(),
+    ) : HudElementSpec<PlainNitroSlot, NitroEngine>() {
+        override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
+
+        override fun create(kart: KartRef.Specific<NitroEngine>): PlainNitroSlot = PlainNitroSlot(this, kart)
+    }
+
+    class Builder : HudElementBuilder<Spec>() {
+        var slotIndex: Int = 1
+        var hideUntilOccupied: Boolean = false
+        var keepVisibleAfterOccupied: Boolean = true
+        var iconSize: Int = 32
+        var boxPadding: Int = 5
+        var boxColor: Int = 0x80000000.toInt()
+
+        override fun build(layout: HudLayoutSpec): Spec {
+            return Spec(
+                layout = layout,
+                slotIndex = slotIndex.coerceAtLeast(1),
+                hideUntilOccupied = hideUntilOccupied,
+                keepVisibleAfterOccupied = keepVisibleAfterOccupied,
+                iconSize = iconSize.coerceAtLeast(0),
+                boxPadding = boxPadding.coerceAtLeast(0),
+                boxColor = boxColor,
+            )
+        }
     }
 }

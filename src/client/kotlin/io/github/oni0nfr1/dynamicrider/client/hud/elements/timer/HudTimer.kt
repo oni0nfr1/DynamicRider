@@ -1,8 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.timer
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
 import io.github.oni0nfr1.dynamicrider.client.rider.time.RaceTime
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.race.KartLapTracker
@@ -13,6 +17,8 @@ import io.github.oni0nfr1.dynamicrider.client.util.seconds
 import io.github.oni0nfr1.skid.client.api.attr.maxLap
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
@@ -20,7 +26,7 @@ import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.max
 
 class HudTimer(
-    spec: HudTimerSpec,
+    spec: Spec,
     kart: KartRef.Specific<KartEngine>,
 ) : HudElementImpl<KartEngine>(spec.layout, kart), Timer {
     private companion object {
@@ -195,4 +201,31 @@ class HudTimer(
         val alpha = (baseArgb ushr 24) and 0xFF
         return (alpha shl 24) or (rgb24 and 0x00FFFFFF)
     }
+
+    class Builder : HudElementBuilder<Spec>() {
+        var minWidth: Int = 100
+        var txtColor: Int = 0xFFFFFFFF.toInt()
+
+        override fun build(layout: HudLayoutSpec): Spec {
+            return Spec(
+                layout = layout,
+                minWidth = minWidth.coerceAtLeast(0),
+                txtColor = txtColor,
+            )
+        }
+    }
+
+    @Serializable
+    @SerialName("RIDE_TIMER")
+    data class Spec(
+        override val layout: HudLayoutSpec,
+        val minWidth: Int = 100,
+        @Serializable(with = HexColorSerdes::class)
+        val txtColor: Int = 0xFFFFFFFF.toInt(),
+    ) : HudElementSpec<HudTimer, KartEngine>() {
+        override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
+
+        override fun create(kart: KartRef.Specific<KartEngine>)= HudTimer(this, kart)
+    }
+
 }

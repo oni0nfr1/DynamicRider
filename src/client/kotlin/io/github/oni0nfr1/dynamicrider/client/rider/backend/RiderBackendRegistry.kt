@@ -4,7 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallb
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.exp.KartExpProgressReader
+import io.github.oni0nfr1.dynamicrider.client.rider.backend.inventory.KartTeamBoostCounter
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.race.KartLapTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.race.KartRaceTimer
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.sidebar.KartRankingManager
@@ -13,7 +13,7 @@ import io.github.oni0nfr1.skid.client.api.events.KartMountEvents
 object RiderBackendRegistry {
     private val modules: List<RiderBackend> = listOf(
         KartTeamBoostTracker,
-        KartExpProgressReader,
+        KartTeamBoostCounter,
         KartLapTracker,
         KartRaceTimer,
         KartRankingManager,

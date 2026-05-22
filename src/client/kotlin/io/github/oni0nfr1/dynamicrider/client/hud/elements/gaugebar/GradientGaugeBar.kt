@@ -1,10 +1,16 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
 import com.mojang.math.Axis
-import io.github.oni0nfr1.dynamicrider.client.graphics.drawScaledText
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar as GaugeBarElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
@@ -13,7 +19,7 @@ import net.minecraft.client.gui.GuiGraphics
 import kotlin.math.exp
 
 class GradientGaugeBar(
-    spec: GradientGaugeBarSpec,
+    spec: Spec,
     kart: KartRef.Specific<NitroEngine>,
 ) : HudElementImpl<NitroEngine>(spec.layout, kart), GaugeBarElement {
     companion object {
@@ -34,7 +40,7 @@ class GradientGaugeBar(
     var gaugeAlpha: Int = spec.gaugeAlpha
     var targetGaugeAlpha: Int = spec.targetGaugeAlpha
     var smoothing: Double = spec.smoothing
-    var gradientStops: List<GradientGaugeBarStopSpec> = spec.gradientStops
+    var gradientStops: List<ColorStop> = spec.gradientStops
 
     override val gauge: Double
         get() = kart.accessEngine { engine ->
@@ -178,5 +184,77 @@ class GradientGaugeBar(
     private fun withAlpha(argb: Int, alpha0to255: Int): Int {
         val a = alpha0to255.coerceIn(0, 255)
         return (a shl 24) or (argb and 0x00FFFFFF)
+    }
+
+    class Builder : HudElementBuilder<Spec>() {
+        var thickness: Int = 8
+        var width: Int = 120
+        var padding: Int = 2
+        var boxColor: Int = 0x80000000.toInt()
+        var gaugeAlpha: Int = 0xFF
+        var targetGaugeAlpha: Int = 0x80
+        var smoothing: Double = 1.0
+        private val gradientStops: MutableList<ColorStop> =
+            ColorStop.default().toMutableList()
+
+        fun gradientStop(offset: Int, color: Int) {
+            gradientStops += ColorStop(offset = offset, color = color)
+        }
+
+        fun gradientStops(vararg stops: ColorStop) {
+            gradientStops.clear()
+            gradientStops.addAll(stops)
+        }
+
+        override fun build(layout: HudLayoutSpec): Spec {
+            return Spec(
+                layout = layout,
+                thickness = thickness,
+                width = width,
+                padding = padding,
+                boxColor = boxColor,
+                gaugeAlpha = gaugeAlpha,
+                targetGaugeAlpha = targetGaugeAlpha,
+                smoothing = smoothing,
+                gradientStops = gradientStops.toList(),
+            )
+        }
+    }
+
+    @Serializable
+    @SerialName("GRADIENT_GAUGE_BAR")
+    data class Spec(
+        override val layout: HudLayoutSpec,
+        val thickness: Int = 8,
+        val width: Int = 120,
+        val padding: Int = 2,
+        @Serializable(with = HexColorSerdes::class)
+        val boxColor: Int = 0x80000000.toInt(),
+        val gaugeAlpha: Int = 0xFF,
+        val targetGaugeAlpha: Int = 0x80,
+        val smoothing: Double = 1.0,
+        val gradientStops: List<ColorStop> = ColorStop.default(),
+    ) : HudElementSpec<GradientGaugeBar, NitroEngine>() {
+        override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
+
+        override fun create(kart: KartRef.Specific<NitroEngine>) = GradientGaugeBar(this, kart)
+    }
+
+    @Serializable
+    data class ColorStop(
+        val offset: Int,
+        @Serializable(with = HexColorSerdes::class)
+        val color: Int,
+    ) {
+        companion object {
+            fun default(): List<ColorStop> = listOf(
+                ColorStop(offset = 0, color = 0xFFFFFFFF.toInt()),
+                ColorStop(offset = 30, color = 0xFFFFE8A1.toInt()),
+                ColorStop(offset = 60, color = 0xFFFFC040.toInt()),
+                ColorStop(offset = 90, color = 0xFFFF5E18.toInt()),
+                ColorStop(offset = 120, color = 0xFFFF0000.toInt()),
+            )
+
+        }
     }
 }

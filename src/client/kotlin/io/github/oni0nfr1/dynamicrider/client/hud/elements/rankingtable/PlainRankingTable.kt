@@ -1,11 +1,17 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.sidebar.KartRankingManager
 import io.github.oni0nfr1.dynamicrider.client.util.ordinal
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
@@ -14,7 +20,7 @@ import java.util.UUID
 import kotlin.math.max
 
 class PlainRankingTable(
-    spec: PlainRankingTableSpec,
+    spec: Spec,
     kart: KartRef.Specific<KartEngine>,
 ) : HudElementImpl<KartEngine>(spec.layout, kart) {
     var defaultTextColor: Int = spec.defaultTextColor
@@ -136,4 +142,63 @@ class PlainRankingTable(
     }
 
     private fun argb(a: Int, rgb: Int): Int = (a shl 24) or (rgb and 0x00FFFFFF)
+
+    class Builder : HudElementBuilder<Spec>() {
+        var defaultTextColor: Int = 0x00FFFFFF
+        var shadow: Boolean = true
+        var minWidth: Int = 100
+        var rowPadding: Int = 2
+        var paddingX: Int = 6
+        var paddingY: Int = 6
+        var backgroundColor: Int = 0x70000000
+        var headerBackgroundColor: Int = 0x90000000.toInt()
+        var highlightBackgroundColor: Int = 0x40FFFFC0
+        var dotSize: Int = 6
+        var dotGap: Int = 6
+        var hideWhenTimeAttack: Boolean = true
+
+        override fun build(layout: HudLayoutSpec): Spec {
+            return Spec(
+                layout = layout,
+                defaultTextColor = defaultTextColor,
+                shadow = shadow,
+                minWidth = minWidth.coerceAtLeast(0),
+                rowPadding = rowPadding.coerceAtLeast(0),
+                paddingX = paddingX.coerceAtLeast(0),
+                paddingY = paddingY.coerceAtLeast(0),
+                backgroundColor = backgroundColor,
+                headerBackgroundColor = headerBackgroundColor,
+                highlightBackgroundColor = highlightBackgroundColor,
+                dotSize = dotSize.coerceAtLeast(0),
+                dotGap = dotGap.coerceAtLeast(0),
+                hideWhenTimeAttack = hideWhenTimeAttack,
+            )
+        }
+    }
+
+    @Serializable
+    @SerialName("PLAIN_RANKING_TABLE")
+    data class Spec(
+        override val layout: HudLayoutSpec,
+        @Serializable(with = HexColorSerdes::class)
+        val defaultTextColor: Int = 0x00FFFFFF,
+        val shadow: Boolean = true,
+        val minWidth: Int = 100,
+        val rowPadding: Int = 2,
+        val paddingX: Int = 6,
+        val paddingY: Int = 6,
+        @Serializable(with = HexColorSerdes::class)
+        val backgroundColor: Int = 0x70000000,
+        @Serializable(with = HexColorSerdes::class)
+        val headerBackgroundColor: Int = 0x90000000.toInt(),
+        @Serializable(with = HexColorSerdes::class)
+        val highlightBackgroundColor: Int = 0x40FFFFC0,
+        val dotSize: Int = 6,
+        val dotGap: Int = 6,
+        val hideWhenTimeAttack: Boolean = true,
+    ) : HudElementSpec<PlainRankingTable, KartEngine>() {
+        override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
+
+        override fun create(kart: KartRef.Specific<KartEngine>): PlainRankingTable = PlainRankingTable(this, kart)
+    }
 }

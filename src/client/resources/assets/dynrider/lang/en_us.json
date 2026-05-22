@@ -11,5 +11,8 @@
   "dynrider.font.vanilla": "Minecraft Vanilla",
   "dynrider.font.nexon_lv2": "Nexon Level2",
   "dynrider.font.kart_gothic": "Nexon Kart Gothic",
-  "dynrider.link.github": "GitHub Repository"
+  "dynrider.link.github": "GitHub Repository",
+  "dynrider.error.scene.load_failed.io": "Cannot access custom HUD file: %s",
+  "dynrider.error.scene.load_failed.decode": "Failed to parse custom HUD file: %s",
+  "dynrider.error.scene.load_failed.incompatible": "Engine \"%s\" cannot render HUD Element \"%s\""
 }

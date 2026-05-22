@@ -68,6 +68,14 @@ fun warnLog(msg: String) {
     ResourceStore.logger.warn("[DynamicRider] $msg")
 }
 
+fun chatLog(msg: Component) {
+    Minecraft.getInstance().player?.displayClientMessage(msg, false)
+}
+
+fun chatLog(msg: String) {
+    Minecraft.getInstance().player?.displayClientMessage(Component.literal(msg), false)
+}
+
 fun colorFromRGB(r: Int, g: Int, b: Int): Int {
     return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
 }

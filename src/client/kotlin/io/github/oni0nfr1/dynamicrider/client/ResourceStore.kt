@@ -10,8 +10,6 @@ object ResourceStore {
 
     val hudId: ResourceLocation
             = ResourceLocation.fromNamespaceAndPath(MOD_ID, "hud")
-    val boosterIcon: ResourceLocation
-        = ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/gui/boost_icon.png")
     val dseg_font: ResourceLocation
         = ResourceLocation.fromNamespaceAndPath(MOD_ID, "dseg7")
 }

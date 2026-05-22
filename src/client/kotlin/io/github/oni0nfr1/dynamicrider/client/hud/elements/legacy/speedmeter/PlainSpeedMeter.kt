@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.speedmeter
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager

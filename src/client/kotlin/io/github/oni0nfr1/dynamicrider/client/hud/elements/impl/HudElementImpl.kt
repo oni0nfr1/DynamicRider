@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.impl
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import net.minecraft.client.DeltaTracker

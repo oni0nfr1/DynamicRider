@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.gaugebar
 
 import com.mojang.math.Axis
-import io.github.oni0nfr1.dynamicrider.client.graphics.drawScaledText
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
