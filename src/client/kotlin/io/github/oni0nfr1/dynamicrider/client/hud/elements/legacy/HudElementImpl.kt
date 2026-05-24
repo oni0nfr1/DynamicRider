@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.HudElement
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.interfaces.HudElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics

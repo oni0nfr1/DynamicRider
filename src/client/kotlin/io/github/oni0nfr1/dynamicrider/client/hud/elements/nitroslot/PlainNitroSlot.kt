@@ -4,7 +4,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
@@ -18,7 +17,7 @@ import net.minecraft.resources.ResourceLocation
 class PlainNitroSlot(
     spec: Spec,
     kart: KartRef.Specific<NitroEngine>
-) : HudElementImpl<NitroEngine>(spec.layout, kart), NitroSlot {
+) : HudElementImpl<NitroEngine>(spec.layout, kart) {
 
     companion object {
         val BOOST_ICON = ResourceLocation.fromNamespaceAndPath(
@@ -34,7 +33,7 @@ class PlainNitroSlot(
     var boxPadding: Int = spec.boxPadding
     var boxColor: Int = spec.boxColor
 
-    override var occupied: Boolean = false
+    var occupied: Boolean = false
 
     private var hasEverBeenOccupied: Boolean = false
 

@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.gaugebar
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.Composer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.legacy.interfaces.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics

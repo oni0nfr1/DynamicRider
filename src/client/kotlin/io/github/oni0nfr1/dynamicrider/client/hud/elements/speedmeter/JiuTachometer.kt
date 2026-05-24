@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.SpeedMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
@@ -20,7 +19,7 @@ import net.minecraft.resources.ResourceLocation
 class JiuTachometer(
     spec: Spec,
     kart: KartRef.Specific<SpeedEngine>,
-) : HudElementImpl<SpeedEngine>(spec.layout, kart), SpeedMeter {
+) : HudElementImpl<SpeedEngine>(spec.layout, kart) {
     private companion object {
         const val HEIGHT = 65
         const val WIDTH = 130
@@ -43,7 +42,7 @@ class JiuTachometer(
     var unitText: String = spec.unitText
     var slotOverlayColor: Int = spec.slotOverlayColor
 
-    override val speed: Int
+    val speed: Int
         get() = kart.accessEngine { engine ->
             engine.tachometer?.speed?.toInt()
         } ?: 0

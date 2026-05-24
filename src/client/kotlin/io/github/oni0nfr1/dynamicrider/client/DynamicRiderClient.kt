@@ -17,7 +17,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle.HudSceneLifecy
 import io.github.oni0nfr1.dynamicrider.client.rider.legacy.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
-import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.korigadier.api.korigadier
@@ -158,6 +157,9 @@ class DynamicRiderClient : ClientModInitializer {
     }
 
     fun onKartSpectateEnd(kartEntity: KartSaddleEntity, spectator: Player, rider: Player) {
+        val client = Minecraft.getInstance()
+        if (client.player != spectator || client.player?.subject != rider) return
+
         currentScene = null
     }
 

@@ -5,7 +5,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.Timer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
 import io.github.oni0nfr1.dynamicrider.client.rider.time.RaceTime
@@ -27,7 +26,7 @@ import kotlin.math.max
 class SpectateHudTimer(
     spec: Spec,
     kart: KartRef.Specific<KartEngine>
-) : HudElementImpl<KartEngine>(spec.layout, kart), Timer {
+) : HudElementImpl<KartEngine>(spec.layout, kart) {
     private companion object {
         const val PADDING_PX = 6
         const val LAP_SUFFIX_GAP_PX = 1
@@ -40,7 +39,7 @@ class SpectateHudTimer(
     var minWidth: Int = spec.minWidth
     var txtColor: Int = spec.txtColor
 
-    override var time: RaceTime = RaceTime()
+    var time: RaceTime = RaceTime()
 
     var currentLap: Int = 1
     var maxLap: Int? = null

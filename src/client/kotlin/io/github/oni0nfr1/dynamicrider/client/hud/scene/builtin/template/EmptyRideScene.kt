@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.ride
+package io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.template
 
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.hudScene

@@ -11,7 +11,6 @@ import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import io.github.oni0nfr1.dynamicrider.client.hud.interfaces.GaugeBar as GaugeBarElement
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
@@ -21,7 +20,7 @@ import kotlin.math.exp
 class GradientGaugeBar(
     spec: Spec,
     kart: KartRef.Specific<NitroEngine>,
-) : HudElementImpl<NitroEngine>(spec.layout, kart), GaugeBarElement {
+) : HudElementImpl<NitroEngine>(spec.layout, kart) {
     companion object {
         val client: Minecraft by lazy { Minecraft.getInstance() }
         val fontManager: Font = client.font
@@ -42,7 +41,7 @@ class GradientGaugeBar(
     var smoothing: Double = spec.smoothing
     var gradientStops: List<ColorStop> = spec.gradientStops
 
-    override val gauge: Double
+    val gauge: Double
         get() = kart.accessEngine { engine ->
             engine.tachometer?.gauge
         } ?: 0.0

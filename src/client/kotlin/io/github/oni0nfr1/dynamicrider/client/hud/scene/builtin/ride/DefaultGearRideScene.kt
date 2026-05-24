@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.ride
 
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.template.emptyRideScene
 import io.github.oni0nfr1.skid.client.api.engine.GearEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 

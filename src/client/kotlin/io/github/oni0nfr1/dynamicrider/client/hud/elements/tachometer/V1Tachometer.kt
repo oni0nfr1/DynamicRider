@@ -49,10 +49,10 @@ class V1Tachometer(
         val TEAM_BOOST_BACKGROUND = img("team_boost_background")
 
         const val EXCEED_GAUGE_LEFT = 66
-        const val EXCEED_GAUGE_RIGHT = 205
+        const val EXCEED_GAUGE_RIGHT = 206
         const val EXCEED_POWERED_FULL_RIGHT = 209
         const val EXCEED_READY_THRESHOLD = 0.3f
-        const val EXCEED_FULL_THRESHOLD = 0.97f
+        const val EXCEED_FULL_THRESHOLD = 0.99f
         val EXCEED_GAUGE = img("exceed_gauge")
         val EXCEED_OFF = img("exceed_off")
         val EXCEED_ON = img("exceed_on")
@@ -100,7 +100,7 @@ class V1Tachometer(
         } ?: false
     val exceedGauge: Float
         get() = kart.accessEngine { engine ->
-            engine.tachometer?.exceedGauge
+            engine.tachometer?.exceedGauge?.div(0.9851485f)
         } ?: 0f
     val nitroGauge: Float
         get() = kart.accessEngine { engine ->
@@ -302,7 +302,7 @@ class V1Tachometer(
     @SerialName("V1_TACHOMETER")
     data class Spec(
         override val layout: HudLayoutSpec,
-        val draftBlinkSpeed: Double,
+        val draftBlinkSpeed: Double = 1.0,
 
     ) : HudElementSpec<V1Tachometer, V1Engine>() {
         override fun requiredEngineClass() = V1Engine::class.java
