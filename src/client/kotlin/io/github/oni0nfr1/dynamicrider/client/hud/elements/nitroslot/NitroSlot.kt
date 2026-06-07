@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.OneShotTimer
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -18,8 +19,9 @@ import net.minecraft.resources.ResourceLocation
 
 class NitroSlot(
     spec: Spec,
-    kart: KartRef.Specific<NitroEngine>
-) : HudElementImpl<NitroEngine>(spec.layout, kart) {
+    kart: KartRef.Specific<NitroEngine>,
+    parent: ElementHolder,
+) : HudElementImpl<NitroEngine>(spec.layout, kart, parent) {
 
     companion object {
         fun img(name: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(
@@ -57,9 +59,8 @@ class NitroSlot(
 
     var wasTeamBoost = false
 
-    override fun resolveSize() {
-        setSize(SIZE_X, SIZE_Y)
-    }
+    override var width: Int = SIZE_X
+    override var height: Int = SIZE_Y
 
     fun GuiGraphics.fillImage(image: ResourceLocation) {
         blit(
@@ -69,10 +70,10 @@ class NitroSlot(
             0,
             0f,
             0f,
-            size.x,
-            size.y,
-            size.x,
-            size.y,
+            width,
+            height,
+            width,
+            height,
         )
     }
 
@@ -84,10 +85,10 @@ class NitroSlot(
             0,
             0f,
             0f,
-            size.x,
-            size.y,
-            size.x,
-            size.y,
+            width,
+            height,
+            width,
+            height,
             color,
         )
     }
@@ -138,6 +139,7 @@ class NitroSlot(
         val backgroundColor: Int,
     ) : HudElementSpec<NitroSlot, NitroEngine>() {
         override fun requiredEngineClass() = NitroEngine::class.java
-        override fun create(kart: KartRef.Specific<NitroEngine>) = NitroSlot(this, kart)
+        override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder) =
+            NitroSlot(this, kart, parent)
     }
 }

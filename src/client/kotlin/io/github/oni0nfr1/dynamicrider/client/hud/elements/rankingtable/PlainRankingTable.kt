@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -22,7 +23,8 @@ import kotlin.math.max
 class PlainRankingTable(
     spec: Spec,
     kart: KartRef.Specific<KartEngine>,
-) : HudElementImpl<KartEngine>(spec.layout, kart) {
+    parent: ElementHolder,
+) : HudElementImpl<KartEngine>(spec.layout, kart, parent) {
     var defaultTextColor: Int = spec.defaultTextColor
     var shadow: Boolean = spec.shadow
     var minWidth: Int = spec.minWidth
@@ -47,10 +49,14 @@ class PlainRankingTable(
     private var racers: LinkedHashMap<UUID, KartRankingManager.Racer> = linkedMapOf()
     private var alive: LinkedHashSet<UUID> = linkedSetOf()
 
-    override fun resolveSize() {
+    override var width: Int = 0
+    override var height: Int = 0
+
+    override fun updateLayout() {
         syncState()
         if (hidden) {
-            setSize(0, 0)
+            width = 0
+            height = 0
             return
         }
 
@@ -62,9 +68,8 @@ class PlainRankingTable(
         } ?: 0
 
         val contentWidth = max(headerWidth, widestRowWidth)
-        val width = max(minWidth, contentWidth + paddingX * 2)
-        val height = paddingY * 2 + rowHeight + visibleEntries.size * rowHeight
-        setSize(width, height)
+        width = max(minWidth, contentWidth + paddingX * 2)
+        height = paddingY * 2 + rowHeight + visibleEntries.size * rowHeight
     }
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
@@ -74,10 +79,10 @@ class PlainRankingTable(
         val visibleEntries = ranking.filter { it.racer.uuid in alive }
         val myUuid = Minecraft.getInstance().player?.uuid
 
-        guiGraphics.fill(0, 0, size.x, size.y, backgroundColor)
+        guiGraphics.fill(0, 0, width, height, backgroundColor)
 
         var cursorY = paddingY
-        guiGraphics.fill(0, cursorY, size.x, cursorY + rowHeight, headerBackgroundColor)
+        guiGraphics.fill(0, cursorY, width, cursorY + rowHeight, headerBackgroundColor)
         guiGraphics.textWithDynriderFont(
             paddingX,
             cursorY + rowPadding,
@@ -92,7 +97,7 @@ class PlainRankingTable(
                 guiGraphics.fill(
                     0,
                     cursorY,
-                    size.x,
+                    width,
                     cursorY + rowHeight,
                     highlightBackgroundColor,
                 )
@@ -199,6 +204,9 @@ class PlainRankingTable(
     ) : HudElementSpec<PlainRankingTable, KartEngine>() {
         override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
 
-        override fun create(kart: KartRef.Specific<KartEngine>): PlainRankingTable = PlainRankingTable(this, kart)
+        override fun create(
+            kart: KartRef.Specific<KartEngine>,
+            parent: ElementHolder,
+        ): PlainRankingTable = PlainRankingTable(this, kart, parent)
     }
 }

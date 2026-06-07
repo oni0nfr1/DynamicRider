@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene
 
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HUDSL
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -7,17 +8,23 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import net.minecraft.client.DeltaTracker
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 
 @HUDSL
 class HudScene<E: KartEngine>(
     private val kart: KartRef.Specific<E>,
     private val engineClass: Class<E>,
-) {
+) : ElementHolder {
 
     private var elementSpecs: MutableList<HudElementSpec<*, E>> = mutableListOf()
     private val onEnableCallbacks: MutableList<() -> Unit> = mutableListOf()
     private val onDisableCallbacks: MutableList<() -> Unit> = mutableListOf()
+
+    override val width: Int
+        get() = Minecraft.getInstance().window.guiScaledWidth
+    override val height: Int
+        get() = Minecraft.getInstance().window.guiScaledHeight
 
     private var elements: List<HudElement<E>> = mutableListOf()
 
@@ -57,7 +64,7 @@ class HudScene<E: KartEngine>(
         onDisableCallbacks += block
     }
 
-    private fun createElements(): List<HudElement<E>> = elementSpecs.map { it.create(kart) }
+    private fun createElements(): List<HudElement<E>> = elementSpecs.map { it.create(kart, this) }
 
     fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
         elements.forEach { it.draw(guiGraphics, deltaTracker) }

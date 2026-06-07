@@ -2,11 +2,13 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.LoopTimer
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
 import io.github.oni0nfr1.skid.client.api.engine.ChargeEngine
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
@@ -19,8 +21,11 @@ import net.minecraft.resources.ResourceLocation
 
 class ChargeTachometer(
     spec: Spec,
-    kart: KartRef.Specific<ChargeEngine>
-) : HudElementImpl<ChargeEngine>(spec.layout, kart) {
+    kart: KartRef.Specific<ChargeEngine>,
+    parent: ElementHolder,
+) : HudElementImpl<ChargeEngine>(spec.layout, kart, parent),
+    GaugeBar by LinearExtrapolator(kart)
+{
 
     // assets
     companion object {
@@ -110,10 +115,6 @@ class ChargeTachometer(
         get() = kart.accessEngine { engine ->
             engine.tachometer?.chargerGauge
         } ?: 0f
-    val nitroGauge: Float
-        get() = kart.accessEngine { engine ->
-            engine.tachometer?.gauge?.toFloat()
-        } ?: 0f
     val autoGauge: Boolean
         get() = kart.accessEngine { engine ->
             val speed = engine.tachometer?.speed ?: return@accessEngine null
@@ -130,8 +131,6 @@ class ChargeTachometer(
         get() = kart.accessEngine { engine ->
             engine.draftCharging
         } ?: false
-    val teamBoostGauge: Float
-        get() = if (KartTeamBoostTracker.gaugeExists) KartTeamBoostTracker.gauge else 0f
     val animationTimer = LoopTimer(1000, 0.0)
     val draftBlink = LoopTimer(1000, draftBlinkSpeed)
 
@@ -140,9 +139,8 @@ class ChargeTachometer(
         draftBlink.start()
     }
 
-    override fun resolveSize() {
-        setSize(SIZE_X, SIZE_Y)
-    }
+    override var width: Int = SIZE_X
+    override var height: Int = SIZE_Y
 
     fun GuiGraphics.fillImage(image: ResourceLocation) {
         blit(
@@ -152,16 +150,16 @@ class ChargeTachometer(
             0,
             0f,
             0f,
-            size.x,
-            size.y,
-            size.x,
-            size.y,
+            width,
+            height,
+            width,
+            height,
         )
     }
 
     fun GuiGraphics.renderChargerGauge(gauge: Float) {
         val top = (SIZE_Y - (SIZE_Y - CHARGER_GAUGE_TOP) * gauge).toInt()
-        val renderHeight = size.y - top
+        val renderHeight = height - top
 
         if (renderHeight > 0) {
             blit(
@@ -171,12 +169,12 @@ class ChargeTachometer(
                 top,
                 0f,
                 top.toFloat(),
-                size.x,
-                size.y - top,
-                size.x,
-                size.y - top,
-                size.x,
-                size.y,
+                width,
+                height - top,
+                width,
+                height - top,
+                width,
+                height,
             )
         }
     }
@@ -192,11 +190,11 @@ class ChargeTachometer(
             BOOST_GAUGE_LEFT.toFloat(),
             0f,
             renderWidth,
-            size.y,
+            height,
             renderWidth,
-            size.y,
-            size.x,
-            size.y,
+            height,
+            width,
+            height,
         )
     }
 
@@ -217,6 +215,8 @@ class ChargeTachometer(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
+        updateGauge(deltaTracker.realtimeDeltaTicks)
+
         guiGraphics.fillImage(background)
         guiGraphics.fillImage(engineIcon)
         guiGraphics.fillImage(chargerIcon)
@@ -261,7 +261,8 @@ class ChargeTachometer(
     ) : HudElementSpec<ChargeTachometer, ChargeEngine>() {
         override fun requiredEngineClass(): Class<out KartEngine> = ChargeEngine::class.java
 
-        override fun create(kart: KartRef.Specific<ChargeEngine>) = ChargeTachometer(this, kart)
+        override fun create(kart: KartRef.Specific<ChargeEngine>, parent: ElementHolder) =
+            ChargeTachometer(this, kart, parent)
     }
 
 }

@@ -2,6 +2,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
 import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawScaledText
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -15,12 +17,13 @@ import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
-import kotlin.math.exp
 
 class GradientGaugeBar(
     spec: Spec,
     kart: KartRef.Specific<NitroEngine>,
-) : HudElementImpl<NitroEngine>(spec.layout, kart) {
+    parent: ElementHolder,
+) : HudElementImpl<NitroEngine>(spec.layout, kart, parent),
+    GaugeBar by LinearExtrapolator(kart) {
     companion object {
         val client: Minecraft by lazy { Minecraft.getInstance() }
         val fontManager: Font = client.font
@@ -33,37 +36,28 @@ class GradientGaugeBar(
     }
 
     var thickness: Int = spec.thickness
-    var width: Int = spec.width
+    var barWidth: Int = spec.width
     var padding: Int = spec.padding
     var boxColor: Int = spec.boxColor
     var gaugeAlpha: Int = spec.gaugeAlpha
-    var targetGaugeAlpha: Int = spec.targetGaugeAlpha
-    var smoothing: Double = spec.smoothing
     var gradientStops: List<ColorStop> = spec.gradientStops
 
-    val gauge: Double
-        get() = kart.accessEngine { engine ->
-            engine.tachometer?.gauge
-        } ?: 0.0
-    private var displayGauge: Double = 0.0
+    override var width: Int = barWidth + padding * 2
+    override var height: Int = thickness + padding * 2
 
-    override fun resolveSize() {
-        setSize(width + padding * 2, thickness + padding * 2)
+    override fun updateLayout() {
+        width = barWidth + padding * 2
+        height = thickness + padding * 2
     }
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        val targetGauge = gauge.coerceIn(0.0, 1.0)
-        val dtTicks = deltaTracker.realtimeDeltaTicks.toDouble()
-        val follow = 1.0 - exp(-smoothing * dtTicks)
-        displayGauge += (targetGauge - displayGauge) * follow
-        displayGauge = displayGauge.coerceIn(0.0, 1.0)
+        updateGauge(deltaTracker.realtimeDeltaTicks)
 
-        guiGraphics.fill(0, 0, size.x, size.y, boxColor)
+        guiGraphics.fill(0, 0, width, height, boxColor)
 
-        val targetFilledWidth = (width * targetGauge).toInt().coerceIn(0, width)
-        val filledWidth = (width * displayGauge).toInt().coerceIn(0, width)
+        val displayGauge = nitroGauge.coerceIn(0f, 1f)
+        val filledWidth = (barWidth * displayGauge).toInt().coerceIn(0, barWidth)
 
-        val targetStops = gradientStops.map { it.offset to withAlpha(it.color, targetGaugeAlpha) }
         val gaugeStops = gradientStops.map { it.offset to withAlpha(it.color, gaugeAlpha) }
 
         val labelScale = thickness / fontManager.lineHeight.toFloat()
@@ -84,17 +78,7 @@ class GradientGaugeBar(
             guiGraphics = guiGraphics,
             barLeftX = padding,
             barTopY = padding,
-            barWidthPx = width,
-            barHeightPx = thickness,
-            filledWidthPx = targetFilledWidth,
-            stops = targetStops,
-        )
-
-        drawMultiStopGradientGauge(
-            guiGraphics = guiGraphics,
-            barLeftX = padding,
-            barTopY = padding,
-            barWidthPx = width,
+            barWidthPx = barWidth,
             barHeightPx = thickness,
             filledWidthPx = filledWidth,
             stops = gaugeStops,
@@ -191,8 +175,6 @@ class GradientGaugeBar(
         var padding: Int = 2
         var boxColor: Int = 0x80000000.toInt()
         var gaugeAlpha: Int = 0xFF
-        var targetGaugeAlpha: Int = 0x80
-        var smoothing: Double = 1.0
         private val gradientStops: MutableList<ColorStop> =
             ColorStop.default().toMutableList()
 
@@ -213,8 +195,6 @@ class GradientGaugeBar(
                 padding = padding,
                 boxColor = boxColor,
                 gaugeAlpha = gaugeAlpha,
-                targetGaugeAlpha = targetGaugeAlpha,
-                smoothing = smoothing,
                 gradientStops = gradientStops.toList(),
             )
         }
@@ -230,13 +210,12 @@ class GradientGaugeBar(
         @Serializable(with = HexColorSerdes::class)
         val boxColor: Int = 0x80000000.toInt(),
         val gaugeAlpha: Int = 0xFF,
-        val targetGaugeAlpha: Int = 0x80,
-        val smoothing: Double = 1.0,
         val gradientStops: List<ColorStop> = ColorStop.default(),
     ) : HudElementSpec<GradientGaugeBar, NitroEngine>() {
         override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
 
-        override fun create(kart: KartRef.Specific<NitroEngine>) = GradientGaugeBar(this, kart)
+        override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder) =
+            GradientGaugeBar(this, kart, parent)
     }
 
     @Serializable

@@ -73,6 +73,42 @@ open class Atlas(
             drawHeight: Int,
             color: Int = 0xFFFFFFFF.toInt(),
         ) {
+            drawRegion(
+                guiGraphics = guiGraphics,
+                x = x,
+                y = y,
+                sourceX = 0,
+                sourceY = 0,
+                sourceWidth = width,
+                sourceHeight = height,
+                drawWidth = drawWidth,
+                drawHeight = drawHeight,
+                color = color,
+            )
+        }
+
+        fun drawRegion(
+            guiGraphics: GuiGraphics,
+            x: Int,
+            y: Int,
+            sourceX: Int,
+            sourceY: Int,
+            sourceWidth: Int,
+            sourceHeight: Int,
+            drawWidth: Int = sourceWidth,
+            drawHeight: Int = sourceHeight,
+            color: Int = 0xFFFFFFFF.toInt(),
+        ) {
+            require(sourceX >= 0) { "sourceX must be non-negative: $sourceX" }
+            require(sourceY >= 0) { "sourceY must be non-negative: $sourceY" }
+            require(sourceWidth > 0) { "sourceWidth must be positive: $sourceWidth" }
+            require(sourceHeight > 0) { "sourceHeight must be positive: $sourceHeight" }
+            require(sourceX + sourceWidth <= width) {
+                "source region exceeds cell width: sourceX=$sourceX, sourceWidth=$sourceWidth, cellWidth=$width"
+            }
+            require(sourceY + sourceHeight <= height) {
+                "source region exceeds cell height: sourceY=$sourceY, sourceHeight=$sourceHeight, cellHeight=$height"
+            }
             require(drawWidth > 0) { "drawWidth must be positive: $drawWidth" }
             require(drawHeight > 0) { "drawHeight must be positive: $drawHeight" }
 
@@ -80,12 +116,12 @@ open class Atlas(
                 RenderType::guiTextured,
                 texture,
                 x, y,
-                u.toFloat(),
-                v.toFloat(),
+                (u + sourceX).toFloat(),
+                (v + sourceY).toFloat(),
                 drawWidth,
                 drawHeight,
-                width,
-                height,
+                sourceWidth,
+                sourceHeight,
                 atlasWidth,
                 atlasHeight,
                 color,

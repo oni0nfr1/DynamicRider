@@ -2,6 +2,9 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.LoopTimer
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -19,8 +22,11 @@ import kotlin.math.abs
 
 class V1Tachometer(
     spec: Spec,
-    kart: KartRef.Specific<V1Engine>
-) : HudElementImpl<V1Engine>(spec.layout, kart) {
+    kart: KartRef.Specific<V1Engine>,
+    parent: ElementHolder,
+) : HudElementImpl<V1Engine>(spec.layout, kart, parent),
+    GaugeBar by LinearExtrapolator(kart)
+{
 
     companion object {
         @Suppress("NOTHING_TO_INLINE")
@@ -102,10 +108,6 @@ class V1Tachometer(
         get() = kart.accessEngine { engine ->
             engine.tachometer?.exceedGauge?.div(0.9851485f)
         } ?: 0f
-    val nitroGauge: Float
-        get() = kart.accessEngine { engine ->
-            engine.tachometer?.gauge?.toFloat()
-        } ?: 0f
     val autoGauge: Boolean
         get() = kart.accessEngine { engine ->
             val speed = engine.tachometer?.speed ?: return@accessEngine null
@@ -122,8 +124,6 @@ class V1Tachometer(
         get() = kart.accessEngine { engine ->
             engine.draftCharging
         } ?: false
-    val teamBoostGauge: Float
-        get() = if (KartTeamBoostTracker.gaugeExists) KartTeamBoostTracker.gauge else 0f
 
     val draftBlink = LoopTimer(1000, draftBlinkSpeed)
     val exceedBlink = LoopTimer(1000)
@@ -145,9 +145,8 @@ class V1Tachometer(
         exceedBlink.start()
     }
 
-    override fun resolveSize() {
-        setSize(SIZE_X, SIZE_Y)
-    }
+    override var width: Int = SIZE_X
+    override var height: Int = SIZE_Y
 
     fun GuiGraphics.fillImage(image: ResourceLocation) {
         blit(
@@ -157,10 +156,10 @@ class V1Tachometer(
             0,
             0f,
             0f,
-            size.x,
-            size.y,
-            size.x,
-            size.y,
+            width,
+            height,
+            width,
+            height,
         )
     }
 
@@ -175,11 +174,11 @@ class V1Tachometer(
             BOOST_GAUGE_LEFT.toFloat(),
             0f,
             renderWidth,
-            size.y,
+            height,
             renderWidth,
-            size.y,
-            size.x,
-            size.y,
+            height,
+            width,
+            height,
         )
     }
 
@@ -199,11 +198,11 @@ class V1Tachometer(
             EXCEED_GAUGE_LEFT.toFloat(),
             0f,
             renderWidth,
-            size.y,
+            height,
             renderWidth,
-            size.y,
-            size.x,
-            size.y,
+            height,
+            width,
+            height,
             color,
         )
     }
@@ -224,11 +223,11 @@ class V1Tachometer(
             0f,
             0f,
             right,
-            size.y,
+            height,
             right,
-            size.y,
-            size.x,
-            size.y,
+            height,
+            width,
+            height,
             color,
         )
     }
@@ -261,6 +260,8 @@ class V1Tachometer(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
+        updateGauge(deltaTracker.realtimeDeltaTicks)
+
         guiGraphics.fillImage(background)
 
         guiGraphics.fillImage(ENGINE_ICON_OFF)
@@ -282,7 +283,7 @@ class V1Tachometer(
         numberFont.drawNumber(
             guiGraphics = guiGraphics,
             number = speed,
-            x = size.x / 2,
+            x = width / 2,
             y = NUMBER_BOTTOM,
             anchor = NumberAtlas.Anchor.BOTTOM_CENTER
         )
@@ -306,6 +307,7 @@ class V1Tachometer(
 
     ) : HudElementSpec<V1Tachometer, V1Engine>() {
         override fun requiredEngineClass() = V1Engine::class.java
-        override fun create(kart: KartRef.Specific<V1Engine>) = V1Tachometer(this, kart)
+        override fun create(kart: KartRef.Specific<V1Engine>, parent: ElementHolder) =
+            V1Tachometer(this, kart, parent)
     }
 }

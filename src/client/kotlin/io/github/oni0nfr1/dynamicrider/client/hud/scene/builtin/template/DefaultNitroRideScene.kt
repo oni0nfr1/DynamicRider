@@ -29,11 +29,9 @@ hudScene(kart) {
             y = -75
         }
 
-        targetGaugeAlpha = 0x00
         width = 120
         thickness = 8
         padding = 2
-        smoothing = 1.0
     }
 
     element<PlainNitroSlot.Builder> {

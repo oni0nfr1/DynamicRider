@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot
 
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -16,8 +17,9 @@ import net.minecraft.resources.ResourceLocation
 
 class PlainNitroSlot(
     spec: Spec,
-    kart: KartRef.Specific<NitroEngine>
-) : HudElementImpl<NitroEngine>(spec.layout, kart) {
+    kart: KartRef.Specific<NitroEngine>,
+    parent: ElementHolder,
+) : HudElementImpl<NitroEngine>(spec.layout, kart, parent) {
 
     companion object {
         val BOOST_ICON = ResourceLocation.fromNamespaceAndPath(
@@ -37,10 +39,14 @@ class PlainNitroSlot(
 
     private var hasEverBeenOccupied: Boolean = false
 
-    override fun resolveSize() {
+    override var width: Int = 0
+    override var height: Int = 0
+
+    override fun updateLayout() {
         syncState()
         val boxSize = iconSize + boxPadding * 2
-        setSize(boxSize, boxSize)
+        width = boxSize
+        height = boxSize
     }
 
     override fun render(
@@ -50,7 +56,7 @@ class PlainNitroSlot(
         syncState()
         if (shouldHide()) return
 
-        guiGraphics.fill(0, 0, size.x, size.y, boxColor)
+        guiGraphics.fill(0, 0, width, height, boxColor)
         if (occupied) {
             guiGraphics.blit(
                 RenderType::guiTextured,
@@ -97,7 +103,8 @@ class PlainNitroSlot(
     ) : HudElementSpec<PlainNitroSlot, NitroEngine>() {
         override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
 
-        override fun create(kart: KartRef.Specific<NitroEngine>): PlainNitroSlot = PlainNitroSlot(this, kart)
+        override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder): PlainNitroSlot =
+            PlainNitroSlot(this, kart, parent)
     }
 
     class Builder : HudElementBuilder<Spec>() {

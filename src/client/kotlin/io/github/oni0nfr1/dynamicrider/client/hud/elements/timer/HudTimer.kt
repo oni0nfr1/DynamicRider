@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.timer
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -27,7 +28,8 @@ import kotlin.math.max
 class HudTimer(
     spec: Spec,
     kart: KartRef.Specific<KartEngine>,
-) : HudElementImpl<KartEngine>(spec.layout, kart) {
+    parent: ElementHolder,
+) : HudElementImpl<KartEngine>(spec.layout, kart, parent) {
     private companion object {
         const val PADDING_PX = 6
         const val LINE_GAP_PX = 2
@@ -49,10 +51,14 @@ class HudTimer(
 
     private var visible: Boolean = false
 
-    override fun resolveSize() {
+    override var width: Int = 0
+    override var height: Int = 0
+
+    override fun updateLayout() {
         syncState()
         if (!visible) {
-            setSize(0, 0)
+            width = 0
+            height = 0
             return
         }
 
@@ -89,7 +95,8 @@ class HudTimer(
         val finalWidthPx = max(minWidth, contentWidthPx + (PADDING_PX * 2))
         val finalHeightPx = contentHeightPx + (PADDING_PX * 2)
 
-        setSize(finalWidthPx, finalHeightPx)
+        width = finalWidthPx
+        height = finalHeightPx
     }
 
     override fun render(
@@ -224,7 +231,10 @@ class HudTimer(
     ) : HudElementSpec<HudTimer, KartEngine>() {
         override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
 
-        override fun create(kart: KartRef.Specific<KartEngine>)= HudTimer(this, kart)
+        override fun create(
+            kart: KartRef.Specific<KartEngine>,
+            parent: ElementHolder,
+        ) = HudTimer(this, kart, parent)
     }
 
 }

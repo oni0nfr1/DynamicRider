@@ -1,12 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.impl
 
+import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import net.minecraft.client.DeltaTracker
-import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import org.joml.Matrix4f
 import org.joml.Vector2f
@@ -16,6 +16,7 @@ import org.joml.Vector3f
 abstract class HudElementImpl<E: KartEngine>(
     layout: HudLayoutSpec,
     val kart: KartRef.Specific<E>,
+    protected val parent: ElementHolder,
 ) : HudElement<E> {
     override var screenAnchor: HudAnchor = layout.screenAnchor
     override var elementAnchor: HudAnchor = layout.elementAnchor
@@ -23,13 +24,14 @@ abstract class HudElementImpl<E: KartEngine>(
     override var position: Vector2i = layout.toPosition()
     override var zIndex: Float = layout.zIndex
 
-    private val transform = Matrix4f()
-    protected val size = Vector2i()
-    private val renderPosition = Vector3f()
+    abstract var width: Int
+        protected set
 
-    protected fun setSize(width: Int, height: Int) {
-        size.set(width, height)
-    }
+    abstract var height: Int
+        protected set
+
+    private val transform = Matrix4f()
+    private val renderPosition = Vector3f()
 
     private fun updateTransform() {
         transform.identity()
@@ -37,15 +39,11 @@ abstract class HudElementImpl<E: KartEngine>(
         transform.scale(scale.x, scale.y, 1f)
     }
 
-    override fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        resolveSize()
+    final override fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
+        updateLayout()
 
-        val window = Minecraft.getInstance().window
-        val screenWidth = window.guiScaledWidth
-        val screenHeight = window.guiScaledHeight
-
-        val screenPoint = screenAnchor.point(screenWidth, screenHeight)
-        val elementPoint = elementAnchor.point(size.x, size.y)
+        val screenPoint = screenAnchor.point(parent.width, parent.height)
+        val elementPoint = elementAnchor.point(width, height)
 
         val rx = position.x + screenPoint.x - (elementPoint.x * scale.x)
         val ry = position.y + screenPoint.y - (elementPoint.y * scale.y)
@@ -62,6 +60,6 @@ abstract class HudElementImpl<E: KartEngine>(
         pose.popPose()
     }
 
-    abstract fun resolveSize()
+    protected open fun updateLayout() {}
     abstract fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker)
 }
