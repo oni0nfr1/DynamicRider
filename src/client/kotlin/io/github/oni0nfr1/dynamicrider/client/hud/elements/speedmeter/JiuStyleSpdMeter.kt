@@ -17,7 +17,7 @@ import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
 
-class JiuTachometer(
+class JiuStyleSpdMeter(
     spec: Spec,
     kart: KartRef.Specific<SpeedEngine>,
     parent: ElementHolder,
@@ -182,11 +182,11 @@ class JiuTachometer(
         val unitText: String = "km/h",
         @Serializable(with = HexColorSerdes::class)
         val slotOverlayColor: Int = 0x40000000,
-    ) : HudElementSpec<JiuTachometer, SpeedEngine>() {
+    ) : HudElementSpec<JiuStyleSpdMeter, SpeedEngine>() {
         override fun requiredEngineClass(): Class<out SpeedEngine> = SpeedEngine::class.java
 
         override fun create(kart: KartRef.Specific<SpeedEngine>, parent: ElementHolder) =
-            JiuTachometer(this, kart, parent)
+            JiuStyleSpdMeter(this, kart, parent)
     }
 
 }

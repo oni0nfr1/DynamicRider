@@ -4,7 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuTachometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuStyleSpdMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.SpectateHudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.hudScene
@@ -15,7 +15,7 @@ inline fun <reified E> defaultNitroSpectateScene(kart: KartRef.Specific<E>): Hud
     where
         E : NitroEngine =
 hudScene(kart) {
-    element<JiuTachometer.Builder> {
+    element<JiuStyleSpdMeter.Builder> {
         layout {
             screenAnchor = HudAnchor.BOTTOM_CENTER
             elementAnchor = HudAnchor.BOTTOM_CENTER

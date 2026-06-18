@@ -6,10 +6,10 @@ import net.minecraft.resources.ResourceLocation
 
 open class Atlas(
     protected val texture: ResourceLocation,
-    private val width: Int,
-    private val height: Int,
-    private val cellWidth: Int,
-    private val cellHeight: Int,
+    val width: Int,
+    val height: Int,
+    val cellWidth: Int,
+    val cellHeight: Int,
 ) {
     init {
         require(width > 0) { "width must be positive: $width" }
@@ -44,8 +44,8 @@ open class Atlas(
         private val texture: ResourceLocation,
         private val atlasWidth: Int,
         private val atlasHeight: Int,
-        private val width: Int,
-        private val height: Int,
+        val width: Int,
+        val height: Int,
         val u: Int,
         val v: Int,
     ) {
