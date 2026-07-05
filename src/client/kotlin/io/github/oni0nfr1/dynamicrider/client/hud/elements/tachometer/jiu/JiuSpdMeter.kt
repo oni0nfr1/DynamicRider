@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
-import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.OneShotTimer
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
@@ -11,7 +11,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.Speedometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.impl.SpdMeterImpl
+import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.elementId
 import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import kotlinx.serialization.SerialName
@@ -27,41 +31,53 @@ class JiuSpdMeter(
 ) : HudElementImpl<SpeedEngine>(spec.layout, kart, parent),
     Speedometer by SpdMeterImpl(kart) {
     companion object {
-        @Suppress("NOTHING_TO_INLINE")
-        inline fun atlasId(path: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(
-            ResourceStore.MOD_ID,
-            "element/jiu_tachometer/$path"
+        val META by ElementRegistry.elementMeta<Meta>(
+            elementId("jiu_tachometer/speedometer")
         )
 
-        val BG_ATLAS by AtlasRegistry.sprite(atlasId("background"))
+        val BG_ATLAS get() = AtlasRegistry.requireSprite(META.background)
 
-        val BG_ANIM_IMPACT get() = BG_ATLAS.cellAt(5, 0)
-        val BG_ANIM get() = buildList {
-            for (i in 0..4) add(BG_ATLAS.cellAt(i, 0))
-        }
+        val BG_ANIM_IMPACT get() = BG_ATLAS.cellAt(META.impactAnimationCell)
+        val BG_ANIM get() = META.backgroundAnimationCells.map(BG_ATLAS::cellAt)
 
-        val BACKGROUND_NO_LIGHT get() = BG_ATLAS.cellAt(6, 0)
-        val BACKGROUND_LIGHT get() = BG_ATLAS.cellAt(7, 0)
+        val BACKGROUND_NO_LIGHT get() = BG_ATLAS.cellAt(META.noLightBackgroundCell)
+        val BACKGROUND_LIGHT get() = BG_ATLAS.cellAt(META.lightBackgroundCell)
 
-        const val NUMBER_POS_X = 197
-        const val NUMBER_POS_Y = 92
-        val NUMBER_WHITE by AtlasRegistry.number(atlasId("number_white"))
-        val NUMBER_CYAN by AtlasRegistry.number(atlasId("number_cyan"))
+        val NUMBER_WHITE get() = AtlasRegistry.requireNumber(META.numberWhite)
+        val NUMBER_CYAN get() = AtlasRegistry.requireNumber(META.numberCyan)
     }
+
+    @Serializable
+    data class Meta(
+        @Serializable(with = ResourceLocationSerializer::class)
+        val background: ResourceLocation,
+        @Serializable(with = ResourceLocationSerializer::class)
+        val numberWhite: ResourceLocation,
+        @Serializable(with = ResourceLocationSerializer::class)
+        val numberCyan: ResourceLocation,
+        val backgroundAnimationCells: List<Atlas.CellPosition>,
+        val impactAnimationCell: Atlas.CellPosition,
+        val noLightBackgroundCell: Atlas.CellPosition,
+        val lightBackgroundCell: Atlas.CellPosition,
+        val numberPosX: Int,
+        val numberPosY: Int,
+        val lightSpeedThreshold: Double,
+        val animationDurationMillis: Long,
+    ) : ElementMetaData
 
     override val width: Int
         get() = BG_ATLAS.cellWidth
     override val height: Int
         get() = BG_ATLAS.cellHeight
 
-    val bgAnimTimer = OneShotTimer(500, spec.animationSpeed)
+    val bgAnimTimer = OneShotTimer(META.animationDurationMillis, spec.animationSpeed)
 
     override fun render(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
-        if (speed >= 100 && !bgAnimTimer.running && bgAnimTimer.progress < 1.0) bgAnimTimer.start()
-        if (speed < 100 && (bgAnimTimer.running  || bgAnimTimer.progress >= 1.0)) bgAnimTimer.stop()
+        if (speed >= META.lightSpeedThreshold && !bgAnimTimer.running && bgAnimTimer.progress < 1.0) bgAnimTimer.start()
+        if (speed < META.lightSpeedThreshold && (bgAnimTimer.running  || bgAnimTimer.progress >= 1.0)) bgAnimTimer.stop()
         val backgroundAnimation = BG_ANIM
         val animPhase = (bgAnimTimer.progress * backgroundAnimation.size).toInt()
 
@@ -76,7 +92,7 @@ class JiuSpdMeter(
         numberFont.drawNumber(
             guiGraphics = guiGraphics,
             number = speed.toInt(),
-            x = NUMBER_POS_X, y = NUMBER_POS_Y,
+            x = META.numberPosX, y = META.numberPosY,
             anchor = NumberAtlas.Anchor.BOTTOM_RIGHT,
         )
 

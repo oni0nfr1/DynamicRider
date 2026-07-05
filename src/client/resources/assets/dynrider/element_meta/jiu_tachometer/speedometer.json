@@ -1,0 +1,19 @@
+{
+  "background": "dynrider:element/jiu_tachometer/background",
+  "numberWhite": "dynrider:element/jiu_tachometer/number_white",
+  "numberCyan": "dynrider:element/jiu_tachometer/number_cyan",
+  "backgroundAnimationCells": [
+    { "row": 0, "col": 0 },
+    { "row": 1, "col": 0 },
+    { "row": 2, "col": 0 },
+    { "row": 3, "col": 0 },
+    { "row": 4, "col": 0 }
+  ],
+  "impactAnimationCell": { "row": 5, "col": 0 },
+  "noLightBackgroundCell": { "row": 6, "col": 0 },
+  "lightBackgroundCell": { "row": 7, "col": 0 },
+  "numberPosX": 197,
+  "numberPosY": 92,
+  "lightSpeedThreshold": 100.0,
+  "animationDurationMillis": 500
+}

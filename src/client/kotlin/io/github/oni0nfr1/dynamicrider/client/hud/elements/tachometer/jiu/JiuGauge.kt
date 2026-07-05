@@ -1,8 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
-import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawGauge
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
@@ -10,7 +9,12 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.element.data.GaugeFillRegion
+import io.github.oni0nfr1.dynamicrider.client.resource.elementId
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import kotlinx.serialization.SerialName
@@ -27,45 +31,43 @@ class JiuGauge(
     GaugeBar by LinearExtrapolator(kart)
 {
     companion object {
-        @Suppress("NOTHING_TO_INLINE")
-        inline fun atlasId(path: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(
-            ResourceStore.MOD_ID,
-            "element/jiu_tachometer/$path"
+        val META by ElementRegistry.elementMeta<Meta>(
+            elementId("jiu_tachometer/gauge")
         )
 
-        val GAUGE by AtlasRegistry.sprite(atlasId("gauge"))
-        val ICON by AtlasRegistry.sprite(atlasId("gauge_icon"))
+        val GAUGE get() = AtlasRegistry.requireSprite(META.gaugeAtlas)
+        val ICON get() = AtlasRegistry.requireSprite(META.iconAtlas)
 
-        const val GAUGE_X = 47
-        const val GAUGE_Y = 3
-        val GAUGE_BG    get() = GAUGE.cellAt(0, 0)
-        val NITRO_GAUGE get() = GAUGE.cellAt(1, 0)
-        val TEAM_GAUGE  get() = GAUGE.cellAt(2, 0)
+        val GAUGE_BG get() = GAUGE.cellAt(META.backgroundCell)
+        val NITRO_GAUGE get() = GAUGE.cellAt(META.nitroGaugeCell)
+        val TEAM_GAUGE get() = GAUGE.cellAt(META.teamGaugeCell)
 
-        const val ICON_X = 0
-        const val ICON_Y = 0
-        val ICON_ON  get() = ICON.cellAt(0, 0)
-        val ICON_OFF get() = ICON.cellAt(1, 0)
-
-        const val GAUGE_LEFT = 1
-        const val GAUGE_RIGHT = 209
+        val ICON_ON get() = ICON.cellAt(META.iconOnCell)
+        val ICON_OFF get() = ICON.cellAt(META.iconOffCell)
     }
 
-    override val width: Int
-        get() = GAUGE_X * 2 + GAUGE.cellWidth
-    override val height: Int = 38
+    @Serializable
+    data class Meta(
+        @Serializable(with = ResourceLocationSerializer::class)
+        val gaugeAtlas: ResourceLocation,
+        @Serializable(with = ResourceLocationSerializer::class)
+        val iconAtlas: ResourceLocation,
+        val backgroundCell: Atlas.CellPosition,
+        val nitroGaugeCell: Atlas.CellPosition,
+        val teamGaugeCell: Atlas.CellPosition,
+        val iconOnCell: Atlas.CellPosition,
+        val iconOffCell: Atlas.CellPosition,
+        val gaugeX: Int,
+        val gaugeY: Int,
+        val iconX: Int,
+        val iconY: Int,
+        val fillRegion: GaugeFillRegion,
+        val elementWidth: Int,
+        val elementHeight: Int,
+    ) : ElementMetaData
 
-    private fun GuiGraphics.drawGauge(img: Atlas.Cell, value: Float) {
-        img.drawRegion(
-            guiGraphics = this,
-            x = GAUGE_LEFT + GAUGE_X,
-            y = GAUGE_Y,
-            sourceX = GAUGE_LEFT,
-            sourceY = 0,
-            sourceWidth = (value * (GAUGE_RIGHT - GAUGE_LEFT)).toInt() + GAUGE_LEFT,
-            sourceHeight = img.height,
-        )
-    }
+    override val width: Int get() = META.elementWidth
+    override val height: Int get() = META.elementHeight
 
     override fun render(
         guiGraphics: GuiGraphics,
@@ -73,17 +75,13 @@ class JiuGauge(
     ) {
         updateGauge(deltaTracker.realtimeDeltaTicks)
 
-        GAUGE_BG.draw(
-            guiGraphics = guiGraphics,
-            x = GAUGE_X,
-            y = GAUGE_Y,
-        )
-        guiGraphics.fillImage(ICON_OFF)
+        GAUGE_BG.draw(guiGraphics, META.gaugeX, META.gaugeY)
+        ICON_OFF.draw(guiGraphics, META.iconX, META.iconY)
 
-        guiGraphics.drawGauge(NITRO_GAUGE, nitroGauge)
-        guiGraphics.drawGauge(TEAM_GAUGE, teamBoostGauge)
+        NITRO_GAUGE.drawGauge(guiGraphics, META.fillRegion, nitroGauge, META.gaugeX, META.gaugeY)
+        TEAM_GAUGE.drawGauge(guiGraphics, META.fillRegion, teamBoostGauge, META.gaugeX, META.gaugeY)
 
-        if (nitroGauge == 1f) guiGraphics.fillImage(ICON_ON)
+        if (nitroGauge == 1f) ICON_ON.draw(guiGraphics, META.iconX, META.iconY)
     }
 
     class Builder : HudElementBuilder<Spec>() {

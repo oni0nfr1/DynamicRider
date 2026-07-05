@@ -1,0 +1,22 @@
+{
+  "gaugeAtlas": "dynrider:element/jiu_tachometer/gauge",
+  "iconAtlas": "dynrider:element/jiu_tachometer/gauge_icon",
+  "backgroundCell": { "row": 0, "col": 0 },
+  "nitroGaugeCell": { "row": 1, "col": 0 },
+  "teamGaugeCell": { "row": 2, "col": 0 },
+  "iconOnCell": { "row": 0, "col": 0 },
+  "iconOffCell": { "row": 1, "col": 0 },
+  "gaugeX": 47,
+  "gaugeY": 3,
+  "iconX": 0,
+  "iconY": 0,
+  "fillRegion": {
+    "x": 1,
+    "y": 0,
+    "width": 209,
+    "height": 32,
+    "direction": "LEFT_TO_RIGHT"
+  },
+  "elementWidth": 304,
+  "elementHeight": 38
+}

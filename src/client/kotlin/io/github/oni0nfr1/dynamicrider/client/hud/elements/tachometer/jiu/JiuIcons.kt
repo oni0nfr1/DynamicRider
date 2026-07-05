@@ -1,14 +1,18 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
-import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.LoopTimer
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.elementId
 import io.github.oni0nfr1.skid.client.api.engine.JiuEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import kotlinx.serialization.SerialName
@@ -24,18 +28,26 @@ class JiuIcons(
 ) : HudElementImpl<JiuEngine>(spec.layout, kart, parent) {
 
     companion object {
-        @Suppress("NOTHING_TO_INLINE")
-        inline fun atlasId(path: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(
-            ResourceStore.MOD_ID,
-            "element/jiu_tachometer/$path"
+        val META by ElementRegistry.elementMeta<Meta>(
+            elementId("jiu_tachometer/icons")
         )
 
-        val ATLAS by AtlasRegistry.sprite(atlasId("icons"))
+        val ATLAS get() = AtlasRegistry.requireSprite(META.atlas)
 
-        val BACKGROUND get() = ATLAS.cellAt(0, 0)
-        val DRAFT      get() = ATLAS.cellAt(1, 0)
-        val AUTO_GAUGE get() = ATLAS.cellAt(2, 0)
+        val BACKGROUND get() = ATLAS.cellAt(META.backgroundCell)
+        val DRAFT get() = ATLAS.cellAt(META.draftCell)
+        val AUTO_GAUGE get() = ATLAS.cellAt(META.autoGaugeCell)
     }
+
+    @Serializable
+    data class Meta(
+        @Serializable(with = ResourceLocationSerializer::class)
+        val atlas: ResourceLocation,
+        val backgroundCell: Atlas.CellPosition,
+        val draftCell: Atlas.CellPosition,
+        val autoGaugeCell: Atlas.CellPosition,
+        val autoGaugeSpeedThreshold: Double,
+    ) : ElementMetaData
 
     override val width: Int
         get() = ATLAS.cellWidth
@@ -53,7 +65,7 @@ class JiuIcons(
             val isDrifting = engine.isDrifting
             val isBoosting = engine.isBoosting
 
-            return !isBoosting && !isDrifting && speed.toInt() >= 100
+            return !isBoosting && !isDrifting && speed >= META.autoGaugeSpeedThreshold
         } ?: false
 
     val draftBlink = LoopTimer(1000, spec.draftBlinkSpeed)
