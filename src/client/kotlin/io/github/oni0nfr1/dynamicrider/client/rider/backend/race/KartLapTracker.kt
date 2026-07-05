@@ -6,10 +6,10 @@ import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackend
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
-import io.github.oni0nfr1.dynamicrider.client.util.isClientPlayerId
 import io.github.oni0nfr1.skid.client.api.attr.maxLap
 import io.github.oni0nfr1.skid.client.api.events.RiderAttrEvents
 import net.minecraft.client.Minecraft
+import net.minecraft.client.player.LocalPlayer
 
 object KartLapTracker : RiderBackend() {
 
@@ -63,11 +63,10 @@ object KartLapTracker : RiderBackend() {
             HandleResult.PASS
         }
 
-        RiderAttrEvents.MAX_LAP.register { entity, value ->
-            if (!raceActive || !isClientPlayerId(entity.id)) return@register
+        RiderAttrEvents.MAX_LAP.register { player, value ->
+            if (!raceActive || player !is LocalPlayer) return@register
 
             maxLap = value.toInt()
-            HandleResult.PASS
         }
     }
 
