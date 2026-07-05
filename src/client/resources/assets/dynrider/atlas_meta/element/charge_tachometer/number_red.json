@@ -1,0 +1,7 @@
+{
+  "type": "NUMBER",
+  "texture": "dynrider:textures/element/charge_tachometer/number_red.png",
+  "digitWidth": 46,
+  "digitHeight": 58,
+  "digitOrder": "1234567890"
+}

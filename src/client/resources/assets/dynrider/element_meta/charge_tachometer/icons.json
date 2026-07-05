@@ -1,0 +1,7 @@
+{
+  "atlas": "dynrider:element/charge_tachometer/icons",
+  "backgroundCell": { "row": 0, "col": 0 },
+  "autoGaugeCell": { "row": 1, "col": 0 },
+  "draftCell": { "row": 2, "col": 0 },
+  "autoGaugeSpeedThreshold": 100.0
+}

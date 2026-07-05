@@ -1,0 +1,20 @@
+{
+  "atlas": "dynrider:element/charge_tachometer/gauge",
+  "backgroundCell": { "row": 0, "col": 0 },
+  "nitroGaugeCell": { "row": 1, "col": 0 },
+  "teamGaugeCell": { "row": 2, "col": 0 },
+  "nitroFillRegion": {
+    "x": 1,
+    "y": 1,
+    "width": 216,
+    "height": 12,
+    "direction": "LEFT_TO_RIGHT"
+  },
+  "teamFillRegion": {
+    "x": 1,
+    "y": 16,
+    "width": 216,
+    "height": 6,
+    "direction": "LEFT_TO_RIGHT"
+  }
+}

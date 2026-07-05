@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/charge_tachometer/charger.png",
+  "width": 376,
+  "height": 270,
+  "cellWidth": 376,
+  "cellHeight": 90
+}

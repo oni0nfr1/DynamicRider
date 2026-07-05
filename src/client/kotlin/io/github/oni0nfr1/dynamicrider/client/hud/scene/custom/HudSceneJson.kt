@@ -4,8 +4,16 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaug
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuStyleSpdMeter
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.ChargeTachometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.JiuStyleSpdMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.ChargeGauge
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.ChargeIcons
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.ChargeSpdMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.ChargeTachometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.ChargerGauge
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuGauge
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuIcons
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuSpdMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.HudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.SpectateHudTimer
 import kotlinx.serialization.modules.SerializersModule
@@ -21,6 +29,15 @@ val HudElementSerializersModule = SerializersModule {
         subclass(HudTimer.Spec::class)
         subclass(SpectateHudTimer.Spec::class)
         subclass(ChargeTachometer.Spec::class)
+        subclass(ChargeSpdMeter.Spec::class)
+        subclass(ChargeGauge.Spec::class)
+        subclass(ChargerGauge.Spec::class)
+        subclass(ChargeIcons.Spec::class)
+
+        // hud.elements.tachometer.jiu
+        subclass(JiuTachometer.Spec::class)
+        subclass(JiuSpdMeter.Spec::class)
+        subclass(JiuIcons.Spec::class)
+        subclass(JiuGauge.Spec::class)
     }
 }
-

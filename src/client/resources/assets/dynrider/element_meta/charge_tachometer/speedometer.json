@@ -1,0 +1,21 @@
+{
+  "background": "dynrider:element/charge_tachometer/background",
+  "numberWhite": "dynrider:element/charge_tachometer/number_white",
+  "numberBlue": "dynrider:element/charge_tachometer/number_blue",
+  "numberRed": "dynrider:element/charge_tachometer/number_red",
+  "backgroundAnimationCell": [
+    { "row": 1, "col": 0 },
+    { "row": 2, "col": 0 },
+    { "row": 3, "col": 0 }
+  ],
+  "emptyBackgroundAnimationCell": { "row": 0, "col": 0 },
+  "noLightBackgroundCell": { "row": 4, "col": 0 },
+  "lightBackgroundCell": { "row": 5, "col": 0 },
+  "numberPosX": 240,
+  "numberPosY": 93,
+  "lightSpeedThreshold": 120.0,
+  "redNumberSpeedThreshold": 300.0,
+  "animationSpeedBase": 0.008,
+  "backgroundWidth": 376,
+  "backgroundHeight": 117
+}

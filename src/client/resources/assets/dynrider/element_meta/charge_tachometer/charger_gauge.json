@@ -1,0 +1,14 @@
+{
+  "atlas": "dynrider:element/charge_tachometer/charger",
+  "gaugeCell": { "row": 0, "col": 0 },
+  "iconOffCell": { "row": 1, "col": 0 },
+  "iconOnCell": { "row": 2, "col": 0 },
+  "fillRegion": {
+    "x": 0,
+    "y": 0,
+    "width": 376,
+    "height": 90,
+    "direction": "BOTTOM_TO_TOP"
+  },
+  "maxEpsilon": 0.05
+}
