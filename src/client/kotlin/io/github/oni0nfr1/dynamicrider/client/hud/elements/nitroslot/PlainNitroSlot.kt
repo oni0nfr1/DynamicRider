@@ -39,14 +39,13 @@ class PlainNitroSlot(
 
     private var hasEverBeenOccupied: Boolean = false
 
-    override var width: Int = 0
-    override var height: Int = 0
+    override val width: Int
+        get() = iconSize + boxPadding * 2
+    override val height: Int
+        get() = iconSize + boxPadding * 2
 
     override fun updateLayout() {
         syncState()
-        val boxSize = iconSize + boxPadding * 2
-        width = boxSize
-        height = boxSize
     }
 
     override fun render(
@@ -100,7 +99,7 @@ class PlainNitroSlot(
         val boxPadding: Int = 5,
         @Serializable(with = HexColorSerdes::class)
         val boxColor: Int = 0x80000000.toInt(),
-    ) : HudElementSpec<PlainNitroSlot, NitroEngine>() {
+    ) : HudElementSpec<PlainNitroSlot, NitroEngine> {
         override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
 
         override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder): PlainNitroSlot =

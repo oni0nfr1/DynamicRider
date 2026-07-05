@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawSpeed7Seg
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillRoundedTrapezoid
@@ -63,13 +63,11 @@ class JiuStyleSpdMeter(
             ((System.currentTimeMillis() - startMillis) / (animationLengthSec * 1000f)).coerceIn(0f, 1f)
         } ?: 0f
 
-    override var width: Int = WIDTH
-    override var height: Int = HEIGHT
+    override val width: Int = WIDTH
+    override val height: Int = HEIGHT
 
     override fun updateLayout() {
         syncGlow()
-        width = WIDTH
-        height = HEIGHT
     }
 
     override fun render(
@@ -182,7 +180,7 @@ class JiuStyleSpdMeter(
         val unitText: String = "km/h",
         @Serializable(with = HexColorSerdes::class)
         val slotOverlayColor: Int = 0x40000000,
-    ) : HudElementSpec<JiuStyleSpdMeter, SpeedEngine>() {
+    ) : HudElementSpec<JiuStyleSpdMeter, SpeedEngine> {
         override fun requiredEngineClass(): Class<out SpeedEngine> = SpeedEngine::class.java
 
         override fun create(kart: KartRef.Specific<SpeedEngine>, parent: ElementHolder) =

@@ -30,5 +30,5 @@ abstract class CompoundElement<E: KartEngine>(
         children.forEach { it.draw(guiGraphics, deltaTracker) }
     }
 
-    protected abstract fun renderMain(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker)
+    protected open fun renderMain(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {}
 }

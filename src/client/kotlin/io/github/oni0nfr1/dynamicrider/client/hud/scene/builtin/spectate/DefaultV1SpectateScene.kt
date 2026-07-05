@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.spectate
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.NitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.DynNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.SpectateHudTimer
@@ -15,13 +15,14 @@ fun defaultV1SpectateScene(kart: KartRef.Specific<V1Engine>) =
             layout {
                 screenAnchor = HudAnchor.BOTTOM_CENTER
                 elementAnchor = HudAnchor.BOTTOM_CENTER
+                y = -5
 
                 scaleX = 0.5f
                 scaleY = 0.5f
             }
         }
 
-        element<NitroSlot.Builder> {
+        element<DynNitroSlot.Builder> {
             layout {
                 screenAnchor = HudAnchor.TOP_LEFT
                 elementAnchor = HudAnchor.TOP_LEFT
@@ -36,7 +37,7 @@ fun defaultV1SpectateScene(kart: KartRef.Specific<V1Engine>) =
             backgroundColor = 0xFF0000FF.toInt()
         }
 
-        element<NitroSlot.Builder> {
+        element<DynNitroSlot.Builder> {
             layout {
                 screenAnchor = HudAnchor.TOP_LEFT
                 elementAnchor = HudAnchor.TOP_LEFT
@@ -51,7 +52,7 @@ fun defaultV1SpectateScene(kart: KartRef.Specific<V1Engine>) =
             backgroundColor = 0xFF0000FF.toInt()
         }
 
-        element<NitroSlot.Builder> {
+        element<DynNitroSlot.Builder> {
             layout {
                 screenAnchor = HudAnchor.TOP_LEFT
                 elementAnchor = HudAnchor.TOP_LEFT

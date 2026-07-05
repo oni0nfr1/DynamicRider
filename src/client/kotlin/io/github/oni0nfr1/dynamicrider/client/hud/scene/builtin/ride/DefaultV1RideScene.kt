@@ -1,9 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.ride
 
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.NitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.DynNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.ChargeTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.HudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.hudScene
@@ -16,13 +15,14 @@ hudScene(kart) {
         layout {
             screenAnchor = HudAnchor.BOTTOM_CENTER
             elementAnchor = HudAnchor.BOTTOM_CENTER
+            y = -5
 
             scaleX = 0.5f
             scaleY = 0.5f
         }
     }
 
-    element<NitroSlot.Builder> {
+    element<DynNitroSlot.Builder> {
         layout {
             screenAnchor = HudAnchor.TOP_LEFT
             elementAnchor = HudAnchor.TOP_LEFT
@@ -37,7 +37,7 @@ hudScene(kart) {
         backgroundColor = 0xFF0000FF.toInt()
     }
 
-    element<NitroSlot.Builder> {
+    element<DynNitroSlot.Builder> {
         layout {
             screenAnchor = HudAnchor.TOP_LEFT
             elementAnchor = HudAnchor.TOP_LEFT
@@ -52,7 +52,7 @@ hudScene(kart) {
         backgroundColor = 0xFF0000FF.toInt()
     }
 
-    element<NitroSlot.Builder> {
+    element<DynNitroSlot.Builder> {
         layout {
             screenAnchor = HudAnchor.TOP_LEFT
             elementAnchor = HudAnchor.TOP_LEFT

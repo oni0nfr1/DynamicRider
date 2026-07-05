@@ -6,6 +6,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.NitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.SkidNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.inventory.KartTeamBoostCounter
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
@@ -17,11 +19,13 @@ import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
 
-class NitroSlot(
+class DynNitroSlot(
     spec: Spec,
     kart: KartRef.Specific<NitroEngine>,
     parent: ElementHolder,
-) : HudElementImpl<NitroEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<NitroEngine>(spec.layout, kart, parent),
+    NitroSlot by SkidNitroSlot(kart)
+{
 
     companion object {
         fun img(name: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(
@@ -50,17 +54,10 @@ class NitroSlot(
 
     val convertAnim = OneShotTimer(1000)
 
-    val maxBoost: Int
-        get() = kart.accessEngine { it.maxBoost } ?: 2
-    val nitro: Int
-        get() = kart.accessEngine { it.tachometer?.nitro } ?: 0
-    val teamNitro: Int
-        get() = KartTeamBoostCounter.boostCount
-
     var wasTeamBoost = false
 
-    override var width: Int = SIZE_X
-    override var height: Int = SIZE_Y
+    override val width: Int = SIZE_X
+    override val height: Int = SIZE_Y
 
     fun GuiGraphics.fillImage(image: ResourceLocation) {
         blit(
@@ -102,13 +99,13 @@ class NitroSlot(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
-        if (maxBoost < this@NitroSlot.slotIndex) return
+        if (maxBoost < this@DynNitroSlot.slotIndex) return
 
         guiGraphics.fillImageColored(BACKGROUND, backgroundColor)
         guiGraphics.fillImage(FRAME)
 
-        if (nitro >= this@NitroSlot.slotIndex) {
-            if (teamNitro >= this@NitroSlot.slotIndex) {
+        if (nitro >= this@DynNitroSlot.slotIndex) {
+            if (teamNitro >= this@DynNitroSlot.slotIndex) {
                 if (!wasTeamBoost) onTeamBoostChange()
                 guiGraphics.fillImage(teamNitroIconWithAnim)
             } else {
@@ -137,9 +134,9 @@ class NitroSlot(
         val slotIndex: Int,
         @Serializable(with = HexColorSerdes::class)
         val backgroundColor: Int,
-    ) : HudElementSpec<NitroSlot, NitroEngine>() {
+    ) : HudElementSpec<DynNitroSlot, NitroEngine> {
         override fun requiredEngineClass() = NitroEngine::class.java
         override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder) =
-            NitroSlot(this, kart, parent)
+            DynNitroSlot(this, kart, parent)
     }
 }

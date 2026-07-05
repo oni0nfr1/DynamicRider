@@ -49,14 +49,19 @@ class PlainRankingTable(
     private var racers: LinkedHashMap<UUID, KartRankingManager.Racer> = linkedMapOf()
     private var alive: LinkedHashSet<UUID> = linkedSetOf()
 
-    override var width: Int = 0
-    override var height: Int = 0
+    private var measuredWidth: Int = 0
+    private var measuredHeight: Int = 0
+
+    override val width: Int
+        get() = measuredWidth
+    override val height: Int
+        get() = measuredHeight
 
     override fun updateLayout() {
         syncState()
         if (hidden) {
-            width = 0
-            height = 0
+            measuredWidth = 0
+            measuredHeight = 0
             return
         }
 
@@ -68,8 +73,8 @@ class PlainRankingTable(
         } ?: 0
 
         val contentWidth = max(headerWidth, widestRowWidth)
-        width = max(minWidth, contentWidth + paddingX * 2)
-        height = paddingY * 2 + rowHeight + visibleEntries.size * rowHeight
+        measuredWidth = max(minWidth, contentWidth + paddingX * 2)
+        measuredHeight = paddingY * 2 + rowHeight + visibleEntries.size * rowHeight
     }
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
@@ -201,7 +206,7 @@ class PlainRankingTable(
         val dotSize: Int = 6,
         val dotGap: Int = 6,
         val hideWhenTimeAttack: Boolean = true,
-    ) : HudElementSpec<PlainRankingTable, KartEngine>() {
+    ) : HudElementSpec<PlainRankingTable, KartEngine> {
         override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
 
         override fun create(

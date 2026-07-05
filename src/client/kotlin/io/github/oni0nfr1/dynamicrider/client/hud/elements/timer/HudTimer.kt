@@ -51,14 +51,19 @@ class HudTimer(
 
     private var visible: Boolean = false
 
-    override var width: Int = 0
-    override var height: Int = 0
+    private var measuredWidth: Int = 0
+    private var measuredHeight: Int = 0
+
+    override val width: Int
+        get() = measuredWidth
+    override val height: Int
+        get() = measuredHeight
 
     override fun updateLayout() {
         syncState()
         if (!visible) {
-            width = 0
-            height = 0
+            measuredWidth = 0
+            measuredHeight = 0
             return
         }
 
@@ -95,8 +100,8 @@ class HudTimer(
         val finalWidthPx = max(minWidth, contentWidthPx + (PADDING_PX * 2))
         val finalHeightPx = contentHeightPx + (PADDING_PX * 2)
 
-        width = finalWidthPx
-        height = finalHeightPx
+        measuredWidth = finalWidthPx
+        measuredHeight = finalHeightPx
     }
 
     override fun render(
@@ -228,7 +233,7 @@ class HudTimer(
         val minWidth: Int = 100,
         @Serializable(with = HexColorSerdes::class)
         val txtColor: Int = 0xFFFFFFFF.toInt(),
-    ) : HudElementSpec<HudTimer, KartEngine>() {
+    ) : HudElementSpec<HudTimer, KartEngine> {
         override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
 
         override fun create(

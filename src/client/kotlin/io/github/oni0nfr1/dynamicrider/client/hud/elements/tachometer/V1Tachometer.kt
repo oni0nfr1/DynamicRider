@@ -3,8 +3,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.LoopTimer
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate.LinearExtrapolator
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -145,8 +145,8 @@ class V1Tachometer(
         exceedBlink.start()
     }
 
-    override var width: Int = SIZE_X
-    override var height: Int = SIZE_Y
+    override val width: Int = SIZE_X
+    override val height: Int = SIZE_Y
 
     fun GuiGraphics.fillImage(image: ResourceLocation) {
         blit(
@@ -305,7 +305,7 @@ class V1Tachometer(
         override val layout: HudLayoutSpec,
         val draftBlinkSpeed: Double = 1.0,
 
-    ) : HudElementSpec<V1Tachometer, V1Engine>() {
+    ) : HudElementSpec<V1Tachometer, V1Engine> {
         override fun requiredEngineClass() = V1Engine::class.java
         override fun create(kart: KartRef.Specific<V1Engine>, parent: ElementHolder) =
             V1Tachometer(this, kart, parent)

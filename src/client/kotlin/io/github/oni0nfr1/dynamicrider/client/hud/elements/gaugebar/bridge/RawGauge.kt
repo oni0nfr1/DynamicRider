@@ -1,6 +1,5 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge
 
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GaugeBar
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 

@@ -3,7 +3,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate.LinearExtrapolator
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -42,13 +43,10 @@ class GradientGaugeBar(
     var gaugeAlpha: Int = spec.gaugeAlpha
     var gradientStops: List<ColorStop> = spec.gradientStops
 
-    override var width: Int = barWidth + padding * 2
-    override var height: Int = thickness + padding * 2
-
-    override fun updateLayout() {
-        width = barWidth + padding * 2
-        height = thickness + padding * 2
-    }
+    override val width: Int
+        get() = barWidth + padding * 2
+    override val height: Int
+        get() = thickness + padding * 2
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
         updateGauge(deltaTracker.realtimeDeltaTicks)
@@ -211,7 +209,7 @@ class GradientGaugeBar(
         val boxColor: Int = 0x80000000.toInt(),
         val gaugeAlpha: Int = 0xFF,
         val gradientStops: List<ColorStop> = ColorStop.default(),
-    ) : HudElementSpec<GradientGaugeBar, NitroEngine>() {
+    ) : HudElementSpec<GradientGaugeBar, NitroEngine> {
         override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
 
         override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder) =

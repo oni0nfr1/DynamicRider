@@ -1,17 +1,16 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.interpolate
+package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge
 
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
-import kotlin.math.exp
 
-class ExponentialInterpolator(
+class LinearInterpolator(
     private val kart: KartRef.Specific<NitroEngine>,
-    private val smoothing: Double,
+    private val interpolationSpeed: Float = 1f,
 ): GaugeBar {
     val nitroGaugeRaw: Float
         get() = kart.accessEngine { it.tachometer?.gauge?.toFloat() } ?: 0.0f
+
     val teamBoostGaugeRaw: Float
         get() = if (KartTeamBoostTracker.gaugeExists) KartTeamBoostTracker.gauge else 0f
 
@@ -25,9 +24,14 @@ class ExponentialInterpolator(
         get() = displayTeamBoostGauge.coerceIn(0f, 1f)
 
     override fun updateGauge(deltaTicks: Float) {
-        val follow = 1.0 - exp(-smoothing * deltaTicks.toDouble())
+        val maxStep = interpolationSpeed * deltaTicks.coerceAtLeast(0f)
 
-        displayNitroGauge += ((nitroGaugeRaw - displayNitroGauge) * follow).toFloat()
-        displayTeamBoostGauge += ((teamBoostGaugeRaw - displayTeamBoostGauge) * follow).toFloat()
+        displayNitroGauge = interpolate(displayNitroGauge, nitroGaugeRaw, maxStep)
+        displayTeamBoostGauge = interpolate(displayTeamBoostGauge, teamBoostGaugeRaw, maxStep)
+    }
+
+    private fun interpolate(current: Float, target: Float, maxStep: Float): Float {
+        val delta = target - current
+        return (current + delta.coerceIn(-maxStep, maxStep)).coerceIn(0f, 1f)
     }
 }

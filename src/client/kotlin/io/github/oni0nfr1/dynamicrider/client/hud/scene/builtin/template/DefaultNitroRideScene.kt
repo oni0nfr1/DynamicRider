@@ -4,7 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.JiuStyleSpdMeter
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.JiuStyleSpdMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.HudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.hudScene
