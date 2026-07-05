@@ -16,6 +16,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle.HudSceneLifecycle
 import io.github.oni0nfr1.dynamicrider.client.rider.legacy.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
+import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
@@ -68,6 +70,8 @@ class DynamicRiderClient : ClientModInitializer {
         // Bootstrap
         instance = this
         Ticker.init()
+        AtlasRegistry.init()
+        ElementRegistry.init()
 
         // Load Config File
         DynRiderConfig.load()

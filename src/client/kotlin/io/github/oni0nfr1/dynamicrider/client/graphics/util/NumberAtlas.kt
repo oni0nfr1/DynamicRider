@@ -5,10 +5,10 @@ import net.minecraft.resources.ResourceLocation
 
 class NumberAtlas(
     texture: ResourceLocation,
-    private val digitWidth: Int,
-    private val digitHeight: Int,
-    private val digitOrder: String = "0123456789",
-) : Atlas(
+    val digitWidth: Int,
+    val digitHeight: Int,
+    val digitOrder: String = "0123456789",
+) : SpriteAtlas(
     texture = texture,
     width = digitWidth * digitOrder.length,
     height = digitHeight,
