@@ -15,7 +15,7 @@ import java.util.UUID;
 
 
 @Mixin(BossHealthOverlay.class)
-public abstract class BossbarSuppressionMixin {
+public abstract class BossHealthOverlayMixin {
     @Shadow
     @Final
     Map<UUID, LerpingBossEvent> events;

@@ -63,7 +63,6 @@ dependencies {
     include("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
 
     modCompileOnly("io.github.oni0nfr1:skid-api:${project.property("skidmc_version")}")
-    include("io.github.oni0nfr1:skid-api:${project.property("skidmc_version")}")
 }
 
 tasks.processResources {
