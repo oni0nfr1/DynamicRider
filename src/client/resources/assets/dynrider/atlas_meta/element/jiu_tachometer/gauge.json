@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/jiu_tachometer/gauge.png",
+  "width": 210,
+  "height": 96,
+  "cellWidth": 210,
+  "cellHeight": 32
+}

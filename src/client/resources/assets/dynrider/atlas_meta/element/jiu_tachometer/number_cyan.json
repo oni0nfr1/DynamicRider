@@ -1,0 +1,6 @@
+{
+  "type": "NUMBER",
+  "texture": "dynrider:textures/element/jiu_tachometer/number_cyan.png",
+  "digitWidth": 35,
+  "digitHeight": 43
+}

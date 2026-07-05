@@ -1,17 +1,21 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.amination.OneShotTimer
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.SpeedMeter
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedmeter.impl.SpdMeterImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.Speedometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.impl.SpdMeterImpl
+import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.resources.ResourceLocation
@@ -21,65 +25,86 @@ class JiuSpdMeter(
     kart: KartRef.Specific<SpeedEngine>,
     parent: ElementHolder
 ) : HudElementImpl<SpeedEngine>(spec.layout, kart, parent),
-    SpeedMeter by SpdMeterImpl(kart) {
+    Speedometer by SpdMeterImpl(kart) {
     companion object {
         @Suppress("NOTHING_TO_INLINE")
-        inline fun id(path: String) = ResourceLocation.fromNamespaceAndPath(
+        inline fun atlasId(path: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(
             ResourceStore.MOD_ID,
-            "textures/element/jiu_tachometer/$path"
+            "element/jiu_tachometer/$path"
         )
 
-        val BG_ATLAS = Atlas(
-            id(""),
-            286, 816,
-            286, 102
-        )
+        val BG_ATLAS by AtlasRegistry.sprite(atlasId("background"))
 
-        val BG_ANIM_IMPACT = BG_ATLAS.cellAt(0, 0)
-        val BG_ANIM = buildList {
-            for (i in 1..5) add(BG_ATLAS.cellAt(i, 0))
+        val BG_ANIM_IMPACT get() = BG_ATLAS.cellAt(5, 0)
+        val BG_ANIM get() = buildList {
+            for (i in 0..4) add(BG_ATLAS.cellAt(i, 0))
         }
 
-        val BACKGROUND_LIGHT = BG_ATLAS.cellAt(6, 0)
-        val BACKGROUND_NO_LIGHT = BG_ATLAS.cellAt(7, 0)
+        val BACKGROUND_NO_LIGHT get() = BG_ATLAS.cellAt(6, 0)
+        val BACKGROUND_LIGHT get() = BG_ATLAS.cellAt(7, 0)
 
-        const val NUMBER_WIDTH = 35
-        const val NUMBER_HEIGHT = 43
-        const val NUMBER_POS_X = 196
+        const val NUMBER_POS_X = 197
         const val NUMBER_POS_Y = 92
-        val NUMBER_WHITE = NumberAtlas(
-            id("number_white"),
-            NUMBER_WIDTH,
-            NUMBER_HEIGHT,
-        )
-        val NUMBER_CYAN = NumberAtlas(
-            id("number_cyan"),
-            NUMBER_WIDTH,
-            NUMBER_HEIGHT,
-        )
+        val NUMBER_WHITE by AtlasRegistry.number(atlasId("number_white"))
+        val NUMBER_CYAN by AtlasRegistry.number(atlasId("number_cyan"))
     }
 
-    override var width: Int = BG_ATLAS.cellWidth
-    override var height: Int = BG_ATLAS.cellHeight
+    override val width: Int
+        get() = BG_ATLAS.cellWidth
+    override val height: Int
+        get() = BG_ATLAS.cellHeight
+
+    val bgAnimTimer = OneShotTimer(500, spec.animationSpeed)
 
     override fun render(
         guiGraphics: GuiGraphics,
         deltaTracker: DeltaTracker
     ) {
+        if (speed >= 100 && !bgAnimTimer.running && bgAnimTimer.progress < 1.0) bgAnimTimer.start()
+        if (speed < 100 && (bgAnimTimer.running  || bgAnimTimer.progress >= 1.0)) bgAnimTimer.stop()
+        val backgroundAnimation = BG_ANIM
+        val animPhase = (bgAnimTimer.progress * backgroundAnimation.size).toInt()
 
+        guiGraphics.fillImage(
+            if (animPhase >= backgroundAnimation.size - 1) BACKGROUND_LIGHT
+            else BACKGROUND_NO_LIGHT
+        )
+
+        backgroundAnimation.subList(0, animPhase).forEach { guiGraphics.fillImage(it) }
+
+        val numberFont = if (animPhase >= backgroundAnimation.size - 1) NUMBER_CYAN else NUMBER_WHITE
+        numberFont.drawNumber(
+            guiGraphics = guiGraphics,
+            number = speed.toInt(),
+            x = NUMBER_POS_X, y = NUMBER_POS_Y,
+            anchor = NumberAtlas.Anchor.BOTTOM_RIGHT,
+        )
+
+        if (bgAnimTimer.progress >= 1.0) guiGraphics.fillImage(BG_ANIM_IMPACT)
+        // TODO: 애니메이션 완료 후에 BG_ANIM_IMPACT가 옆으로 퍼지는 효과
     }
 
+    class Builder : HudElementBuilder<Spec>() {
+        var animationSpeed: Double = 1.0
+
+        override fun build(layout: HudLayoutSpec) = Spec(
+            layout,
+            animationSpeed,
+        )
+    }
+
+    @Serializable
+    @SerialName("JIU_SPEEDOMETER")
     data class Spec(
         override val layout: HudLayoutSpec,
-
-    ) : HudElementSpec<JiuSpdMeter, SpeedEngine>() {
+        val animationSpeed: Double,
+    ) : HudElementSpec<JiuSpdMeter, SpeedEngine> {
         override fun requiredEngineClass() = SpeedEngine::class.java
 
         override fun create(
             kart: KartRef.Specific<SpeedEngine>,
             parent: ElementHolder
-        ): HudElement<SpeedEngine> {
-            TODO("Not yet implemented")
-        }
+        ) = JiuSpdMeter(this, kart, parent)
+
     }
 }

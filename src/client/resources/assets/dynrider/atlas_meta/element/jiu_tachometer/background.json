@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/jiu_tachometer/background.png",
+  "width": 288,
+  "height": 816,
+  "cellWidth": 288,
+  "cellHeight": 102
+}
