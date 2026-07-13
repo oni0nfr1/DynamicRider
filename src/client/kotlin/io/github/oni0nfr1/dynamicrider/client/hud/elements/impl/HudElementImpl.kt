@@ -4,6 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.layout.HudLayoutEngine
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import net.minecraft.client.DeltaTracker
@@ -40,13 +41,23 @@ abstract class HudElementImpl<E: KartEngine>(
     final override fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
         updateLayout()
 
-        val screenPoint = screenAnchor.point(parent.width, parent.height)
-        val elementPoint = elementAnchor.point(width, height)
+        val result = HudLayoutEngine.resolve(
+            layout = HudLayoutSpec(
+                screenAnchor = screenAnchor,
+                elementAnchor = elementAnchor,
+                scaleX = scale.x,
+                scaleY = scale.y,
+                x = position.x,
+                y = position.y,
+                zIndex = zIndex,
+            ),
+            parentWidth = parent.width,
+            parentHeight = parent.height,
+            elementWidth = width,
+            elementHeight = height,
+        )
 
-        val rx = position.x + screenPoint.x - (elementPoint.x * scale.x)
-        val ry = position.y + screenPoint.y - (elementPoint.y * scale.y)
-
-        renderPosition.set(rx, ry, zIndex)
+        renderPosition.set(result.renderX, result.renderY, result.zIndex)
         updateTransform()
 
         val pose = guiGraphics.pose()
