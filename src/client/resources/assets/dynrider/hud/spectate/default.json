@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "elements": [
+    {
+      "type": "JIU_TACHOMETER_SIMPLE",
+      "layout": { "screenAnchor": "BOTTOM_CENTER", "elementAnchor": "BOTTOM_CENTER" }
+    },
+    {
+      "type": "GRADIENT_GAUGE_BAR",
+      "layout": { "screenAnchor": "BOTTOM_CENTER", "elementAnchor": "BOTTOM_CENTER", "y": -75 }
+    },
+    {
+      "type": "PLAIN_NITRO_SLOT",
+      "layout": { "x": 10, "y": 10 },
+      "slotIndex": 1,
+      "iconSize": 32
+    },
+    {
+      "type": "PLAIN_NITRO_SLOT",
+      "layout": { "x": 62, "y": 10 },
+      "slotIndex": 2,
+      "iconSize": 28
+    },
+    {
+      "type": "PLAIN_NITRO_SLOT",
+      "layout": { "x": 110, "y": 10 },
+      "slotIndex": 3,
+      "hideUntilOccupied": true,
+      "keepVisibleAfterOccupied": true,
+      "iconSize": 28
+    },
+    {
+      "type": "SPECTATE_TIMER",
+      "layout": { "screenAnchor": "TOP_RIGHT", "elementAnchor": "TOP_RIGHT", "x": -10, "y": 10 }
+    },
+    {
+      "type": "PLAIN_RANKING_TABLE",
+      "layout": { "screenAnchor": "MIDDLE_LEFT", "elementAnchor": "MIDDLE_LEFT", "x": 10 }
+    }
+  ]
+}

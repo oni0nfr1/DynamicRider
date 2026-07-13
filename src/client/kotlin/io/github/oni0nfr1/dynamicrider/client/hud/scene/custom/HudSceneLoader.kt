@@ -5,20 +5,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneSpecAddResult
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 
 object HudSceneLoader {
-    private val json = Json {
-        serializersModule = HudElementSerializersModule
-        classDiscriminator = "type"
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-        prettyPrint = true
-    }
-
     fun <E : KartEngine> load(
         path: Path,
         kart: KartRef.Specific<E>,
@@ -35,18 +26,27 @@ object HudSceneLoader {
         }
 
         val spec = try {
-            json.decodeFromString<HudSceneSpec>(content)
+            HudSceneCodec.decode(content)
         } catch (exception: SerializationException) {
             return HudSceneLoadResult.Failed(listOf(HudSceneLoadError.DecodeFailure(path, exception)))
         }
 
+        return load(spec, path, kart, engineClass)
+    }
+
+    fun <E : KartEngine> load(
+        spec: HudSceneSpec,
+        sourcePath: Path,
+        kart: KartRef.Specific<E>,
+        engineClass: Class<E>,
+    ): HudSceneLoadResult<E> {
         val compatibilityErrors = spec.elements.mapIndexedNotNull { elementIndex, elementSpec ->
             val requiredEngineClass = elementSpec.requiredEngineClass()
             if (requiredEngineClass.isAssignableFrom(engineClass)) {
                 null
             } else {
                 HudSceneLoadError.IncompatibleElement(
-                    path = path,
+                    path = sourcePath,
                     elementIndex = elementIndex,
                     specType = elementSpec::class.java.name,
                     requiredEngineClass = requiredEngineClass,
@@ -67,7 +67,7 @@ object HudSceneLoader {
                     return HudSceneLoadResult.Failed(
                         listOf(
                             HudSceneLoadError.IncompatibleElement(
-                                path = path,
+                                path = sourcePath,
                                 elementIndex = elementIndex,
                                 specType = result.specType,
                                 requiredEngineClass = result.requiredEngineClass,

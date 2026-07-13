@@ -1,13 +1,10 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle
 
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.ride.*
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.builtin.spectate.*
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneLoadError
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneLoadResult
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneLoader
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneRepository
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneResolution
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneMode
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudScenePaths
 import io.github.oni0nfr1.dynamicrider.client.util.chatLog
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
@@ -21,84 +18,73 @@ object HudSceneLifecycle {
     private val customSceneRoot: Path
         get() = FabricLoader.getInstance().configDir.resolve("dynrider")
 
+    private val repository: HudSceneRepository by lazy { HudSceneRepository(customSceneRoot) }
+
     fun createRideScene(kart: KartRef): HudScene<out KartEngine>? =
         kart.access {
             return@access when (val currentEngine = engine ?: return@access null) {
-                is XEngine -> loadSpecificRideScene(currentEngine, ::defaultXRideScene)
-                is EXEngine -> loadSpecificRideScene(currentEngine, ::defaultEXRideScene)
-                is JiuEngine -> loadSpecificRideScene(currentEngine, ::defaultJiuRideScene)
-                is NewEngine -> loadSpecificRideScene(currentEngine, ::defaultNewRideScene)
-                is Z7Engine -> loadSpecificRideScene(currentEngine, ::defaultZ7RideScene)
-                is V1Engine -> loadSpecificRideScene(currentEngine, ::defaultV1RideScene)
-                is A2Engine -> loadSpecificRideScene(currentEngine, ::defaultA2RideScene)
-                is LegacyEngine -> loadSpecificRideScene(currentEngine, ::defaultLegacyRideScene)
-                is ProEngine -> loadSpecificRideScene(currentEngine, ::defaultProRideScene)
-                is RushPlusEngine -> loadSpecificRideScene(currentEngine, ::defaultRushPlusRideScene)
-                is ChargeEngine -> loadSpecificRideScene(currentEngine, ::defaultChargeRideScene)
-                is SREngine -> loadSpecificRideScene(currentEngine, ::defaultSRRideScene)
-                is N1Engine -> loadSpecificRideScene(currentEngine, ::defaultN1RideScene)
-                is RXEngine -> loadSpecificRideScene(currentEngine, ::defaultRXRideScene)
-                is KeyEngine -> loadSpecificRideScene(currentEngine, ::defaultKeyRideScene)
-                is GearEngine -> loadSpecificRideScene(currentEngine, ::defaultGearRideScene)
-                is F1Engine -> loadSpecificRideScene(currentEngine, ::defaultF1RideScene)
-                is RallyEngine -> loadSpecificRideScene(currentEngine, ::defaultRallyRideScene)
-                is MKEngine -> loadSpecificRideScene(currentEngine, ::defaultMKRideScene)
-                is BoatEngine -> loadSpecificRideScene(currentEngine, ::defaultBoatRideScene)
+                is XEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is EXEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is JiuEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is NewEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is Z7Engine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is V1Engine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is A2Engine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is LegacyEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is ProEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is RushPlusEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is ChargeEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is SREngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is N1Engine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is RXEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is KeyEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is GearEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is F1Engine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is RallyEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is MKEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
+                is BoatEngine -> loadSpecificScene(HudSceneMode.RIDE, currentEngine)
             }
         }
 
     fun createSpectateScene(kart: KartRef): HudScene<out KartEngine>? =
         kart.access {
             return@access when (val currentEngine = engine ?: return@access null) {
-                is XEngine -> loadSpecificSpectateScene(currentEngine, ::defaultXSpectateScene)
-                is EXEngine -> loadSpecificSpectateScene(currentEngine, ::defaultEXSpectateScene)
-                is JiuEngine -> loadSpecificSpectateScene(currentEngine, ::defaultJiuSpectateScene)
-                is NewEngine -> loadSpecificSpectateScene(currentEngine, ::defaultNewSpectateScene)
-                is Z7Engine -> loadSpecificSpectateScene(currentEngine, ::defaultZ7SpectateScene)
-                is V1Engine -> loadSpecificSpectateScene(currentEngine, ::defaultV1SpectateScene)
-                is A2Engine -> loadSpecificSpectateScene(currentEngine, ::defaultA2SpectateScene)
-                is LegacyEngine -> loadSpecificSpectateScene(currentEngine, ::defaultLegacySpectateScene)
-                is ProEngine -> loadSpecificSpectateScene(currentEngine, ::defaultProSpectateScene)
-                is RushPlusEngine -> loadSpecificSpectateScene(currentEngine, ::defaultRushPlusSpectateScene)
-                is ChargeEngine -> loadSpecificSpectateScene(currentEngine, ::defaultChargeSpectateScene)
-                is SREngine -> loadSpecificSpectateScene(currentEngine, ::defaultSRSpectateScene)
-                is N1Engine -> loadSpecificSpectateScene(currentEngine, ::defaultN1SpectateScene)
-                is RXEngine -> loadSpecificSpectateScene(currentEngine, ::defaultRXSpectateScene)
-                is KeyEngine -> loadSpecificSpectateScene(currentEngine, ::defaultKeySpectateScene)
-                is GearEngine -> loadSpecificSpectateScene(currentEngine, ::defaultGearSpectateScene)
-                is F1Engine -> loadSpecificSpectateScene(currentEngine, ::defaultF1SpectateScene)
-                is RallyEngine -> loadSpecificSpectateScene(currentEngine, ::defaultRallySpectateScene)
-                is MKEngine -> loadSpecificSpectateScene(currentEngine, ::defaultMKSpectateScene)
-                is BoatEngine -> loadSpecificSpectateScene(currentEngine, ::defaultBoatSpectateScene)
+                is XEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is EXEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is JiuEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is NewEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is Z7Engine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is V1Engine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is A2Engine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is LegacyEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is ProEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is RushPlusEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is ChargeEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is SREngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is N1Engine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is RXEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is KeyEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is GearEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is F1Engine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is RallyEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is MKEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
+                is BoatEngine -> loadSpecificScene(HudSceneMode.SPECTATE, currentEngine)
             }
         }
 
-    private inline fun <reified E : KartEngine> loadSpecificRideScene(
+    private inline fun <reified E : KartEngine> loadSpecificScene(
+        mode: HudSceneMode,
         engine: E,
-        noinline builtinScene: (KartRef.Specific<E>) -> HudScene<E>,
     ): HudScene<E> {
         val kart = KartRef.specify(engine)
-        val path = HudScenePaths.customHudScenePath(customSceneRoot, HudSceneMode.RIDE, engine.type)
-        return when (val result = HudSceneLoader.load(path, kart, E::class.java)) {
-            is HudSceneLoadResult.Loaded -> result.scene
-            is HudSceneLoadResult.Failed -> {
-                reportLoadFailure(result.errors)
-                builtinScene(kart)
+        return when (val result = repository.resolve(mode, engine.type, kart, E::class.java)) {
+            is HudSceneResolution.Resolved -> {
+                if (result.diagnostics.isNotEmpty()) reportLoadFailure(result.diagnostics)
+                result.scene
             }
-        }
-    }
-
-    private inline fun <reified E : KartEngine> loadSpecificSpectateScene(
-        engine: E,
-        noinline builtinScene: (KartRef.Specific<E>) -> HudScene<E>,
-    ): HudScene<E> {
-        val kart = KartRef.specify(engine)
-        val path = HudScenePaths.customHudScenePath(customSceneRoot, HudSceneMode.SPECTATE, engine.type)
-        return when (val result = HudSceneLoader.load(path, kart, E::class.java)) {
-            is HudSceneLoadResult.Loaded -> result.scene
-            is HudSceneLoadResult.Failed -> {
+            is HudSceneResolution.Failed -> {
                 reportLoadFailure(result.errors)
-                builtinScene(kart)
+                HudScene(kart, E::class.java)
             }
         }
     }

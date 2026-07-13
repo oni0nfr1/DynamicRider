@@ -12,5 +12,11 @@ enum class HudSceneMode {
 
 @Serializable
 data class HudSceneSpec(
+    val formatVersion: Int = CURRENT_FORMAT_VERSION,
+    val elementIds: List<String> = emptyList(),
     val elements: List<@Polymorphic HudElementSpec<*, *>>,
-)
+) {
+    companion object {
+        const val CURRENT_FORMAT_VERSION: Int = 1
+    }
+}

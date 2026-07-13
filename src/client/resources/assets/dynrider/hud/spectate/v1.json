@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "elements": [
+    {
+      "type": "V1_TACHOMETER",
+      "layout": { "screenAnchor": "BOTTOM_CENTER", "elementAnchor": "BOTTOM_CENTER", "scaleX": 0.5, "scaleY": 0.5, "y": -5 }
+    },
+    { "type": "NITRO_SLOT", "layout": { "x": 10, "y": 10, "scaleX": 0.5, "scaleY": 0.5 }, "slotIndex": 1, "backgroundColor": "#FF0000FF" },
+    { "type": "NITRO_SLOT", "layout": { "x": 60, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "slotIndex": 2, "backgroundColor": "#FF0000FF" },
+    { "type": "NITRO_SLOT", "layout": { "x": 100, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "slotIndex": 3, "backgroundColor": "#FF0000FF" },
+    { "type": "SPECTATE_TIMER", "layout": { "screenAnchor": "TOP_RIGHT", "elementAnchor": "TOP_RIGHT", "x": -10, "y": 10 } },
+    { "type": "PLAIN_RANKING_TABLE", "layout": { "screenAnchor": "MIDDLE_LEFT", "elementAnchor": "MIDDLE_LEFT", "x": 10 } }
+  ]
+}

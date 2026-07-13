@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scene.custom
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.DynNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.JiuStyleSpdMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.ChargeGauge
@@ -14,6 +15,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuGau
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuIcons
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuSpdMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuTachometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.HudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.SpectateHudTimer
 import kotlinx.serialization.modules.SerializersModule
@@ -24,6 +26,7 @@ val HudElementSerializersModule = SerializersModule {
     polymorphic(HudElementSpec::class) {
         subclass(GradientGaugeBar.Spec::class)
         subclass(PlainNitroSlot.Spec::class)
+        subclass(DynNitroSlot.Spec::class)
         subclass(PlainRankingTable.Spec::class)
         subclass(JiuStyleSpdMeter.Spec::class)
         subclass(HudTimer.Spec::class)
@@ -39,5 +42,6 @@ val HudElementSerializersModule = SerializersModule {
         subclass(JiuSpdMeter.Spec::class)
         subclass(JiuIcons.Spec::class)
         subclass(JiuGauge.Spec::class)
+        subclass(V1Tachometer.Spec::class)
     }
 }
