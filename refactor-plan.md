@@ -77,7 +77,7 @@ Skid API ───── LiveKartState ───┐
 - [x] `KartRef.Specific<E>`와 Skid API를 감싸는 엔진별 `LiveKartState` 구현을 제공한다.
 - [x] 모든 `KartStateType`에 대응해 값을 자유롭게 변경할 수 있는 엔진별 `PreviewKartState` 구현을 제공한다.
 - [x] `KartStateType`에 맞는 기본 가변 상태와 `PreviewHudSceneContext`를 조립하는 preview factory를 제공한다.
-- [ ] 대표 상태를 바로 재현할 수 있는 초기 preview preset을 제공한다.
+- [x] 대표 상태를 바로 재현할 수 있는 초기 preview preset을 제공한다.
 - [x] `KartRef`와 Skid API에 대한 직접 접근은 `hud.runtime`의 live 연결 계층으로 제한한다.
 - [x] 기존 `Speedometer`, `GaugeBar`, `NitroSlot` 구현이 `KartRef` 대신 호환되는 `KartState`를 입력으로 받도록 변경한다.
 - [x] raw, interpolation, trailing 등 기존 delegate 구현의 다형성과 효과를 유지한다.
@@ -108,7 +108,7 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [x] `HudSceneContext`는 장면의 실행 환경이므로 `hud.scene`에 둔다.
 - [x] `KartEngine`과 `KartRef` 양쪽을 아는 live factory와 registry는 `hud.runtime`에 격리한다.
 - [x] 실제 상태 adapter는 `hud.runtime.state`, 가변 preview 구현은 `hud.editor.preview`에 둔다.
-- [ ] preview preset은 `hud.editor.preview`에 둔다.
+- [x] preview preset은 `hud.editor.preview`에 둔다.
 - [x] 기존 효과 delegate의 패키지는 우선 유지하고 역할 변경과 무관한 이름 변경은 별도 작업으로 미룬다.
 - [x] 의존성은 `hud.state`와 `hud.scene`의 계약을 runtime·preview·elements가 사용하는 방향으로만 흐르게 한다.
 
