@@ -44,10 +44,21 @@ config/dynrider/hud/{mode}/{engine}.json
 - [ ] 런타임 `HudScene`이 document 변경을 감지하고 변경된 요소만 재생성하도록 연결한다.
 - [ ] compound element의 자식에도 영속 ID와 편집 가능한 bounds를 제공한다.
 
-## 4. 요소 등록과 Preview 데이터
+## 4. Annotation 기반 요소 메타데이터와 Preview 데이터
 
-- [ ] serializer, type ID, 표시 이름, 기본 spec, 엔진 호환성 및 runtime factory를 element descriptor registry로 통합한다.
-- [ ] 요소 속성의 범위, 색상, enum 등 편집기 입력 메타데이터를 descriptor에 추가한다.
+요소별 descriptor 구현은 만들지 않는다. `Spec`에 선언된 annotation과 `kotlinx.serialization`의 `SerialDescriptor`를 읽어 요소 정보, 속성 편집기 및 validation 규칙을 자동 생성한다.
+
+- [ ] `@SerialInfo` 기반의 `@HudElementInfo`, `@HudProperty`, `@HudRange`, `@HudColor`, `@HudHidden`, `@HudLayout` annotation을 정의한다.
+- [ ] 클래스의 `@HudElementInfo`에서 표시 이름, 카테고리 및 선택적 아이콘 정보를 읽는다.
+- [ ] property의 직렬화 타입과 annotation을 조합해 Boolean toggle, 숫자 입력, slider, enum selector, 문자열 입력, color picker 및 anchor selector를 자동 선택한다.
+- [ ] 타입만으로 편집 방식을 결정할 수 있는 property에는 annotation을 요구하지 않고, 표시 이름·범위·색상 등 추가 정보가 필요할 때만 annotation을 사용한다.
+- [ ] serializer, type ID, 엔진 호환성 및 runtime factory를 중앙 type registry에 등록하되 속성별 descriptor 코드는 작성하지 않는다.
+- [ ] 현재 spec을 `JsonElement`로 encode하고 변경된 property만 교체한 뒤 같은 serializer로 decode하여 immutable spec을 갱신한다.
+- [ ] generic property 변경 결과는 `ReplaceElementSpecCommand`로 document에 적용한다.
+- [ ] 모든 top-level 및 compound child spec에 기본값을 제공해 type discriminator만으로 기본 요소를 생성할 수 있게 한다.
+- [ ] `@HudRange` 등의 metadata를 GUI 입력 제한과 JSON load validation에서 공통으로 사용한다.
+- [ ] 범위를 벗어난 외부 JSON 값은 자동 보정하지 않고 경로가 포함된 validation 오류로 반환한다.
+- [ ] 초기에는 type/serializer 등록을 중앙에서 명시적으로 관리하고, 요소 수 증가로 등록 비용이 커질 때 KSP 기반 registry 생성을 검토한다.
 - [ ] 실제 카트·전역 manager 접근을 `HudDataContext`로 감싼다.
 - [ ] 속도, 게이지, 니트로, 타이머 및 순위용 preview context를 제공한다.
 - [ ] legacy HUD/state 코드를 신규 계약으로 이관하거나 제거한다.
@@ -66,6 +77,9 @@ config/dynrider/hud/{mode}/{engine}.json
 - 유효한 config가 resource보다 우선하고, config가 없으면 현재 리소스팩 장면을 사용한다.
 - 잘못된 config는 보존되며 resource 장면으로 fallback한다.
 - JSON encode/decode, ID 보존, atomic save, delete-to-fallback을 테스트한다.
+- annotation이 serializer descriptor에 보존되고 각 property 타입에 맞는 편집 metadata가 생성되는지 테스트한다.
+- generic property 변경의 encode-update-decode round-trip과 validation 오류 경로를 테스트한다.
+- 모든 등록 요소가 기본 spec을 생성하고 현재 엔진 호환성 검사를 수행할 수 있는지 테스트한다.
 - 다양한 화면 크기와 anchor/scale 조합에서 bounds와 inverse 좌표를 테스트한다.
 - 모든 command는 undo 후 원본 document를 복원하고 redo 후 변경 상태를 복원한다.
 - `compileClientKotlin`, `test`, `build`가 통과한다.
@@ -75,4 +89,7 @@ config/dynrider/hud/{mode}/{engine}.json
 - 리소스팩의 built-in JSON override를 공식 지원한다.
 - GUI는 resource 파일을 수정하지 않고 config override만 생성한다.
 - 커스텀 JSON 오류 시 사용자 파일을 자동 수정하거나 삭제하지 않는다.
+- 요소별 수동 property descriptor 대신 annotation과 serialization descriptor를 단일 메타데이터 원천으로 사용한다.
+- immutable spec 수정은 reflection 기반 `copy()` 호출이 아니라 JSON tree round-trip으로 구현한다.
+- annotation만으로 해결되지 않는 serializer/runtime factory 연결은 중앙 registry가 담당한다.
 - 초기 구현은 spec 변경 시 요소를 재생성하고, 세부 runtime patch는 성능 문제가 확인된 뒤 추가한다.
