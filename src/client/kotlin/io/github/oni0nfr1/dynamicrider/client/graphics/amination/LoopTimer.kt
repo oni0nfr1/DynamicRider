@@ -5,6 +5,7 @@ import kotlin.math.floor
 class LoopTimer(
     val intervalMillis: Long,
     initialSpeed: Double = 1.0,
+    private val nanoTime: () -> Long = System::nanoTime,
 ) : AnimationTimer {
     init {
         require(intervalMillis > 0L) {
@@ -37,7 +38,7 @@ class LoopTimer(
         }
 
         running = true
-        recentNanos = System.nanoTime()
+        recentNanos = nanoTime()
     }
 
     override fun stop() {
@@ -47,17 +48,17 @@ class LoopTimer(
 
     fun restart() {
         progressValue = 0.0
-        recentNanos = System.nanoTime()
+        recentNanos = nanoTime()
         running = true
     }
 
     fun reset(progress: Double = 0.0) {
         progressValue = normalizeProgress(progress)
-        recentNanos = System.nanoTime()
+        recentNanos = nanoTime()
     }
 
     private fun updateProgress() {
-        val currentNanos = System.nanoTime()
+        val currentNanos = nanoTime()
 
         if (!running) {
             recentNanos = currentNanos

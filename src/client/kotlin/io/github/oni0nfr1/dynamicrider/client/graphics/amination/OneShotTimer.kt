@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.graphics.amination
 class OneShotTimer(
     val intervalMillis: Long,
     initialSpeed: Double = 1.0,
+    private val nanoTime: () -> Long = System::nanoTime,
 ) : AnimationTimer {
     init {
         require(intervalMillis > 0L) {
@@ -35,7 +36,7 @@ class OneShotTimer(
 
     override fun start() {
         progressValue = 0.0
-        recentNanos = System.nanoTime()
+        recentNanos = nanoTime()
         running = true
     }
 
@@ -46,7 +47,7 @@ class OneShotTimer(
 
     override fun stop() {
         progressValue = 0.0
-        recentNanos = System.nanoTime()
+        recentNanos = nanoTime()
         running = false
     }
 
@@ -55,7 +56,7 @@ class OneShotTimer(
     }
 
     private fun updateProgress() {
-        val currentNanos = System.nanoTime()
+        val currentNanos = nanoTime()
 
         if (!running) {
             recentNanos = currentNanos
