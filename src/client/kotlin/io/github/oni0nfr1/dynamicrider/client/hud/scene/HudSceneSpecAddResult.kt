@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene
 
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationError
 
 sealed interface HudSceneSpecAddResult {
     data object Added : HudSceneSpecAddResult
@@ -10,4 +11,12 @@ sealed interface HudSceneSpecAddResult {
         val sceneStateClass: Class<out KartState>,
         val specType: String,
     ) : HudSceneSpecAddResult
+
+    data class InvalidSpec(
+        val errors: List<HudSpecValidationError>,
+    ) : HudSceneSpecAddResult {
+        init {
+            require(errors.isNotEmpty()) { "Invalid HUD spec must contain at least one error" }
+        }
+    }
 }

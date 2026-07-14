@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationError
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path
@@ -26,5 +27,13 @@ sealed interface HudSceneLoadError {
         val specType: String,
         val requiredStateClass: Class<out KartState>,
         val sceneStateClass: Class<out KartState>,
+    ) : HudSceneLoadError
+
+    data class InvalidElement(
+        val path: Path,
+        val elementIndex: Int,
+        val elementId: String?,
+        val specType: String,
+        val errors: List<HudSpecValidationError>,
     ) : HudSceneLoadError
 }

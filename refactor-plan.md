@@ -34,6 +34,10 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 장면 생성 실패 시 게임을 중단하지 않고 빈 장면으로 복구한다.
 - [x] 현재 ride/spectate 엔진 분기를 `KartStateType` 기반 조회로 교체한다.
 - [ ] 저장·삭제·리소스 reload 후 현재 장면을 즉시 다시 생성하는 controller를 도입한다.
+  - custom 저장 후 현재 live HUD에 저장된 장면을 다시 적용한다.
+  - custom 삭제 후 resource fallback 장면을 즉시 적용한다.
+  - 리소스팩 reload 후 현재 mode와 `KartStateType`의 장면을 다시 resolve한다.
+  - 재생성 실패 시 기존의 빈 장면 복구와 진단 전달 정책을 유지한다.
 
 ## 3. 편집 문서와 레이아웃
 
@@ -41,7 +45,13 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 기존 JSON에 ID가 없으면 결정적인 ID를 생성하는 `HudSceneDocument`를 제공한다.
 - [x] 추가·삭제·재정렬·spec 교체를 undo/redo command로 제공한다.
 - [x] anchor·scale 좌표 계산과 hit-test bounds를 `HudLayoutEngine`으로 분리한다.
+- [x] 검증 없는 Kotlin DSL용 `HudScene.addSpec`을 제거하고 호환성·유효성을 검사하는 단일 `addSpec` 진입점으로 통합한다.
 - [ ] 런타임 `HudScene`이 document 변경을 감지하고 변경된 요소만 재생성하도록 연결한다.
+  - document 변경을 element ID와 변경 종류가 포함된 event 또는 revision으로 노출한다.
+  - element ID와 runtime element의 대응을 유지한다.
+  - 추가·삭제·재정렬은 scene의 runtime element 목록에 반영한다.
+  - spec 교체 시 context는 유지하고 해당 runtime element만 재생성한다.
+  - 변경 후 선택 및 hit-test에 사용하는 bounds를 다시 계산한다.
 - [ ] compound element의 자식에도 영속 ID와 편집 가능한 bounds를 제공한다.
 
 ## 4. Annotation 기반 요소 메타데이터와 Preview 데이터
@@ -54,11 +64,18 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 타입만으로 편집 방식을 결정할 수 있는 property에는 annotation을 요구하지 않고, 표시 이름·범위·색상 등 추가 정보가 필요할 때만 annotation을 사용한다.
 - [x] 모든 등록 요소 Spec에 element/layout/color 및 필요한 range metadata와 `en_us`·`ko_kr` 번역을 제공한다.
 - [x] serializer, type ID, 상태 타입 호환성 및 runtime factory를 중앙 type registry에 등록하되 속성별 descriptor 코드는 작성하지 않는다.
-- [ ] 현재 spec을 `JsonElement`로 encode하고 변경된 property만 교체한 뒤 같은 serializer로 decode하여 immutable spec을 갱신한다.
+- [x] 현재 spec을 `JsonElement`로 encode하고 변경된 property만 교체한 뒤 같은 serializer로 decode하여 immutable spec을 갱신한다.
 - [ ] generic property 변경 결과는 `ReplaceElementSpecCommand`로 document에 적용한다.
+  - 변경 실패 시 document와 undo/redo stack을 수정하지 않는다.
+  - 변경 성공 시 element ID를 유지하며 새 spec으로 교체한다.
+  - 같은 요소의 같은 property에 대한 연속 변경을 이후 command 병합에 사용할 수 있도록 경로를 보존한다.
 - [x] 모든 top-level 및 compound child spec에 기본값을 제공해 type discriminator만으로 기본 요소를 생성할 수 있게 한다.
-- [ ] `@HudRange` 등의 metadata를 GUI 입력 제한과 JSON load validation에서 공통으로 사용한다.
-- [ ] 범위를 벗어난 외부 JSON 값은 자동 보정하지 않고 경로가 포함된 validation 오류로 반환한다.
+- [x] `@HudRange` 등의 metadata를 GUI 입력 제한과 JSON load validation에서 공통으로 사용한다.
+- [x] 범위를 벗어난 외부 JSON 값은 자동 보정하지 않고 경로가 포함된 validation 오류로 반환한다.
+  - `HudSpecValidator`는 registry의 serializer와 metadata를 입력으로 받아 전체 spec을 검사한다.
+  - 유한값과 range 등의 의미 오류는 validation 결과로 반환하고, enum·color 형식 등의 구조 오류는 serializer가 검사해 호출자가 편집 또는 decode 오류로 변환한다.
+  - 오류에는 element ID와 `property.path`를 포함할 수 있도록 구조화된 경로를 사용한다.
+  - generic property 편집기와 resource/config JSON loader가 같은 validator를 사용한다.
 - [x] 초기에는 type/serializer 등록을 중앙에서 명시적으로 관리하고, 요소 수 증가로 등록 비용이 커질 때 KSP 기반 registry 생성을 검토한다.
 - [x] legacy HUD/state 코드를 신규 계약으로 이관하거나 제거한다.
 
@@ -115,6 +132,10 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 
 ## 6. 인게임 GUI 편집기
 
+- [ ] repository, document, command stack, preview context와 preview scene을 묶는 편집 세션 모델을 제공한다.
+  - 현재 mode, `KartStateType`, 장면 출처 및 dirty 상태를 소유한다.
+  - resource 장면은 원본으로 유지하고 첫 실제 변경 시 custom 작업 사본을 만든다.
+  - GUI는 파일 경로와 fallback 규칙을 직접 다루지 않고 세션 API만 사용한다.
 - [ ] 리소스 장면은 읽기 전용으로 열고 첫 변경 시 config 문서를 생성한다.
 - [ ] 요소 팔레트, 캔버스 선택·이동, 속성 패널을 구현한다.
 - [ ] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 제공한다.
@@ -122,7 +143,33 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [ ] 저장 또는 삭제 후 현재 HUD를 즉시 갱신한다.
 - [ ] 기본 편집기 완성 후 중첩 object와 list property의 재귀 metadata 및 편집 UI를 추가한다.
 
+초기 GUI 구현 순서는 요소 목록과 선택, 요소 팔레트, primitive·enum·color 속성 패널,
+layout·anchor 편집, 프리뷰 캔버스 drag, undo/redo, 저장·삭제·복원 순으로 한다.
+validation 실패는 해당 property 경로와 함께 속성 패널에 표시한다.
+
+## 7. 이후 구현 우선순위
+
+1. [x] 공통 `HudSpecValidator`와 구조화된 validation 오류를 구현하고 JSON loader와 generic property 편집기에 적용한다.
+2. [ ] generic property 변경 성공 결과를 `ReplaceElementSpecCommand`와 `HudCommandStack`에 연결한다.
+3. [ ] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
+4. [ ] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
+5. [ ] custom 저장·삭제 및 resource reload를 live HUD에 반영하는 lifecycle controller를 구현한다.
+6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
+7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
+
+프레임 단위 상태 snapshot, KSP registry 생성 및 runtime element의 세부 property patch는
+정확성 또는 성능 문제가 확인되기 전까지 후순위로 둔다.
+
 ## 검증 기준
+
+- [x] client source output을 사용하는 JUnit 테스트 소스셋을 구성하고 `test`와 `build`에 연결한다.
+- [x] generic property 변경, registry/metadata 번역, built-in JSON, document command, layout 및 custom 저장·삭제의 기본 회귀 테스트를 제공한다.
+- [x] 공통 validator의 전체 spec 검사와 구조화된 오류 경로를 테스트한다.
+- [ ] property 편집부터 command 실행 및 undo/redo까지의 통합 흐름을 테스트한다.
+- [ ] document 변경에 따른 preview runtime element 재생성을 테스트한다.
+- [ ] resource 장면의 첫 변경, custom 저장·삭제 및 fallback을 편집 세션 수준에서 테스트한다.
+- [ ] 저장·삭제·resource reload 후 live HUD 갱신을 테스트한다.
+- [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
 
 - 모든 resource JSON이 codec과 상태 타입 호환성 검사를 통과한다.
 - 유효한 config가 resource보다 우선하고, config가 없으면 현재 리소스팩 장면을 사용한다.

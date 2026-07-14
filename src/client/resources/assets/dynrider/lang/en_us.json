@@ -15,6 +15,7 @@
   "dynrider.error.scene.load_failed.io": "Cannot access custom HUD file: %s",
   "dynrider.error.scene.load_failed.decode": "Failed to parse custom HUD file: %s",
   "dynrider.error.scene.load_failed.incompatible": "Engine \"%s\" cannot render HUD Element \"%s\"",
+  "dynrider.error.scene.load_failed.invalid": "HUD Element \"%s\" has an invalid property: %s",
   "dynamicrider.hud.category.other": "Other",
   "dynamicrider.hud.category.gauge": "Gauge",
   "dynamicrider.hud.category.nitro": "Nitro",

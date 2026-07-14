@@ -75,7 +75,7 @@ object HudSceneLoader {
 
         val scene = HudScene(context)
         spec.elements.forEachIndexed { elementIndex, elementSpec ->
-            when (val result = scene.addSpecChecked(elementSpec)) {
+            when (val result = scene.addSpec(elementSpec)) {
                 HudSceneSpecAddResult.Added -> Unit
                 is HudSceneSpecAddResult.IncompatibleState -> {
                     return HudSceneLoadResult.Failed(
@@ -86,6 +86,19 @@ object HudSceneLoader {
                                 specType = result.specType,
                                 requiredStateClass = result.requiredStateClass,
                                 sceneStateClass = result.sceneStateClass,
+                            )
+                        )
+                    )
+                }
+                is HudSceneSpecAddResult.InvalidSpec -> {
+                    return HudSceneLoadResult.Failed(
+                        listOf(
+                            HudSceneLoadError.InvalidElement(
+                                path = sourcePath,
+                                elementIndex = elementIndex,
+                                elementId = spec.elementIds.getOrNull(elementIndex),
+                                specType = elementSpec::class.java.name,
+                                errors = result.errors,
                             )
                         )
                     )

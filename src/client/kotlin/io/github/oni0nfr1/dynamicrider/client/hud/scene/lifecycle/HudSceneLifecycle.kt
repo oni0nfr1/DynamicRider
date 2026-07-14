@@ -66,6 +66,12 @@ object HudSceneLifecycle {
                 displayStateName(error.sceneStateClass),
                 displayElementName(error.specType),
             )
+
+            is HudSceneLoadError.InvalidElement -> Component.translatable(
+                "dynrider.error.scene.load_failed.invalid",
+                displayElementName(error.specType),
+                error.errors.first().path.toString(),
+            )
         }
     }
 
@@ -87,6 +93,11 @@ object HudSceneLifecycle {
                 "Incompatible custom HUD element: path=${error.path}, index=${error.elementIndex}, " +
                     "sceneState=${error.sceneStateClass.name}, requiredState=${error.requiredStateClass.name}, " +
                     "spec=${error.specType}"
+            )
+
+            is HudSceneLoadError.InvalidElement -> warnLog(
+                "Invalid custom HUD element: path=${error.path}, index=${error.elementIndex}, " +
+                    "id=${error.elementId}, spec=${error.specType}, errors=${error.errors}"
             )
         }
     }

@@ -4,6 +4,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -23,13 +25,7 @@ class HudScene<S : KartState>(
 
     private var elements: List<HudElement<S>> = mutableListOf()
 
-    fun <SPEC> addSpec(spec: SPEC)
-        where
-            SPEC : HudElementSpec<*, S> {
-        elementSpecs += spec
-    }
-
-    fun addSpecChecked(spec: HudElementSpec<*, *>): HudSceneSpecAddResult {
+    fun addSpec(spec: HudElementSpec<*, *>): HudSceneSpecAddResult {
         val requiredStateClass = spec.requiredStateClass()
         val sceneStateClass = context.kartStateType.stateClass
         if (!requiredStateClass.isAssignableFrom(sceneStateClass)) {
@@ -40,8 +36,15 @@ class HudScene<S : KartState>(
             )
         }
 
+        when (val validation = HudSpecValidator.validate(spec)) {
+            HudSpecValidationResult.Valid -> Unit
+            is HudSpecValidationResult.Invalid -> {
+                return HudSceneSpecAddResult.InvalidSpec(validation.errors)
+            }
+        }
+
         @Suppress("UNCHECKED_CAST")
-        addSpec(spec as HudElementSpec<*, S>)
+        elementSpecs += spec as HudElementSpec<*, S>
         return HudSceneSpecAddResult.Added
     }
 

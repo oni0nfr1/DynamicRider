@@ -15,6 +15,7 @@
   "dynrider.error.scene.load_failed.io": "커스텀 HUD 파일에 접근할 수 없습니다: %s",
   "dynrider.error.scene.load_failed.decode": "커스텀 HUD 파일 해석에 실패했습니다: %s",
   "dynrider.error.scene.load_failed.incompatible": "\"%s\" 엔진은 \"%s\" 요소를 렌더링할 수 없습니다",
+  "dynrider.error.scene.load_failed.invalid": "HUD 요소 \"%s\"의 속성이 올바르지 않습니다: %s",
   "dynamicrider.hud.category.other": "기타",
   "dynamicrider.hud.category.gauge": "게이지",
   "dynamicrider.hud.category.nitro": "부스터",

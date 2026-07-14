@@ -8,6 +8,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTy
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyMetadata
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -15,13 +17,13 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.doubleOrNull
 
 /** serializer round-trip으로 immutable HUD element spec의 단일 property를 변경한다. */
 object HudSpecPropertyEditor {
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
+        allowSpecialFloatingPointValues = true
     }
 
     /**
@@ -71,8 +73,20 @@ object HudSpecPropertyEditor {
             val updated = replace(encoded, path.segments, value)
                 ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
 
-            validateRange(property, updated[property.serialName], path)?.let { return it }
-            Success(json.decodeFromJsonElement(serializer, updated))
+            val updatedSpec = json.decodeFromJsonElement(serializer, updated)
+            when (val validation = HudSpecValidator.validate(updatedSpec)) {
+                HudSpecValidationResult.Valid -> Success(updatedSpec)
+                is HudSpecValidationResult.Invalid -> {
+                    val error = validation.errors.first()
+                    Failure(
+                        error.path.segments.takeIf { it.isNotEmpty() }
+                            ?.let { HudPropertyPath.of(*it.toTypedArray()) }
+                            ?: path,
+                        Reason.INVALID_VALUE,
+                        error.message,
+                    )
+                }
+            }
         } catch (exception: SerializationException) {
             Failure(
                 path,
@@ -138,24 +152,6 @@ object HudSpecPropertyEditor {
                 path,
                 Reason.INVALID_VALUE,
                 "HUD property '$path' requires a primitive value",
-            )
-        }
-        return null
-    }
-
-    private fun validateRange(
-        property: HudPropertyMetadata,
-        encodedValue: JsonElement?,
-        path: HudPropertyPath,
-    ): Failure? {
-        val editor = property.editor as? HudPropertyEditorType.Slider ?: return null
-        val numericValue = (encodedValue as? JsonPrimitive)?.doubleOrNull
-            ?: return Failure(path, Reason.INVALID_VALUE, "HUD property '${property.serialName}' must be numeric")
-        if (!numericValue.isFinite() || numericValue !in editor.range.min..editor.range.max) {
-            return Failure(
-                path,
-                Reason.INVALID_VALUE,
-                "HUD property '${property.serialName}' must be between ${editor.range.min} and ${editor.range.max}",
             )
         }
         return null

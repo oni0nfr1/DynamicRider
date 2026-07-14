@@ -3,11 +3,14 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import kotlinx.serialization.SerializationException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import java.nio.file.Path
 
 class HudSceneCodecTest {
     @Test
@@ -64,6 +67,24 @@ class HudSceneCodecTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun `semantic validation failure becomes a scene load error`() {
+        val context = PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState())
+        val spec = HudSceneCodec.decode(
+            """{"formatVersion":1,"elementIds":["invalid-gauge"],"elements":[{"type":"GRADIENT_GAUGE_BAR","width":3000}]}"""
+        )
+
+        val result = HudSceneLoader.load(spec, Path.of("test.json"), context)
+
+        val failed = org.junit.jupiter.api.Assertions.assertInstanceOf(HudSceneLoadResult.Failed::class.java, result)
+        val error = org.junit.jupiter.api.Assertions.assertInstanceOf(
+            HudSceneLoadError.InvalidElement::class.java,
+            failed.errors.single(),
+        )
+        assertEquals("invalid-gauge", error.elementId)
+        assertEquals("width", error.errors.single().path.toString())
     }
 
     private fun resource(path: String): String =
