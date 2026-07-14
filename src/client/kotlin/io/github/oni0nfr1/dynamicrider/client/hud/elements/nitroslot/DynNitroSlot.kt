@@ -7,7 +7,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.SkidNitroSlot
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.inventory.KartTeamBoostCounter
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef

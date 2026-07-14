@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.scene.custom
+package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json

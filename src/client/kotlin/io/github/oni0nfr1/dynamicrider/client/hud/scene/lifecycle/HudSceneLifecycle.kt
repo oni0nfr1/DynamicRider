@@ -1,10 +1,10 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle
 
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneLoadError
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneRepository
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneResolution
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneResolution
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneMode
 import io.github.oni0nfr1.dynamicrider.client.util.chatLog
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog

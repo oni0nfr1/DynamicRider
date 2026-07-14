@@ -5,7 +5,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.sidebar.KartRankingManager
 import io.github.oni0nfr1.dynamicrider.client.util.ordinal
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine

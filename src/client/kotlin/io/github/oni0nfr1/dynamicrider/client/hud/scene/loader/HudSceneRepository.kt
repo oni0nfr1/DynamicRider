@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.scene.custom
+package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef

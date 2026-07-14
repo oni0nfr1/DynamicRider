@@ -13,7 +13,7 @@ import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle.HudSceneLifecycle
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneResourceRegistry
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneResourceRegistry
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry

@@ -8,7 +8,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.Linea
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 import kotlinx.serialization.SerialName

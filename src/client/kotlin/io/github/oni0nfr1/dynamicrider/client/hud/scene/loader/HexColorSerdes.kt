@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.hud.scene.custom
+package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
