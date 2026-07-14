@@ -18,53 +18,60 @@ data class HudDocumentElement(
 class HudSceneDocument private constructor(
     private val mutableElements: MutableList<HudDocumentElement>,
 ) {
+    private var cleanSpec: HudSceneSpec = currentSpec()
+
     val elements: List<HudDocumentElement>
         get() = mutableElements.toList()
 
-    var dirty: Boolean = false
-        private set
+    /** 현재 내용이 마지막 [markClean] 시점과 다른지 반환한다. */
+    val dirty: Boolean
+        get() = currentSpec() != cleanSpec
+
+    /** 영속 [id]를 가진 현재 document 요소를 조회한다. */
+    fun elementById(id: String): HudDocumentElement? = mutableElements.firstOrNull { it.id == id }
 
     /** 현재 작업 사본을 요소 ID가 포함된 저장용 장면 명세로 변환한다. */
-    fun toSpec(): HudSceneSpec = HudSceneSpec(
+    fun toSpec(): HudSceneSpec = currentSpec()
+
+    private fun currentSpec(): HudSceneSpec = HudSceneSpec(
         elementIds = mutableElements.map(HudDocumentElement::id),
         elements = mutableElements.map(HudDocumentElement::spec),
     )
 
     /** 현재 document가 저장된 상태와 일치한다고 표시한다. */
     fun markClean() {
-        dirty = false
+        cleanSpec = currentSpec()
     }
 
-    internal fun add(index: Int, element: HudDocumentElement) {
+    internal fun add(index: Int, element: HudDocumentElement): HudDocumentChange.Added {
         require(mutableElements.none { it.id == element.id }) { "Duplicate HUD element id '${element.id}'" }
-        mutableElements.add(index.coerceIn(0, mutableElements.size), element)
-        dirty = true
+        val actualIndex = index.coerceIn(0, mutableElements.size)
+        mutableElements.add(actualIndex, element)
+        return HudDocumentChange.Added(element, actualIndex)
     }
 
-    internal fun remove(id: String): Pair<Int, HudDocumentElement> {
+    internal fun remove(id: String): HudDocumentChange.Removed {
         val index = mutableElements.indexOfFirst { it.id == id }
         require(index >= 0) { "Unknown HUD element id '$id'" }
         val removed = mutableElements.removeAt(index)
-        dirty = true
-        return index to removed
+        return HudDocumentChange.Removed(removed, index)
     }
 
-    internal fun move(id: String, targetIndex: Int): Int {
+    internal fun move(id: String, targetIndex: Int): HudDocumentChange.Moved {
         val sourceIndex = mutableElements.indexOfFirst { it.id == id }
         require(sourceIndex >= 0) { "Unknown HUD element id '$id'" }
         val element = mutableElements.removeAt(sourceIndex)
-        mutableElements.add(targetIndex.coerceIn(0, mutableElements.size), element)
-        dirty = true
-        return sourceIndex
+        val actualTargetIndex = targetIndex.coerceIn(0, mutableElements.size)
+        mutableElements.add(actualTargetIndex, element)
+        return HudDocumentChange.Moved(id, sourceIndex, actualTargetIndex)
     }
 
-    internal fun replace(id: String, spec: HudElementSpec<*, *>): HudElementSpec<*, *> {
+    internal fun replace(id: String, spec: HudElementSpec<*, *>): HudDocumentChange.SpecReplaced {
         val index = mutableElements.indexOfFirst { it.id == id }
         require(index >= 0) { "Unknown HUD element id '$id'" }
         val previous = mutableElements[index].spec
         mutableElements[index] = HudDocumentElement(id, spec)
-        dirty = true
-        return previous
+        return HudDocumentChange.SpecReplaced(id, previous, spec)
     }
 
     companion object {

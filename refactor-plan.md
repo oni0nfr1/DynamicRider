@@ -44,10 +44,11 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 각 요소의 영속 ID를 JSON에 선택적으로 저장한다.
 - [x] 기존 JSON에 ID가 없으면 결정적인 ID를 생성하는 `HudSceneDocument`를 제공한다.
 - [x] 추가·삭제·재정렬·spec 교체를 undo/redo command로 제공한다.
+- [x] command 실행·undo·redo 결과를 정규화한 `HudDocumentChange`로 발행하고 clean snapshot 기준 dirty 상태를 제공한다.
 - [x] anchor·scale 좌표 계산과 hit-test bounds를 `HudLayoutEngine`으로 분리한다.
 - [x] 검증 없는 Kotlin DSL용 `HudScene.addSpec`을 제거하고 호환성·유효성을 검사하는 단일 `addSpec` 진입점으로 통합한다.
 - [ ] 런타임 `HudScene`이 document 변경을 감지하고 변경된 요소만 재생성하도록 연결한다.
-  - document 변경을 element ID와 변경 종류가 포함된 event 또는 revision으로 노출한다.
+  - [x] command stack이 document 변경을 element ID와 변경 종류가 포함된 event로 노출한다.
   - element ID와 runtime element의 대응을 유지한다.
   - 추가·삭제·재정렬은 scene의 runtime element 목록에 반영한다.
   - spec 교체 시 context는 유지하고 해당 runtime element만 재생성한다.
