@@ -75,7 +75,8 @@ Skid API ───── LiveKartState ───┐
 - [x] HUD 코어의 엔진 구별 기준으로 안정적인 ID와 상태 클래스를 가진 `KartStateType<S>`를 정의하고, `KartEngine` 타입은 Skid 연결 계층 밖으로 노출하지 않는다.
 - [x] 엔진 고유 값은 `JiuKartState`, `ChargeKartState`, `V1KartState`처럼 공통 상태를 확장한 엔진별 인터페이스로 분리한다.
 - [x] `KartRef.Specific<E>`와 Skid API를 감싸는 엔진별 `LiveKartState` 구현을 제공한다.
-- [ ] 모든 `KartStateType`에 대응해 값을 자유롭게 변경할 수 있는 엔진별 `PreviewKartState` 구현을 제공한다.
+- [x] 모든 `KartStateType`에 대응해 값을 자유롭게 변경할 수 있는 엔진별 `PreviewKartState` 구현을 제공한다.
+- [x] `KartStateType`에 맞는 기본 가변 상태와 `PreviewHudSceneContext`를 조립하는 preview factory를 제공한다.
 - [ ] 대표 상태를 바로 재현할 수 있는 초기 preview preset을 제공한다.
 - [x] `KartRef`와 Skid API에 대한 직접 접근은 `hud.runtime`의 live 연결 계층으로 제한한다.
 - [x] 기존 `Speedometer`, `GaugeBar`, `NitroSlot` 구현이 `KartRef` 대신 호환되는 `KartState`를 입력으로 받도록 변경한다.
