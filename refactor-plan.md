@@ -24,7 +24,7 @@ config/dynrider/hud/{mode}/{engine}.json
 - [x] config 저장을 임시 파일 작성 후 교체하는 방식으로 구현한다.
 - [x] 기본 장면을 resource JSON으로 이관하고 builtin 장면 DSL을 제거한다.
 - [x] 엔진 전용 resource가 없으면 mode별 `default.json`을 사용한다.
-- [ ] 요소 내부의 미사용 `Builder` 및 DSL 기반 클래스를 제거한다.
+- [x] 요소 내부의 미사용 `Builder` 및 DSL 기반 클래스를 제거한다.
 
 ## 2. 장면 저장소와 수명주기
 

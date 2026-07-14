@@ -4,7 +4,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
@@ -67,10 +66,6 @@ class ChargeGauge(
         guiGraphics.fillImage(BACKGROUND)
         NITRO_GAUGE.drawGauge(guiGraphics, META.nitroFillRegion, nitroGauge)
         TEAM_GAUGE.drawGauge(guiGraphics, META.teamFillRegion, teamBoostGauge)
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        override fun build(layout: HudLayoutSpec) = Spec(layout)
     }
 
     @Serializable

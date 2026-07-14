@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.Speedometer
@@ -128,15 +127,6 @@ class ChargeSpdMeter(
                 guiGraphics.fillImage(frames[frameIndex])
             }
         }
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var animationSpeed: Double = 1.0
-
-        override fun build(layout: HudLayoutSpec) = Spec(
-            layout = layout,
-            animationSpeed = animationSpeed.coerceAtLeast(0.0),
-        )
     }
 
     @Serializable

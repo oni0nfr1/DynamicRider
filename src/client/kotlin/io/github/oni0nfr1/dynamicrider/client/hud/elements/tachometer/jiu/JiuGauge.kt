@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
@@ -82,14 +81,6 @@ class JiuGauge(
         TEAM_GAUGE.drawGauge(guiGraphics, META.fillRegion, teamBoostGauge, META.gaugeX, META.gaugeY)
 
         if (nitroGauge == 1f) ICON_ON.draw(guiGraphics, META.iconX, META.iconY)
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-
-
-        override fun build(layout: HudLayoutSpec) = Spec(
-            layout,
-        )
     }
 
     @Serializable

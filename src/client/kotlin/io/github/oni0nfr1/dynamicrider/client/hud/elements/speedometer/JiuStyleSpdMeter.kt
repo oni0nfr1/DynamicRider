@@ -4,7 +4,6 @@ import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawSpeed7Seg
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillRoundedTrapezoid
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
@@ -137,31 +136,6 @@ class JiuStyleSpdMeter(
 
     private fun syncGlow() {
         glow = speed >= glowThreshold
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var tachometerBackgroundScale: Float = 1.25f
-        var animationLengthSec: Float = 0.5f
-        var glowThreshold: Int = 100
-        var normalDigitColor: Int = 0xFFE8E08A.toInt()
-        var glowDigitColor: Int = 0xFF00FFFF.toInt()
-        var offDigitColor: Int = 0x40000000
-        var unitText: String = "km/h"
-        var slotOverlayColor: Int = 0x40000000
-
-        override fun build(layout: HudLayoutSpec): Spec {
-            return Spec(
-                layout = layout,
-                tachometerBackgroundScale = tachometerBackgroundScale.coerceAtLeast(0f),
-                animationLengthSec = animationLengthSec.coerceAtLeast(0.01f),
-                glowThreshold = glowThreshold.coerceAtLeast(0),
-                normalDigitColor = normalDigitColor,
-                glowDigitColor = glowDigitColor,
-                offDigitColor = offDigitColor,
-                unitText = unitText,
-                slotOverlayColor = slotOverlayColor,
-            )
-        }
     }
 
     @Serializable

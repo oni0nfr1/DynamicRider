@@ -3,7 +3,6 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
@@ -152,39 +151,6 @@ class PlainRankingTable(
     }
 
     private fun argb(a: Int, rgb: Int): Int = (a shl 24) or (rgb and 0x00FFFFFF)
-
-    class Builder : HudElementBuilder<Spec>() {
-        var defaultTextColor: Int = 0x00FFFFFF
-        var shadow: Boolean = true
-        var minWidth: Int = 100
-        var rowPadding: Int = 2
-        var paddingX: Int = 6
-        var paddingY: Int = 6
-        var backgroundColor: Int = 0x70000000
-        var headerBackgroundColor: Int = 0x90000000.toInt()
-        var highlightBackgroundColor: Int = 0x40FFFFC0
-        var dotSize: Int = 6
-        var dotGap: Int = 6
-        var hideWhenTimeAttack: Boolean = true
-
-        override fun build(layout: HudLayoutSpec): Spec {
-            return Spec(
-                layout = layout,
-                defaultTextColor = defaultTextColor,
-                shadow = shadow,
-                minWidth = minWidth.coerceAtLeast(0),
-                rowPadding = rowPadding.coerceAtLeast(0),
-                paddingX = paddingX.coerceAtLeast(0),
-                paddingY = paddingY.coerceAtLeast(0),
-                backgroundColor = backgroundColor,
-                headerBackgroundColor = headerBackgroundColor,
-                highlightBackgroundColor = highlightBackgroundColor,
-                dotSize = dotSize.coerceAtLeast(0),
-                dotGap = dotGap.coerceAtLeast(0),
-                hideWhenTimeAttack = hideWhenTimeAttack,
-            )
-        }
-    }
 
     @Serializable
     @SerialName("PLAIN_RANKING_TABLE")

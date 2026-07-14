@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
@@ -165,37 +164,6 @@ class GradientGaugeBar(
     private fun withAlpha(argb: Int, alpha0to255: Int): Int {
         val a = alpha0to255.coerceIn(0, 255)
         return (a shl 24) or (argb and 0x00FFFFFF)
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var thickness: Int = 8
-        var width: Int = 120
-        var padding: Int = 2
-        var boxColor: Int = 0x80000000.toInt()
-        var gaugeAlpha: Int = 0xFF
-        private val gradientStops: MutableList<ColorStop> =
-            ColorStop.default().toMutableList()
-
-        fun gradientStop(offset: Int, color: Int) {
-            gradientStops += ColorStop(offset = offset, color = color)
-        }
-
-        fun gradientStops(vararg stops: ColorStop) {
-            gradientStops.clear()
-            gradientStops.addAll(stops)
-        }
-
-        override fun build(layout: HudLayoutSpec): Spec {
-            return Spec(
-                layout = layout,
-                thickness = thickness,
-                width = width,
-                padding = padding,
-                boxColor = boxColor,
-                gaugeAlpha = gaugeAlpha,
-                gradientStops = gradientStops.toList(),
-            )
-        }
     }
 
     @Serializable

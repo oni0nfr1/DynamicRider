@@ -5,7 +5,6 @@ import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
@@ -80,15 +79,6 @@ class ChargeIcons(
         if (draftActive || (draftCharging && draftBlink.progress < 0.5f)) {
             guiGraphics.fillImage(DRAFT)
         }
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var draftBlinkSpeed: Double = 1.0
-
-        override fun build(layout: HudLayoutSpec) = Spec(
-            layout = layout,
-            draftBlinkSpeed = draftBlinkSpeed.coerceAtLeast(0.0),
-        )
     }
 
     @Serializable

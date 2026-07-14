@@ -3,7 +3,6 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.timer
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HexColorSerdes
@@ -181,19 +180,6 @@ class SpectateHudTimer(
     private fun withSameAlpha(baseArgb: Int, rgb24: Int): Int {
         val alpha = (baseArgb ushr 24) and 0xFF
         return (alpha shl 24) or (rgb24 and 0x00FFFFFF)
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var minWidth: Int = 100
-        var txtColor: Int = 0xFFFFFFFF.toInt()
-
-        override fun build(layout: HudLayoutSpec): Spec {
-            return Spec(
-                layout = layout,
-                minWidth = minWidth.coerceAtLeast(0),
-                txtColor = txtColor,
-            )
-        }
     }
 
     @Serializable

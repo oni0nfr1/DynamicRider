@@ -1,8 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HUDSL
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
@@ -11,7 +9,6 @@ import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 
-@HUDSL
 class HudScene<E: KartEngine>(
     private val kart: KartRef.Specific<E>,
     private val engineClass: Class<E>,
@@ -27,13 +24,6 @@ class HudScene<E: KartEngine>(
         get() = Minecraft.getInstance().window.guiScaledHeight
 
     private var elements: List<HudElement<E>> = mutableListOf()
-
-    inline fun <reified BUILDER> element(block: BUILDER.() -> Unit)
-        where
-            BUILDER : HudElementBuilder<HudElementSpec<*, E>> {
-        val builder = BUILDER::class.java.getDeclaredConstructor().newInstance()
-        addSpec(builder.apply(block).build())
-    }
 
     fun <SPEC> addSpec(spec: SPEC)
         where
@@ -79,6 +69,3 @@ class HudScene<E: KartEngine>(
         onDisableCallbacks.forEach { it() }
     }
 }
-
-inline fun <reified E: KartEngine> hudScene(kart: KartRef.Specific<E>, block: HudScene<E>.() -> Unit): HudScene<E>
-    = HudScene(kart, E::class.java).apply(block)

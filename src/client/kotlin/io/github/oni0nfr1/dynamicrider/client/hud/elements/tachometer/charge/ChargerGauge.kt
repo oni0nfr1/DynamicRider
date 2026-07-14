@@ -2,7 +2,6 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
@@ -68,10 +67,6 @@ class ChargerGauge(
             if (gauge >= 1f - META.maxEpsilon) ICON_ON else ICON_OFF
         )
         GAUGE.drawGauge(guiGraphics, META.fillRegion, gauge)
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        override fun build(layout: HudLayoutSpec) = Spec(layout)
     }
 
     @Serializable

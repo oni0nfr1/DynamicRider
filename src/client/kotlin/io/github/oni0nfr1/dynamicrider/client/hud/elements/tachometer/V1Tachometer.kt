@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
@@ -287,16 +286,6 @@ class V1Tachometer(
             y = NUMBER_BOTTOM,
             anchor = NumberAtlas.Anchor.BOTTOM_CENTER
         )
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        val draftBlinkSpeed = 1.0
-
-        override fun build(layout: HudLayoutSpec): Spec =
-            Spec(
-                layout = layout,
-                draftBlinkSpeed = draftBlinkSpeed,
-            )
     }
 
     @Serializable

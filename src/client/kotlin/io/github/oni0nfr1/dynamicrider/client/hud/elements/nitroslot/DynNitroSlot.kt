@@ -3,7 +3,6 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot
 import io.github.oni0nfr1.dynamicrider.client.graphics.amination.OneShotTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.NitroSlot
@@ -113,18 +112,6 @@ class DynNitroSlot(
                 guiGraphics.fillImage(NITRO_ICON)
             }
         } else wasTeamBoost = false
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var slotIndex: Int = 0
-        var backgroundColor: Int = 0xFF808080.toInt()
-
-        override fun build(layout: HudLayoutSpec) =
-            Spec(
-                layout,
-                slotIndex.coerceAtLeast(1),
-                backgroundColor,
-            )
     }
 
     @Serializable

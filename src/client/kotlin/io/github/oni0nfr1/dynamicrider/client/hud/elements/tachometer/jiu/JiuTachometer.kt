@@ -2,7 +2,6 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.CompoundElement
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.skid.client.api.engine.JiuEngine
@@ -26,19 +25,6 @@ class JiuTachometer(
         get() = JiuSpdMeter.BG_ATLAS.cellWidth
     override val height: Int
         get() = JiuSpdMeter.BG_ATLAS.cellHeight
-
-    class Builder : HudElementBuilder<Spec>() {
-        val speedometer = JiuSpdMeter.Builder()
-        val icons = JiuIcons.Builder()
-        val gauge = JiuGauge.Builder()
-
-        override fun build(layout: HudLayoutSpec) = Spec(
-            layout,
-            speedometer.build(),
-            icons.build(),
-            gauge.build(),
-        )
-    }
 
     @Serializable
     @SerialName("JIU_TACHOMETER")

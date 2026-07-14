@@ -6,7 +6,6 @@ import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.dsl.HudElementBuilder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.Speedometer
@@ -98,15 +97,6 @@ class JiuSpdMeter(
 
         if (bgAnimTimer.progress >= 1.0) guiGraphics.fillImage(BG_ANIM_IMPACT)
         // TODO: 애니메이션 완료 후에 BG_ANIM_IMPACT가 옆으로 퍼지는 효과
-    }
-
-    class Builder : HudElementBuilder<Spec>() {
-        var animationSpeed: Double = 1.0
-
-        override fun build(layout: HudLayoutSpec) = Spec(
-            layout,
-            animationSpeed,
-        )
     }
 
     @Serializable
