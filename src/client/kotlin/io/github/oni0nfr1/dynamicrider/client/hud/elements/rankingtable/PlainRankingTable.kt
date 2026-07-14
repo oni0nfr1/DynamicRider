@@ -5,6 +5,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.hud.state.RankingState
 import io.github.oni0nfr1.dynamicrider.client.util.ordinal
@@ -163,8 +166,11 @@ class PlainRankingTable(
 
     @Serializable
     @SerialName("PLAIN_RANKING_TABLE")
+    @HudElementInfo(category = "ranking")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
+        @HudColor(alpha = false)
         @Serializable(with = HexColorSerdes::class)
         val defaultTextColor: Int = 0x00FFFFFF,
         val shadow: Boolean = true,
@@ -172,10 +178,13 @@ class PlainRankingTable(
         val rowPadding: Int = 2,
         val paddingX: Int = 6,
         val paddingY: Int = 6,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val backgroundColor: Int = 0x70000000,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val headerBackgroundColor: Int = 0x90000000.toInt(),
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val highlightBackgroundColor: Int = 0x40FFFFC0,
         val dotSize: Int = 6,

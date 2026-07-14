@@ -10,6 +10,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.Speedometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.impl.SpdMeterImpl
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
@@ -105,7 +107,9 @@ class JiuSpdMeter(
 
     @Serializable
     @SerialName("JIU_SPEEDOMETER")
+    @HudElementInfo(category = "speedometer")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
         val animationSpeed: Double = 1.0,
     ) : HudElementSpec<JiuSpdMeter, SpeedKartState> {

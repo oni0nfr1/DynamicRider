@@ -4,6 +4,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.CompoundElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.hud.state.ChargeKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
@@ -29,7 +31,9 @@ class ChargeTachometer(
 
     @Serializable
     @SerialName("CHARGE_TACHOMETER")
+    @HudElementInfo(category = "tachometer")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
         val speedometer: ChargeSpdMeter.Spec = ChargeSpdMeter.Spec(),
         val chargerGauge: ChargerGauge.Spec = ChargerGauge.Spec(

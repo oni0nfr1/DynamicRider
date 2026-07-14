@@ -7,6 +7,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.NitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge.SkidNitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
@@ -115,9 +119,13 @@ class DynNitroSlot(
 
     @Serializable
     @SerialName("NITRO_SLOT")
+    @HudElementInfo(category = "nitro")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
+        @HudRange(min = 1.0, max = 16.0, step = 1.0)
         val slotIndex: Int = 1,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val backgroundColor: Int = 0xFF0000FF.toInt(),
     ) : HudElementSpec<DynNitroSlot, NitroKartState> {

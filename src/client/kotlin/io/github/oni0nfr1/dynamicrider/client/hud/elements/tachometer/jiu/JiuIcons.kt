@@ -7,6 +7,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
@@ -82,7 +84,9 @@ class JiuIcons(
 
     @Serializable
     @SerialName("JIU_ICONS")
+    @HudElementInfo(category = "tachometer")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
         val draftBlinkSpeed: Double = 1.0,
     ) : HudElementSpec<JiuIcons, JiuKartState> {

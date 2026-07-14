@@ -6,6 +6,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.hud.state.SpeedKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
@@ -138,18 +141,24 @@ class JiuStyleSpdMeter(
 
     @Serializable
     @SerialName("JIU_TACHOMETER_SIMPLE")
+    @HudElementInfo(category = "speedometer")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
         val tachometerBackgroundScale: Float = 1.25f,
         val animationLengthSec: Float = 0.5f,
         val glowThreshold: Int = 100,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val normalDigitColor: Int = 0xFFE8E08A.toInt(),
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val glowDigitColor: Int = 0xFF00FFFF.toInt(),
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val offDigitColor: Int = 0x40000000,
         val unitText: String = "km/h",
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val slotOverlayColor: Int = 0x40000000,
     ) : HudElementSpec<JiuStyleSpdMeter, SpeedKartState> {

@@ -5,6 +5,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.CompoundElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.hud.state.JiuKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
@@ -29,7 +31,9 @@ class JiuTachometer(
 
     @Serializable
     @SerialName("JIU_TACHOMETER")
+    @HudElementInfo(category = "tachometer")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
         val speedometer: JiuSpdMeter.Spec = JiuSpdMeter.Spec(),
         val icons: JiuIcons.Spec = JiuIcons.Spec(

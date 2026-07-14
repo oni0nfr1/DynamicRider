@@ -52,13 +52,14 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 클래스의 `@HudElementInfo`에서 표시 이름 번역 key, 카테고리 및 선택적 아이콘 정보를 읽는다.
 - [x] property의 직렬화 타입과 annotation을 조합해 Boolean toggle, 숫자 입력, slider, enum selector, 문자열 입력, color picker 및 anchor selector를 자동 선택한다.
 - [x] 타입만으로 편집 방식을 결정할 수 있는 property에는 annotation을 요구하지 않고, 표시 이름·범위·색상 등 추가 정보가 필요할 때만 annotation을 사용한다.
-- [ ] serializer, type ID, 상태 타입 호환성 및 runtime factory를 중앙 type registry에 등록하되 속성별 descriptor 코드는 작성하지 않는다.
+- [x] 모든 등록 요소 Spec에 element/layout/color 및 필요한 range metadata와 `en_us`·`ko_kr` 번역을 제공한다.
+- [x] serializer, type ID, 상태 타입 호환성 및 runtime factory를 중앙 type registry에 등록하되 속성별 descriptor 코드는 작성하지 않는다.
 - [ ] 현재 spec을 `JsonElement`로 encode하고 변경된 property만 교체한 뒤 같은 serializer로 decode하여 immutable spec을 갱신한다.
 - [ ] generic property 변경 결과는 `ReplaceElementSpecCommand`로 document에 적용한다.
-- [ ] 모든 top-level 및 compound child spec에 기본값을 제공해 type discriminator만으로 기본 요소를 생성할 수 있게 한다.
+- [x] 모든 top-level 및 compound child spec에 기본값을 제공해 type discriminator만으로 기본 요소를 생성할 수 있게 한다.
 - [ ] `@HudRange` 등의 metadata를 GUI 입력 제한과 JSON load validation에서 공통으로 사용한다.
 - [ ] 범위를 벗어난 외부 JSON 값은 자동 보정하지 않고 경로가 포함된 validation 오류로 반환한다.
-- [ ] 초기에는 type/serializer 등록을 중앙에서 명시적으로 관리하고, 요소 수 증가로 등록 비용이 커질 때 KSP 기반 registry 생성을 검토한다.
+- [x] 초기에는 type/serializer 등록을 중앙에서 명시적으로 관리하고, 요소 수 증가로 등록 비용이 커질 때 KSP 기반 registry 생성을 검토한다.
 - [x] legacy HUD/state 코드를 신규 계약으로 이관하거나 제거한다.
 
 ## 5. 런타임·프리뷰 상태 계층
@@ -119,6 +120,7 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [ ] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 제공한다.
 - [ ] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
 - [ ] 저장 또는 삭제 후 현재 HUD를 즉시 갱신한다.
+- [ ] 기본 편집기 완성 후 중첩 object와 list property의 재귀 metadata 및 편집 UI를 추가한다.
 
 ## 검증 기준
 
@@ -146,6 +148,7 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - immutable spec 수정은 reflection 기반 `copy()` 호출이 아니라 JSON tree round-trip으로 구현한다.
 - annotation만으로 해결되지 않는 serializer/runtime factory 연결은 중앙 registry가 담당한다.
 - 요소와 property의 표시 metadata에는 번역 문자열이 아닌 자동 생성 또는 명시적으로 override한 i18n key를 저장한다.
+- 초기 속성 편집은 primitive, enum 및 layout에 집중하고 중첩 object/list 편집은 기본 GUI 완성 뒤로 미룬다.
 - 초기 구현은 spec 변경 시 요소를 재생성하고, 세부 runtime patch는 성능 문제가 확인된 뒤 추가한다.
 - `KartState`는 기존 효과 delegate를 대체하지 않고 외부 상태 공급원을 추상화하는 입력 계층으로 사용한다.
 - Skid API 및 프리뷰 구현의 차이는 상태 어댑터에서 끝내고, 이후의 효과 처리와 요소 렌더링 경로는 공유한다.

@@ -5,6 +5,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
 import io.github.oni0nfr1.dynamicrider.client.util.milliseconds
@@ -210,9 +213,12 @@ class HudTimer(
 
     @Serializable
     @SerialName("RIDE_TIMER")
+    @HudElementInfo(category = "timer")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec = HudLayoutSpec(),
         val minWidth: Int = 100,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val txtColor: Int = 0xFFFFFFFF.toInt(),
     ) : HudElementSpec<HudTimer, KartState> {
