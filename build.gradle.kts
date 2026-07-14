@@ -63,6 +63,14 @@ dependencies {
     include("io.github.oni0nfr1:korigadier:${project.property("korigadier_version")}")
 
     modCompileOnly("io.github.oni0nfr1:skid-api:${project.property("skidmc_version")}")
+
+    testImplementation(sourceSets["client"].output)
+    testImplementation("org.junit.jupiter:junit-jupiter:${project.property("junit_version")}")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.processResources {
