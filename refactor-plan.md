@@ -32,7 +32,7 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] resolve 결과에 `CUSTOM_CONFIG`, `RESOURCE`, `CUSTOM_FALLBACK` 출처를 기록한다.
 - [x] 커스텀 저장 및 삭제 API를 제공한다.
 - [x] 장면 생성 실패 시 게임을 중단하지 않고 빈 장면으로 복구한다.
-- [ ] 현재 ride/spectate 엔진 분기를 `KartStateType` 기반 조회로 교체한다.
+- [x] 현재 ride/spectate 엔진 분기를 `KartStateType` 기반 조회로 교체한다.
 - [ ] 저장·삭제·리소스 reload 후 현재 장면을 즉시 다시 생성하는 controller를 도입한다.
 
 ## 3. 편집 문서와 레이아웃
@@ -59,7 +59,7 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [ ] `@HudRange` 등의 metadata를 GUI 입력 제한과 JSON load validation에서 공통으로 사용한다.
 - [ ] 범위를 벗어난 외부 JSON 값은 자동 보정하지 않고 경로가 포함된 validation 오류로 반환한다.
 - [ ] 초기에는 type/serializer 등록을 중앙에서 명시적으로 관리하고, 요소 수 증가로 등록 비용이 커질 때 KSP 기반 registry 생성을 검토한다.
-- [ ] legacy HUD/state 코드를 신규 계약으로 이관하거나 제거한다.
+- [x] legacy HUD/state 코드를 신규 계약으로 이관하거나 제거한다.
 
 ## 5. 런타임·프리뷰 상태 계층
 
@@ -71,25 +71,26 @@ Skid API ───── LiveKartState ───┐
 편집기 ─── PreviewKartState ────┘
 ```
 
-- [ ] 공통 카트 값을 제공하는 읽기 전용 `KartState` 인터페이스를 정의한다.
-- [ ] HUD 코어의 엔진 구별 기준으로 안정적인 ID와 상태 클래스를 가진 `KartStateType<S>`를 정의하고, `KartEngine` 타입은 Skid 연결 계층 밖으로 노출하지 않는다.
-- [ ] 엔진 고유 값은 `JiuKartState`, `ChargeKartState`, `V1KartState`처럼 공통 상태를 확장한 엔진별 인터페이스로 분리한다.
-- [ ] `KartRef.Specific<E>`와 Skid API를 감싸는 엔진별 `LiveKartState` 구현을 제공한다.
-- [ ] 편집기에서 값을 자유롭게 변경할 수 있는 엔진별 `PreviewKartState` 구현과 초기 프리셋을 제공한다.
-- [ ] `KartRef`와 Skid API에 대한 직접 접근은 `LiveKartState` 계층으로 제한한다.
-- [ ] 기존 `Speedometer`, `GaugeBar`, `NitroSlot` 구현이 `KartRef` 대신 호환되는 `KartState`를 입력으로 받도록 변경한다.
-- [ ] raw, interpolation, trailing 등 기존 delegate 구현의 다형성과 효과를 유지한다.
-- [ ] `KartState`는 보간되지 않은 의미상의 원본 값을 제공하고, 시간에 따른 보간·지연·잔상은 delegate가 담당하도록 경계를 정한다.
-- [ ] `KartState`는 장면 전체에서 공유하고, 가변 애니메이션 상태를 가진 효과 delegate는 기본적으로 요소별로 생성한다.
-- [ ] 경기 시간·랩처럼 카트 엔진 외부의 진행 값은 `RaceState`, 참가자·순위·로컬 플레이어 값은 `RankingState`라는 별도 상태 어댑터로 분리한다.
-- [ ] 랭킹을 제공하지 않는 타임어택과 아직 참가자가 없는 랭킹을 구분할 수 있도록 `RankingState.Unavailable`과 사용 가능한 랭킹 상태를 명시적으로 모델링한다.
-- [ ] `KartState`, `RaceState`, `RankingState` 및 애니메이션 시계를 읽기 전용 속성으로 묶는 `HudSceneContext<S>`를 정의한다.
-- [ ] 모든 `HudElementSpec.create`와 요소 생성자는 상태별로 다른 인자를 받지 않고 `HudSceneContext<S>`와 `ElementHolder`를 받는 공통 생성 규약을 사용한다.
-- [ ] 요소는 공통 context에서 필요한 상태를 골라 효과 delegate를 생성하고, `Speedometer`, `GaugeBar`, `RaceTimer` 등의 delegate에는 전체 context가 아닌 필요한 상태 인터페이스만 전달한다.
-- [ ] `HudSceneContext`에는 임의 타입 조회, backend 객체 및 상태 변경 명령을 추가하지 않아 service locator로 확장되지 않게 한다.
-- [ ] 실제 게임용 `LiveHudSceneContext`와 편집기용 `PreviewHudSceneContext`가 동일한 요소 생성 및 렌더링 경로를 사용하도록 한다.
-- [ ] 프리뷰 애니메이션의 일시 정지·재시작·시간 이동을 지원할 수 있도록 `HudClock`을 상태 공급원과 분리한다.
-- [ ] 프리뷰 값은 장면 JSON에 저장하지 않고 편집 세션 상태로 관리한다. 필요하면 별도의 편집기 설정에 마지막 사용값만 저장한다.
+- [x] 공통 카트 값을 제공하는 읽기 전용 `KartState` 인터페이스를 정의한다.
+- [x] HUD 코어의 엔진 구별 기준으로 안정적인 ID와 상태 클래스를 가진 `KartStateType<S>`를 정의하고, `KartEngine` 타입은 Skid 연결 계층 밖으로 노출하지 않는다.
+- [x] 엔진 고유 값은 `JiuKartState`, `ChargeKartState`, `V1KartState`처럼 공통 상태를 확장한 엔진별 인터페이스로 분리한다.
+- [x] `KartRef.Specific<E>`와 Skid API를 감싸는 엔진별 `LiveKartState` 구현을 제공한다.
+- [ ] 모든 `KartStateType`에 대응해 값을 자유롭게 변경할 수 있는 엔진별 `PreviewKartState` 구현을 제공한다.
+- [ ] 대표 상태를 바로 재현할 수 있는 초기 preview preset을 제공한다.
+- [x] `KartRef`와 Skid API에 대한 직접 접근은 `hud.runtime`의 live 연결 계층으로 제한한다.
+- [x] 기존 `Speedometer`, `GaugeBar`, `NitroSlot` 구현이 `KartRef` 대신 호환되는 `KartState`를 입력으로 받도록 변경한다.
+- [x] raw, interpolation, trailing 등 기존 delegate 구현의 다형성과 효과를 유지한다.
+- [x] `KartState`는 보간되지 않은 의미상의 원본 값을 제공하고, 시간에 따른 보간·지연·잔상은 delegate가 담당하도록 경계를 정한다.
+- [x] `KartState`는 장면 전체에서 공유하고, 가변 애니메이션 상태를 가진 효과 delegate는 기본적으로 요소별로 생성한다.
+- [x] 경기 시간·랩처럼 카트 엔진 외부의 진행 값은 `RaceState`, 참가자·순위·로컬 플레이어 값은 `RankingState`라는 별도 상태 어댑터로 분리한다.
+- [x] 랭킹을 제공하지 않는 타임어택과 아직 참가자가 없는 랭킹을 구분할 수 있도록 `RankingState.Unavailable`과 사용 가능한 랭킹 상태를 명시적으로 모델링한다.
+- [x] `KartState`, `RaceState`, `RankingState` 및 애니메이션 시계를 읽기 전용 속성으로 묶는 `HudSceneContext<S>`를 정의한다.
+- [x] 모든 `HudElementSpec.create`와 요소 생성자는 상태별로 다른 인자를 받지 않고 `HudSceneContext<S>`와 `ElementHolder`를 받는 공통 생성 규약을 사용한다.
+- [x] 요소는 공통 context에서 필요한 상태를 골라 사용하고, `Speedometer`, `GaugeBar`, `NitroSlot` 등의 효과 delegate에는 전체 context가 아닌 필요한 상태 인터페이스만 전달한다.
+- [x] `HudSceneContext`에는 임의 타입 조회, backend 객체 및 상태 변경 명령을 추가하지 않아 service locator로 확장되지 않게 한다.
+- [x] 실제 게임용 `LiveHudSceneContext`와 편집기용 `PreviewHudSceneContext`가 동일한 요소 생성 및 렌더링 경로를 사용하도록 한다.
+- [x] 프리뷰 애니메이션의 일시 정지·재시작·시간 이동을 지원할 수 있도록 `HudClock`을 상태 공급원과 분리한다.
+- [x] 프리뷰 값은 장면 JSON에 저장하지 않고 편집 세션 상태로 관리한다. 필요하면 별도의 편집기 설정에 마지막 사용값만 저장한다.
 - [ ] 초기 구현은 기존 getter 기반 갱신 방식을 사용할 수 있으며, 일관성이나 접근 비용 문제가 확인되면 프레임 단위 불변 상태 snapshot을 도입한다.
 
 패키지와 의존 방향은 다음과 같이 고정한다.
@@ -102,12 +103,13 @@ hud/editor/preview        편집 가능한 preview 상태와 preset
 hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 delegate
 ```
 
-- [ ] `hud.state`는 Skid API, rider backend 구현, Minecraft singleton 및 편집기 구현을 참조하지 않는다.
-- [ ] `HudSceneContext`는 장면의 실행 환경이므로 `hud.scene`에 둔다.
-- [ ] `KartEngine`과 `KartRef` 양쪽을 아는 live factory와 registry는 `hud.runtime`에 격리한다.
-- [ ] 실제 상태 adapter는 `hud.runtime.state`, 가변 preview 구현과 preset은 `hud.editor.preview`에 둔다.
-- [ ] 기존 효과 delegate의 패키지는 우선 유지하고 역할 변경과 무관한 이름 변경은 별도 작업으로 미룬다.
-- [ ] 의존성은 `hud.state`와 `hud.scene`의 계약을 runtime·preview·elements가 사용하는 방향으로만 흐르게 한다.
+- [x] `hud.state`는 Skid API, rider backend 구현, Minecraft singleton 및 편집기 구현을 참조하지 않는다.
+- [x] `HudSceneContext`는 장면의 실행 환경이므로 `hud.scene`에 둔다.
+- [x] `KartEngine`과 `KartRef` 양쪽을 아는 live factory와 registry는 `hud.runtime`에 격리한다.
+- [x] 실제 상태 adapter는 `hud.runtime.state`, 가변 preview 구현은 `hud.editor.preview`에 둔다.
+- [ ] preview preset은 `hud.editor.preview`에 둔다.
+- [x] 기존 효과 delegate의 패키지는 우선 유지하고 역할 변경과 무관한 이름 변경은 별도 작업으로 미룬다.
+- [x] 의존성은 `hud.state`와 `hud.scene`의 계약을 runtime·preview·elements가 사용하는 방향으로만 흐르게 한다.
 
 ## 6. 인게임 GUI 편집기
 
