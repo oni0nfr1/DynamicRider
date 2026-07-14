@@ -4,11 +4,20 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentEle
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 
+/**
+ * HUD document에 적용하고 되돌릴 수 있는 하나의 편집 작업이다.
+ *
+ * 명령 인스턴스는 [HudCommandStack]을 통해 실행해야 한다.
+ */
 interface HudEditCommand {
+    /** 변경을 document에 적용한다. */
     fun apply(document: HudSceneDocument)
+
+    /** 앞서 적용한 변경을 document에서 되돌린다. */
     fun revert(document: HudSceneDocument)
 }
 
+/** 지정한 위치에 요소를 추가하는 명령이다. */
 class AddElementCommand(
     private val element: HudDocumentElement,
     private val index: Int = Int.MAX_VALUE,
@@ -17,6 +26,7 @@ class AddElementCommand(
     override fun revert(document: HudSceneDocument) { document.remove(element.id) }
 }
 
+/** ID로 요소를 찾아 제거하는 명령이다. */
 class RemoveElementCommand(
     private val elementId: String,
 ) : HudEditCommand {
@@ -32,6 +42,7 @@ class RemoveElementCommand(
     }
 }
 
+/** 요소의 렌더 및 저장 순서를 변경하는 명령이다. */
 class MoveElementCommand(
     private val elementId: String,
     private val targetIndex: Int,
@@ -47,6 +58,7 @@ class MoveElementCommand(
     }
 }
 
+/** 요소 ID를 유지하면서 전체 명세를 교체하는 명령이다. */
 class ReplaceElementSpecCommand(
     private val elementId: String,
     private val replacement: HudElementSpec<*, *>,

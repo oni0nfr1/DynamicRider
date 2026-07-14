@@ -10,6 +10,15 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 object HudSceneLoader {
+    /**
+     * 파일에서 장면 명세를 읽고 지정한 카트 엔진에 사용할 런타임 장면을 생성한다.
+     *
+     * 파일 접근, 역직렬화 및 엔진 호환성 오류는 예외 대신 [HudSceneLoadResult.Failed]로 반환한다.
+     *
+     * @param path 읽을 config 파일 경로
+     * @param kart 런타임 요소에 전달할 특정 엔진 카트 참조
+     * @param engineClass 장면 요소의 호환성을 검사할 엔진 클래스
+     */
     fun <E : KartEngine> load(
         path: Path,
         kart: KartRef.Specific<E>,
@@ -34,6 +43,14 @@ object HudSceneLoader {
         return load(spec, path, kart, engineClass)
     }
 
+    /**
+     * 이미 역직렬화된 장면 명세를 검증하고 런타임 장면으로 변환한다.
+     *
+     * @param spec 변환할 장면 명세
+     * @param sourcePath 오류 진단에 표시할 원본 경로
+     * @param kart 런타임 요소에 전달할 특정 엔진 카트 참조
+     * @param engineClass 장면 요소의 호환성을 검사할 엔진 클래스
+     */
     fun <E : KartEngine> load(
         spec: HudSceneSpec,
         sourcePath: Path,

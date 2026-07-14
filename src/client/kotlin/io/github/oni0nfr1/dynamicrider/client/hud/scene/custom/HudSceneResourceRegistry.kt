@@ -9,6 +9,9 @@ import net.minecraft.server.packs.PackType
 import net.minecraft.server.packs.resources.ResourceManager
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * 활성 리소스팩에서 HUD 장면 JSON을 읽어 검증된 명세와 로드 오류를 캐시한다.
+ */
 object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener {
     private const val SCENE_DIRECTORY = "hud"
     private const val JSON_EXTENSION = ".json"
@@ -25,13 +28,24 @@ object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener {
     @Volatile
     private var loadErrors: Map<ResourceLocation, SerializationException> = emptyMap()
 
+    /** Fabric 클라이언트 리소스 reload listener를 한 번만 등록한다. */
     fun init() {
         if (!initialized.compareAndSet(false, true)) return
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(this)
     }
 
+    /**
+     * 리소스 ID에 대응하는 검증된 장면 명세를 반환한다.
+     *
+     * @return 로드된 명세, 리소스가 없거나 역직렬화에 실패했으면 `null`
+     */
     fun get(id: ResourceLocation): HudSceneSpec? = loadedScenes[id]
 
+    /**
+     * 리소스 ID를 읽는 중 발생한 역직렬화 오류를 반환한다.
+     *
+     * 리소스가 단순히 존재하지 않는 경우에는 `null`이다.
+     */
     fun getLoadError(id: ResourceLocation): SerializationException? = loadErrors[id]
 
     override fun getFabricId(): ResourceLocation = reloadListenerId
