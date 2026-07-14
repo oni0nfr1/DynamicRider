@@ -145,6 +145,9 @@ object HudElementTypeRegistry {
     private val byId = entries.associateBy(HudElementType<*, *>::id).also {
         require(it.size == entries.size) { "HUD element type IDs must be unique" }
     }
+    private val bySpecClass = entries.associateBy(HudElementType<*, *>::specClass).also {
+        require(it.size == entries.size) { "HUD element spec classes must be unique" }
+    }
 
     val serializersModule: SerializersModule = SerializersModule {
         polymorphic(HudElementSpec::class) {
@@ -154,6 +157,9 @@ object HudElementTypeRegistry {
 
     /** 안정적인 직렬화 [id]로 요소 타입을 조회한다. */
     fun byId(id: String): HudElementType<*, *>? = byId[id]
+
+    /** [spec]의 구체 클래스에 등록된 요소 타입을 조회한다. */
+    fun bySpec(spec: HudElementSpec<*, *>): HudElementType<*, *>? = bySpecClass[spec::class]
 
     /** [stateType]의 장면에 추가할 수 있는 요소 타입만 반환한다. */
     fun compatibleWith(stateType: KartStateType<out KartState>): List<HudElementType<*, *>> =
