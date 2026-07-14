@@ -13,6 +13,7 @@ import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle.HudSceneLifecycle
+import io.github.oni0nfr1.dynamicrider.client.hud.runtime.LiveHudSceneContextFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneResourceRegistry
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
@@ -142,7 +143,9 @@ class DynamicRiderClient : ClientModInitializer {
         val client = Minecraft.getInstance()
         if (client.player?.subject != rider) return
 
-        currentScene = kartEntity.kart?.let(HudSceneLifecycle::createRideScene)
+        currentScene = kartEntity.kart
+            ?.let(LiveHudSceneContextFactory::create)
+            ?.let(HudSceneLifecycle::createRideScene)
     }
 
     fun onKartDismount(kartEntity: KartSaddleEntity, rider: Player) {
@@ -156,7 +159,9 @@ class DynamicRiderClient : ClientModInitializer {
         val client = Minecraft.getInstance()
         if (client.player != spectator || client.player?.subject != rider) return
 
-        currentScene = kartEntity.kart?.let(HudSceneLifecycle::createSpectateScene)
+        currentScene = kartEntity.kart
+            ?.let(LiveHudSceneContextFactory::create)
+            ?.let(HudSceneLifecycle::createSpectateScene)
     }
 
     fun onKartSpectateEnd(kartEntity: KartSaddleEntity, spectator: Player, rider: Player) {

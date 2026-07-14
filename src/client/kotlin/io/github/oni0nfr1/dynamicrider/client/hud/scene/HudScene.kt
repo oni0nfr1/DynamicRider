@@ -3,18 +3,16 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scene
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 
-class HudScene<E: KartEngine>(
-    private val kart: KartRef.Specific<E>,
-    private val engineClass: Class<E>,
+class HudScene<S : KartState>(
+    private val context: HudSceneContext<S>,
 ) : ElementHolder {
 
-    private var elementSpecs: MutableList<HudElementSpec<*, E>> = mutableListOf()
+    private var elementSpecs: MutableList<HudElementSpec<*, S>> = mutableListOf()
     private val onEnableCallbacks: MutableList<() -> Unit> = mutableListOf()
     private val onDisableCallbacks: MutableList<() -> Unit> = mutableListOf()
 
@@ -23,26 +21,27 @@ class HudScene<E: KartEngine>(
     override val height: Int
         get() = Minecraft.getInstance().window.guiScaledHeight
 
-    private var elements: List<HudElement<E>> = mutableListOf()
+    private var elements: List<HudElement<S>> = mutableListOf()
 
     fun <SPEC> addSpec(spec: SPEC)
         where
-            SPEC : HudElementSpec<*, E> {
+            SPEC : HudElementSpec<*, S> {
         elementSpecs += spec
     }
 
     fun addSpecChecked(spec: HudElementSpec<*, *>): HudSceneSpecAddResult {
-        val requiredEngineClass = spec.requiredEngineClass()
-        if (!requiredEngineClass.isAssignableFrom(engineClass)) {
-            return HudSceneSpecAddResult.IncompatibleEngine(
-                requiredEngineClass = requiredEngineClass,
-                sceneEngineClass = engineClass,
+        val requiredStateClass = spec.requiredStateClass()
+        val sceneStateClass = context.kartStateType.stateClass
+        if (!requiredStateClass.isAssignableFrom(sceneStateClass)) {
+            return HudSceneSpecAddResult.IncompatibleState(
+                requiredStateClass = requiredStateClass,
+                sceneStateClass = sceneStateClass,
                 specType = spec::class.java.name,
             )
         }
 
         @Suppress("UNCHECKED_CAST")
-        addSpec(spec as HudElementSpec<*, E>)
+        addSpec(spec as HudElementSpec<*, S>)
         return HudSceneSpecAddResult.Added
     }
 
@@ -54,7 +53,7 @@ class HudScene<E: KartEngine>(
         onDisableCallbacks += block
     }
 
-    private fun createElements(): List<HudElement<E>> = elementSpecs.map { it.create(kart, this) }
+    private fun createElements(): List<HudElement<S>> = elementSpecs.map { it.create(context, this) }
 
     fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
         elements.forEach { it.draw(guiGraphics, deltaTracker) }

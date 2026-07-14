@@ -15,8 +15,8 @@ import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.elementId
-import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.SpeedKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -25,10 +25,10 @@ import net.minecraft.resources.ResourceLocation
 
 class JiuSpdMeter(
     spec: Spec,
-    kart: KartRef.Specific<SpeedEngine>,
+    context: HudSceneContext<SpeedKartState>,
     parent: ElementHolder
-) : HudElementImpl<SpeedEngine>(spec.layout, kart, parent),
-    Speedometer by SpdMeterImpl(kart) {
+) : HudElementImpl<SpeedKartState>(spec.layout, context, parent),
+    Speedometer by SpdMeterImpl(context.kartState) {
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(
             elementId("jiu_tachometer/speedometer")
@@ -69,7 +69,11 @@ class JiuSpdMeter(
     override val height: Int
         get() = BG_ATLAS.cellHeight
 
-    val bgAnimTimer = OneShotTimer(META.animationDurationMillis, spec.animationSpeed)
+    val bgAnimTimer = OneShotTimer(
+        META.animationDurationMillis,
+        spec.animationSpeed,
+        context::nanoTime,
+    )
 
     override fun render(
         guiGraphics: GuiGraphics,
@@ -104,13 +108,13 @@ class JiuSpdMeter(
     data class Spec(
         override val layout: HudLayoutSpec,
         val animationSpeed: Double,
-    ) : HudElementSpec<JiuSpdMeter, SpeedEngine> {
-        override fun requiredEngineClass() = SpeedEngine::class.java
+    ) : HudElementSpec<JiuSpdMeter, SpeedKartState> {
+        override fun requiredStateClass() = SpeedKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<SpeedEngine>,
+            context: HudSceneContext<SpeedKartState>,
             parent: ElementHolder
-        ) = JiuSpdMeter(this, kart, parent)
+        ) = JiuSpdMeter(this, context, parent)
 
     }
 }

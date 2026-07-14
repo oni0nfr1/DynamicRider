@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path
@@ -24,7 +24,7 @@ sealed interface HudSceneLoadError {
         val path: Path,
         val elementIndex: Int,
         val specType: String,
-        val requiredEngineClass: Class<out KartEngine>,
-        val sceneEngineClass: Class<out KartEngine>,
+        val requiredStateClass: Class<out KartState>,
+        val sceneStateClass: Class<out KartState>,
     ) : HudSceneLoadError
 }

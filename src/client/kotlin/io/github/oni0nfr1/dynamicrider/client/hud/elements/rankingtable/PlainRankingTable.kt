@@ -6,10 +6,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.sidebar.KartRankingManager
+import io.github.oni0nfr1.dynamicrider.client.hud.state.RankingState
 import io.github.oni0nfr1.dynamicrider.client.util.ordinal
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -21,9 +21,9 @@ import kotlin.math.max
 
 class PlainRankingTable(
     spec: Spec,
-    kart: KartRef.Specific<KartEngine>,
+    context: HudSceneContext<KartState>,
     parent: ElementHolder,
-) : HudElementImpl<KartEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<KartState>(spec.layout, context, parent) {
     var defaultTextColor: Int = spec.defaultTextColor
     var shadow: Boolean = spec.shadow
     var minWidth: Int = spec.minWidth
@@ -44,9 +44,10 @@ class PlainRankingTable(
         get() = fontManager.lineHeight + rowPadding * 2
 
     private var hidden: Boolean = false
-    private var ranking: List<KartRankingManager.RankingEntry> = emptyList()
-    private var racers: LinkedHashMap<UUID, KartRankingManager.Racer> = linkedMapOf()
-    private var alive: LinkedHashSet<UUID> = linkedSetOf()
+    private var ranking: List<RankingState.Entry> = emptyList()
+    private var racers: Map<UUID, RankingState.Racer> = emptyMap()
+    private var alive: Set<UUID> = emptySet()
+    private var localRacerId: UUID? = null
 
     private var measuredWidth: Int = 0
     private var measuredHeight: Int = 0
@@ -81,7 +82,7 @@ class PlainRankingTable(
         if (hidden) return
 
         val visibleEntries = ranking.filter { it.racer.uuid in alive }
-        val myUuid = Minecraft.getInstance().player?.uuid
+        val myUuid = localRacerId
 
         guiGraphics.fill(0, 0, width, height, backgroundColor)
 
@@ -134,19 +135,27 @@ class PlainRankingTable(
     }
 
     private fun syncState() {
-        hidden = hideWhenTimeAttack && KartRankingManager.isTimeAttack
-        ranking = KartRankingManager.ranking
-        racers = KartRankingManager.racers
-        alive = KartRankingManager.alive
-
-        if (racers.isEmpty()) {
-            hidden = true
+        when (val state = context.rankingState) {
+            is RankingState.Unavailable -> {
+                hidden = hideWhenTimeAttack || state.racers.isEmpty()
+                ranking = emptyList()
+                racers = state.racers
+                alive = state.racers.keys
+                localRacerId = state.localRacerId
+            }
+            is RankingState.Available -> {
+                hidden = false
+                ranking = state.entries
+                racers = state.racers
+                alive = state.alive
+                localRacerId = state.localRacerId
+                if (racers.isEmpty()) hidden = true
+            }
         }
     }
 
     private fun headerText(): String {
-        val myUuid = Minecraft.getInstance().player?.uuid
-        val myRank = ranking.firstOrNull { it.racer.uuid == myUuid }?.rank
+        val myRank = ranking.firstOrNull { it.racer.uuid == localRacerId }?.rank
         return "${myRank?.ordinal() ?: "--"} / ${racers.size}"
     }
 
@@ -172,12 +181,12 @@ class PlainRankingTable(
         val dotSize: Int = 6,
         val dotGap: Int = 6,
         val hideWhenTimeAttack: Boolean = true,
-    ) : HudElementSpec<PlainRankingTable, KartEngine> {
-        override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
+    ) : HudElementSpec<PlainRankingTable, KartState> {
+        override fun requiredStateClass(): Class<out KartState> = KartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<KartEngine>,
+            context: HudSceneContext<KartState>,
             parent: ElementHolder,
-        ): PlainRankingTable = PlainRankingTable(this, kart, parent)
+        ): PlainRankingTable = PlainRankingTable(this, context, parent)
     }
 }

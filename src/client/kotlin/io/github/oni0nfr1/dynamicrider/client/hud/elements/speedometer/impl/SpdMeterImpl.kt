@@ -1,10 +1,9 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.impl
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.Speedometer
-import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.SpeedKartState
 
-class SpdMeterImpl(val kart: KartRef.Specific<SpeedEngine>) : Speedometer {
+class SpdMeterImpl(private val state: SpeedKartState) : Speedometer {
     override val speed: Double
-        get() = kart.accessEngine { it.tachometer?.speed } ?: 0.0
+        get() = state.speed
 }

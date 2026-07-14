@@ -15,8 +15,8 @@ import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.elementId
-import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.SpeedKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -25,10 +25,10 @@ import net.minecraft.resources.ResourceLocation
 
 class ChargeSpdMeter(
     spec: Spec,
-    kart: KartRef.Specific<SpeedEngine>,
+    context: HudSceneContext<SpeedKartState>,
     parent: ElementHolder
-) : HudElementImpl<SpeedEngine>(spec.layout, kart, parent),
-    Speedometer by SpdMeterImpl(kart)
+) : HudElementImpl<SpeedKartState>(spec.layout, context, parent),
+    Speedometer by SpdMeterImpl(context.kartState)
 {
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(
@@ -84,7 +84,7 @@ class ChargeSpdMeter(
     override val height: Int
         get() = META.backgroundHeight
 
-    private val animationTimer = LoopTimer(1000, 0.0)
+    private val animationTimer = LoopTimer(1000, 0.0, context::nanoTime)
     private val animationSpeed = spec.animationSpeed
 
     init {
@@ -134,13 +134,13 @@ class ChargeSpdMeter(
     data class Spec(
         override val layout: HudLayoutSpec,
         val animationSpeed: Double,
-    ) : HudElementSpec<ChargeSpdMeter, SpeedEngine> {
-        override fun requiredEngineClass() = SpeedEngine::class.java
+    ) : HudElementSpec<ChargeSpdMeter, SpeedKartState> {
+        override fun requiredStateClass() = SpeedKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<SpeedEngine>,
+            context: HudSceneContext<SpeedKartState>,
             parent: ElementHolder
-        ) = ChargeSpdMeter(this, kart, parent)
+        ) = ChargeSpdMeter(this, context, parent)
 
     }
 

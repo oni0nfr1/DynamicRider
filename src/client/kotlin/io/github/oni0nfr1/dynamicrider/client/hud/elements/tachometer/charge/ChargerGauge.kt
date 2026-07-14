@@ -13,8 +13,8 @@ import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.data.GaugeFillRegion
 import io.github.oni0nfr1.dynamicrider.client.resource.elementId
-import io.github.oni0nfr1.skid.client.api.engine.ChargeEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.ChargeKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -23,9 +23,9 @@ import net.minecraft.resources.ResourceLocation
 
 class ChargerGauge(
     spec: Spec,
-    kart: KartRef.Specific<ChargeEngine>,
+    context: HudSceneContext<ChargeKartState>,
     parent: ElementHolder,
-) : HudElementImpl<ChargeEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<ChargeKartState>(spec.layout, context, parent) {
 
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(
@@ -54,7 +54,7 @@ class ChargerGauge(
     ) : ElementMetaData
 
     val chargerGauge: Float
-        get() = kart.accessEngine { it.tachometer?.chargerGauge } ?: 0f
+        get() = context.kartState.chargerGauge
 
     override val width: Int
         get() = ATLAS.cellWidth
@@ -73,12 +73,12 @@ class ChargerGauge(
     @SerialName("CHARGER_GAUGE")
     data class Spec(
         override val layout: HudLayoutSpec,
-    ) : HudElementSpec<ChargerGauge, ChargeEngine> {
-        override fun requiredEngineClass() = ChargeEngine::class.java
+    ) : HudElementSpec<ChargerGauge, ChargeKartState> {
+        override fun requiredStateClass() = ChargeKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<ChargeEngine>,
+            context: HudSceneContext<ChargeKartState>,
             parent: ElementHolder,
-        ) = ChargerGauge(this, kart, parent)
+        ) = ChargerGauge(this, context, parent)
     }
 }

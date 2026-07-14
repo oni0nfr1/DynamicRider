@@ -1,14 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.bridge
 
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.inventory.KartTeamBoostCounter
-import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
 
-class SkidNitroSlot(val kart: KartRef.Specific<NitroEngine>) : NitroSlot {
+class SkidNitroSlot(private val state: NitroKartState) : NitroSlot {
     override val maxBoost: Int
-        get() = kart.accessEngine { it.maxBoost } ?: 2
+        get() = state.maxBoost
     override val nitro: Int
-        get() = kart.accessEngine { it.tachometer?.nitro } ?: 0
+        get() = state.nitro
     override val teamNitro: Int
-        get() = KartTeamBoostCounter.boostCount
+        get() = state.teamNitro
 }

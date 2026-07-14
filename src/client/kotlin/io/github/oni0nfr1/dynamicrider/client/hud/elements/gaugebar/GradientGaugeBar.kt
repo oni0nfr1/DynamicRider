@@ -9,8 +9,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
-import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -20,10 +20,10 @@ import net.minecraft.client.gui.GuiGraphics
 
 class GradientGaugeBar(
     spec: Spec,
-    kart: KartRef.Specific<NitroEngine>,
+    context: HudSceneContext<NitroKartState>,
     parent: ElementHolder,
-) : HudElementImpl<NitroEngine>(spec.layout, kart, parent),
-    GaugeBar by LinearExtrapolator(kart) {
+) : HudElementImpl<NitroKartState>(spec.layout, context, parent),
+    GaugeBar by LinearExtrapolator(context.kartState) {
     companion object {
         val client: Minecraft by lazy { Minecraft.getInstance() }
         val fontManager: Font = client.font
@@ -177,11 +177,11 @@ class GradientGaugeBar(
         val boxColor: Int = 0x80000000.toInt(),
         val gaugeAlpha: Int = 0xFF,
         val gradientStops: List<ColorStop> = ColorStop.default(),
-    ) : HudElementSpec<GradientGaugeBar, NitroEngine> {
-        override fun requiredEngineClass(): Class<out NitroEngine> = NitroEngine::class.java
+    ) : HudElementSpec<GradientGaugeBar, NitroKartState> {
+        override fun requiredStateClass(): Class<out NitroKartState> = NitroKartState::class.java
 
-        override fun create(kart: KartRef.Specific<NitroEngine>, parent: ElementHolder) =
-            GradientGaugeBar(this, kart, parent)
+        override fun create(context: HudSceneContext<NitroKartState>, parent: ElementHolder) =
+            GradientGaugeBar(this, context, parent)
     }
 
     @Serializable

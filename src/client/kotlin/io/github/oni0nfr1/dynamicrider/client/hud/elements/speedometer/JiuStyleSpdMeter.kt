@@ -7,8 +7,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
-import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.SpeedKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -18,9 +18,9 @@ import net.minecraft.resources.ResourceLocation
 
 class JiuStyleSpdMeter(
     spec: Spec,
-    kart: KartRef.Specific<SpeedEngine>,
+    context: HudSceneContext<SpeedKartState>,
     parent: ElementHolder,
-) : HudElementImpl<SpeedEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<SpeedKartState>(spec.layout, context, parent) {
     private companion object {
         const val HEIGHT = 65
         const val WIDTH = 130
@@ -44,14 +44,12 @@ class JiuStyleSpdMeter(
     var slotOverlayColor: Int = spec.slotOverlayColor
 
     val speed: Int
-        get() = kart.accessEngine { engine ->
-            engine.tachometer?.speed?.toInt()
-        } ?: 0
+        get() = context.kartState.speed.toInt()
 
     private var glow: Boolean = false
         set(value) {
             if (field == value) return
-            animationTime = if (value) System.currentTimeMillis() else null
+            animationTime = if (value) context.clock.currentTimeMillis() else null
             field = value
         }
 
@@ -59,7 +57,7 @@ class JiuStyleSpdMeter(
 
     private val animationProgress: Float
         get() = animationTime?.let { startMillis ->
-            ((System.currentTimeMillis() - startMillis) / (animationLengthSec * 1000f)).coerceIn(0f, 1f)
+            ((context.clock.currentTimeMillis() - startMillis) / (animationLengthSec * 1000f)).coerceIn(0f, 1f)
         } ?: 0f
 
     override val width: Int = WIDTH
@@ -154,11 +152,11 @@ class JiuStyleSpdMeter(
         val unitText: String = "km/h",
         @Serializable(with = HexColorSerdes::class)
         val slotOverlayColor: Int = 0x40000000,
-    ) : HudElementSpec<JiuStyleSpdMeter, SpeedEngine> {
-        override fun requiredEngineClass(): Class<out SpeedEngine> = SpeedEngine::class.java
+    ) : HudElementSpec<JiuStyleSpdMeter, SpeedKartState> {
+        override fun requiredStateClass(): Class<out SpeedKartState> = SpeedKartState::class.java
 
-        override fun create(kart: KartRef.Specific<SpeedEngine>, parent: ElementHolder) =
-            JiuStyleSpdMeter(this, kart, parent)
+        override fun create(context: HudSceneContext<SpeedKartState>, parent: ElementHolder) =
+            JiuStyleSpdMeter(this, context, parent)
     }
 
 }

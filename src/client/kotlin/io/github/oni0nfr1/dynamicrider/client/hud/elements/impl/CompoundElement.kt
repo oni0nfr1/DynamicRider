@@ -4,24 +4,24 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 
-abstract class CompoundElement<E: KartEngine>(
+abstract class CompoundElement<S : KartState>(
     layout: HudLayoutSpec,
-    kart: KartRef.Specific<E>,
+    context: HudSceneContext<S>,
     parent: ElementHolder
-) : HudElementImpl<E>(layout, kart, parent), ElementHolder {
+) : HudElementImpl<S>(layout, context, parent), ElementHolder {
 
-    private val childSpecs: MutableList<HudElementSpec<*, E>> = mutableListOf()
+    private val childSpecs: MutableList<HudElementSpec<*, S>> = mutableListOf()
 
-    private val children: List<HudElement<E>> by lazy {
-        childSpecs.map { it.create(kart, this) }
+    private val children: List<HudElement<S>> by lazy {
+        childSpecs.map { it.create(context, this) }
     }
 
-    protected fun addChild(spec: HudElementSpec<*, E>) {
+    protected fun addChild(spec: HudElementSpec<*, S>) {
         childSpecs += spec
     }
 

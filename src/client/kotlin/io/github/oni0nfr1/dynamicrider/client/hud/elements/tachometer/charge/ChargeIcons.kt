@@ -12,8 +12,8 @@ import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.elementId
-import io.github.oni0nfr1.skid.client.api.engine.ChargeEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.ChargeKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -22,9 +22,9 @@ import net.minecraft.resources.ResourceLocation
 
 class ChargeIcons(
     spec: Spec,
-    kart: KartRef.Specific<ChargeEngine>,
+    context: HudSceneContext<ChargeKartState>,
     parent: ElementHolder,
-) : HudElementImpl<ChargeEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<ChargeKartState>(spec.layout, context, parent) {
 
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(
@@ -52,18 +52,17 @@ class ChargeIcons(
     ) : ElementMetaData
 
     val autoGauge: Boolean
-        get() = kart.accessEngine { engine ->
-            val speed = engine.tachometer?.speed ?: return@accessEngine null
-            !engine.isBoosting && !engine.isDrifting && speed >= META.autoGaugeSpeedThreshold
-        } ?: false
+        get() = with(context.kartState) {
+            !isBoosting && !isDrifting && speed >= META.autoGaugeSpeedThreshold
+        }
 
     val draftActive: Boolean
-        get() = kart.accessEngine { it.draftActive } ?: false
+        get() = context.kartState.draftActive
 
     val draftCharging: Boolean
-        get() = kart.accessEngine { it.draftCharging } ?: false
+        get() = context.kartState.draftCharging
 
-    val draftBlink = LoopTimer(1000, spec.draftBlinkSpeed)
+    val draftBlink = LoopTimer(1000, spec.draftBlinkSpeed, context::nanoTime)
 
     override val width: Int
         get() = ATLAS.cellWidth
@@ -86,12 +85,12 @@ class ChargeIcons(
     data class Spec(
         override val layout: HudLayoutSpec,
         val draftBlinkSpeed: Double,
-    ) : HudElementSpec<ChargeIcons, ChargeEngine> {
-        override fun requiredEngineClass() = ChargeEngine::class.java
+    ) : HudElementSpec<ChargeIcons, ChargeKartState> {
+        override fun requiredStateClass() = ChargeKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<ChargeEngine>,
+            context: HudSceneContext<ChargeKartState>,
             parent: ElementHolder,
-        ) = ChargeIcons(this, kart, parent)
+        ) = ChargeIcons(this, context, parent)
     }
 }

@@ -5,8 +5,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.layout.HudLayoutEngine
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.gui.GuiGraphics
 import org.joml.Matrix4f
@@ -14,11 +14,11 @@ import org.joml.Vector2f
 import org.joml.Vector2i
 import org.joml.Vector3f
 
-abstract class HudElementImpl<E: KartEngine>(
+abstract class HudElementImpl<S : KartState>(
     layout: HudLayoutSpec,
-    val kart: KartRef.Specific<E>,
+    protected val context: HudSceneContext<S>,
     protected val parent: ElementHolder,
-) : HudElement<E> {
+) : HudElement<S> {
     override var screenAnchor: HudAnchor = layout.screenAnchor
     override var elementAnchor: HudAnchor = layout.elementAnchor
     override var scale: Vector2f = layout.toScale()

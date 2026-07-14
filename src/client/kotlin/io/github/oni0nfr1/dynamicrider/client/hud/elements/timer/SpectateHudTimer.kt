@@ -7,14 +7,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
-import io.github.oni0nfr1.dynamicrider.client.rider.time.RaceTime
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.race.KartRaceTimer
 import io.github.oni0nfr1.dynamicrider.client.util.milliseconds
 import io.github.oni0nfr1.dynamicrider.client.util.minutes
 import io.github.oni0nfr1.dynamicrider.client.util.seconds
-import io.github.oni0nfr1.skid.client.api.attr.maxLap
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -25,9 +22,9 @@ import kotlin.math.max
 
 class SpectateHudTimer(
     spec: Spec,
-    kart: KartRef.Specific<KartEngine>,
+    context: HudSceneContext<KartState>,
     parent: ElementHolder,
-) : HudElementImpl<KartEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<KartState>(spec.layout, context, parent) {
     private companion object {
         const val PADDING_PX = 6
         const val LAP_SUFFIX_GAP_PX = 1
@@ -40,7 +37,7 @@ class SpectateHudTimer(
     var minWidth: Int = spec.minWidth
     var txtColor: Int = spec.txtColor
 
-    var time: RaceTime = RaceTime()
+    var timeTotalMillis: Millis = 0
 
     var currentLap: Int = 1
     var maxLap: Int? = null
@@ -68,7 +65,7 @@ class SpectateHudTimer(
         val lapMainText = currentLap.coerceAtLeast(0).toString()
         val lapSuffixText = maxLap?.let { " /${it.coerceAtLeast(0)}" }.orEmpty()
 
-        val timeValueText = formatTime(time.interpolatedTotalMillis)
+        val timeValueText = formatTime(timeTotalMillis)
         val timeLabelText = "TIME / "
 
         val lapMainWidthPx = fontRenderer.width(lapMainText) * LAP_SCALE
@@ -101,7 +98,7 @@ class SpectateHudTimer(
 
         val lapMainText = currentLap.coerceAtLeast(0).toString()
         val lapSuffixText = maxLap?.let { " /${it.coerceAtLeast(0)}" } ?: "Lap"
-        val timeValueText = formatTime(time.interpolatedTotalMillis)
+        val timeValueText = formatTime(timeTotalMillis)
 
         val labelColor = withSameAlpha(txtColor, 0x00B0B0B0)
         val valueColor = txtColor
@@ -143,11 +140,11 @@ class SpectateHudTimer(
     }
 
     private fun syncState() {
-        val client = Minecraft.getInstance()
-        visible = KartRaceTimer.isRacing
-        time = KartRaceTimer.time
-        currentLap = kart.access { engine?.currentLap } ?: 0
-        maxLap = client.level?.maxLap
+        val raceState = context.raceState
+        visible = raceState.racing
+        timeTotalMillis = raceState.elapsedTimeMillis
+        currentLap = raceState.currentLap
+        maxLap = raceState.maxLap
     }
 
     private fun drawLabelAndValue(
@@ -189,13 +186,13 @@ class SpectateHudTimer(
         val minWidth: Int = 100,
         @Serializable(with = HexColorSerdes::class)
         val txtColor: Int = 0xFFFFFFFF.toInt(),
-    ) : HudElementSpec<SpectateHudTimer, KartEngine> {
-        override fun requiredEngineClass(): Class<out KartEngine> = KartEngine::class.java
+    ) : HudElementSpec<SpectateHudTimer, KartState> {
+        override fun requiredStateClass(): Class<out KartState> = KartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<KartEngine>,
+            context: HudSceneContext<KartState>,
             parent: ElementHolder,
-        ): SpectateHudTimer = SpectateHudTimer(this, kart, parent)
+        ): SpectateHudTimer = SpectateHudTimer(this, context, parent)
     }
 
 }

@@ -1,18 +1,16 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge
 
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
-import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
 
 class LinearInterpolator(
-    private val kart: KartRef.Specific<NitroEngine>,
+    private val state: NitroKartState,
     private val interpolationSpeed: Float = 1f,
 ): GaugeBar {
     val nitroGaugeRaw: Float
-        get() = kart.accessEngine { it.tachometer?.gauge?.toFloat() } ?: 0.0f
+        get() = state.nitroGauge
 
     val teamBoostGaugeRaw: Float
-        get() = if (KartTeamBoostTracker.gaugeExists) KartTeamBoostTracker.gauge else 0f
+        get() = state.teamBoostGauge
 
     private var displayNitroGauge: Float = nitroGaugeRaw
     private var displayTeamBoostGauge: Float = teamBoostGaugeRaw

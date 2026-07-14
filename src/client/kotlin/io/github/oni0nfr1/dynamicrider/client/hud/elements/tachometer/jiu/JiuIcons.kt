@@ -12,8 +12,8 @@ import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.elementId
-import io.github.oni0nfr1.skid.client.api.engine.JiuEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.JiuKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -22,9 +22,9 @@ import net.minecraft.resources.ResourceLocation
 
 class JiuIcons(
     spec: Spec,
-    kart: KartRef.Specific<JiuEngine>,
+    context: HudSceneContext<JiuKartState>,
     parent: ElementHolder,
-) : HudElementImpl<JiuEngine>(spec.layout, kart, parent) {
+) : HudElementImpl<JiuKartState>(spec.layout, context, parent) {
 
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(
@@ -54,20 +54,16 @@ class JiuIcons(
         get() = ATLAS.cellHeight
 
     val draftActive: Boolean
-        get() = kart.accessEngine { it.draftActive } ?: false
+        get() = context.kartState.draftActive
     val draftCharging: Boolean
-        get() = kart.accessEngine { it.draftCharging } ?: false
+        get() = context.kartState.draftCharging
 
     val autoGauge: Boolean
-        get() = kart.accessEngine { engine ->
-            val speed = engine.tachometer?.speed ?: return@accessEngine null
-            val isDrifting = engine.isDrifting
-            val isBoosting = engine.isBoosting
+        get() = with(context.kartState) {
+            !isBoosting && !isDrifting && speed >= META.autoGaugeSpeedThreshold
+        }
 
-            return !isBoosting && !isDrifting && speed >= META.autoGaugeSpeedThreshold
-        } ?: false
-
-    val draftBlink = LoopTimer(1000, spec.draftBlinkSpeed)
+    val draftBlink = LoopTimer(1000, spec.draftBlinkSpeed, context::nanoTime)
 
     override fun render(
         guiGraphics: GuiGraphics,
@@ -89,12 +85,12 @@ class JiuIcons(
     data class Spec(
         override val layout: HudLayoutSpec,
         val draftBlinkSpeed: Double,
-    ) : HudElementSpec<JiuIcons, JiuEngine> {
-        override fun requiredEngineClass() = JiuEngine::class.java
+    ) : HudElementSpec<JiuIcons, JiuKartState> {
+        override fun requiredStateClass() = JiuKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<JiuEngine>,
+            context: HudSceneContext<JiuKartState>,
             parent: ElementHolder
-        ) = JiuIcons(this, kart, parent)
+        ) = JiuIcons(this, context, parent)
     }
 }

@@ -4,16 +4,16 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.CompoundElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.skid.client.api.engine.ChargeEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.ChargeKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 class ChargeTachometer(
     spec: Spec,
-    kart: KartRef.Specific<ChargeEngine>,
+    context: HudSceneContext<ChargeKartState>,
     parent: ElementHolder,
-) : CompoundElement<ChargeEngine>(spec.layout, kart, parent) {
+) : CompoundElement<ChargeKartState>(spec.layout, context, parent) {
 
     init {
         addChild(spec.speedometer)
@@ -35,12 +35,12 @@ class ChargeTachometer(
         val chargerGauge: ChargerGauge.Spec,
         val gauge: ChargeGauge.Spec,
         val icons: ChargeIcons.Spec,
-    ) : HudElementSpec<ChargeTachometer, ChargeEngine> {
-        override fun requiredEngineClass() = ChargeEngine::class.java
+    ) : HudElementSpec<ChargeTachometer, ChargeKartState> {
+        override fun requiredStateClass() = ChargeKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<ChargeEngine>,
+            context: HudSceneContext<ChargeKartState>,
             parent: ElementHolder,
-        ) = ChargeTachometer(this, kart, parent)
+        ) = ChargeTachometer(this, context, parent)
     }
 }

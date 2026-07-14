@@ -14,8 +14,8 @@ import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.data.GaugeFillRegion
 import io.github.oni0nfr1.dynamicrider.client.resource.elementId
-import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -24,10 +24,10 @@ import net.minecraft.resources.ResourceLocation
 
 class JiuGauge(
     spec: Spec,
-    kart: KartRef.Specific<NitroEngine>,
+    context: HudSceneContext<NitroKartState>,
     parent: ElementHolder,
-) : HudElementImpl<NitroEngine>(spec.layout, kart, parent),
-    GaugeBar by LinearExtrapolator(kart)
+) : HudElementImpl<NitroKartState>(spec.layout, context, parent),
+    GaugeBar by LinearExtrapolator(context.kartState)
 {
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(
@@ -88,13 +88,13 @@ class JiuGauge(
     data class Spec(
         override val layout: HudLayoutSpec
 
-    ) : HudElementSpec<JiuGauge, NitroEngine> {
-        override fun requiredEngineClass() = NitroEngine::class.java
+    ) : HudElementSpec<JiuGauge, NitroKartState> {
+        override fun requiredStateClass() = NitroKartState::class.java
 
         override fun create(
-            kart: KartRef.Specific<NitroEngine>,
+            context: HudSceneContext<NitroKartState>,
             parent: ElementHolder
-        ) = JiuGauge(this, kart, parent)
+        ) = JiuGauge(this, context, parent)
 
     }
 }

@@ -8,9 +8,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.Linea
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
-import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
-import io.github.oni0nfr1.skid.client.api.engine.V1Engine
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.dynamicrider.client.hud.state.V1KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.minecraft.client.DeltaTracker
@@ -21,10 +20,10 @@ import kotlin.math.abs
 
 class V1Tachometer(
     spec: Spec,
-    kart: KartRef.Specific<V1Engine>,
+    context: HudSceneContext<V1KartState>,
     parent: ElementHolder,
-) : HudElementImpl<V1Engine>(spec.layout, kart, parent),
-    GaugeBar by LinearExtrapolator(kart)
+) : HudElementImpl<V1KartState>(spec.layout, context, parent),
+    GaugeBar by LinearExtrapolator(context.kartState)
 {
 
     companion object {
@@ -96,36 +95,22 @@ class V1Tachometer(
 
 
     val speed: Int
-        get() = kart.accessEngine { engine ->
-            engine.tachometer?.speed?.toInt()
-        } ?: 0
+        get() = context.kartState.speed.toInt()
     val isBoosting: Boolean
-        get() = kart.accessEngine { engine ->
-            engine.isBoosting
-        } ?: false
+        get() = context.kartState.isBoosting
     val exceedGauge: Float
-        get() = kart.accessEngine { engine ->
-            engine.tachometer?.exceedGauge?.div(0.9851485f)
-        } ?: 0f
+        get() = context.kartState.exceedGauge
     val autoGauge: Boolean
-        get() = kart.accessEngine { engine ->
-            val speed = engine.tachometer?.speed ?: return@accessEngine null
-            val isDrifting = engine.isDrifting
-            val isBoosting = engine.isBoosting
-
-            return !isBoosting && !isDrifting && speed.toInt() >= 100
-        } ?: false
+        get() = with(context.kartState) {
+            !isBoosting && !isDrifting && speed.toInt() >= 100
+        }
     val draftActive: Boolean
-        get() = kart.accessEngine { engine ->
-            engine.draftActive
-        } ?: false
+        get() = context.kartState.draftActive
     val draftCharging: Boolean
-        get() = kart.accessEngine { engine ->
-            engine.draftCharging
-        } ?: false
+        get() = context.kartState.draftCharging
 
-    val draftBlink = LoopTimer(1000, draftBlinkSpeed)
-    val exceedBlink = LoopTimer(1000)
+    val draftBlink = LoopTimer(1000, draftBlinkSpeed, context::nanoTime)
+    val exceedBlink = LoopTimer(1000, nanoTime = context::nanoTime)
     val exceedBlinkAlpha
         get() = 1.0f - abs(2.0f * exceedBlink.progress - 1)
     var prevExceedGauge = 0f
@@ -274,7 +259,7 @@ class V1Tachometer(
 
         guiGraphics.renderExceed(exceedGauge, exceedGaugeDecreasing)
 
-        if (KartTeamBoostTracker.gaugeExists) {
+        if (context.kartState.teamBoostGaugeAvailable) {
             guiGraphics.fillImage(TEAM_BOOST_BACKGROUND)
             guiGraphics.renderNitroGauge(TEAM_BOOST_GAUGE, teamBoostGauge)
         }
@@ -294,9 +279,9 @@ class V1Tachometer(
         override val layout: HudLayoutSpec,
         val draftBlinkSpeed: Double = 1.0,
 
-    ) : HudElementSpec<V1Tachometer, V1Engine> {
-        override fun requiredEngineClass() = V1Engine::class.java
-        override fun create(kart: KartRef.Specific<V1Engine>, parent: ElementHolder) =
-            V1Tachometer(this, kart, parent)
+    ) : HudElementSpec<V1Tachometer, V1KartState> {
+        override fun requiredStateClass() = V1KartState::class.java
+        override fun create(context: HudSceneContext<V1KartState>, parent: ElementHolder) =
+            V1Tachometer(this, context, parent)
     }
 }
