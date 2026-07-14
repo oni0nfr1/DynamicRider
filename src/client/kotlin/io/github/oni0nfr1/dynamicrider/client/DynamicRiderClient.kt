@@ -11,7 +11,6 @@ import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceEndCallb
 import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRaceStartCallback
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression
-import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle.HudSceneLifecycle
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneResourceRegistry
@@ -55,8 +54,6 @@ class DynamicRiderClient : ClientModInitializer {
                 _instance = value
             }
     }
-
-    val stateManager = HudStateManager()
 
     var raceActive: Boolean = false
         private set
