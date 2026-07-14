@@ -72,7 +72,7 @@ class ChargerGauge(
     @Serializable
     @SerialName("CHARGER_GAUGE")
     data class Spec(
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
     ) : HudElementSpec<ChargerGauge, ChargeKartState> {
         override fun requiredStateClass() = ChargeKartState::class.java
 

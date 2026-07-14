@@ -139,7 +139,7 @@ class JiuStyleSpdMeter(
     @Serializable
     @SerialName("JIU_TACHOMETER_SIMPLE")
     data class Spec(
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
         val tachometerBackgroundScale: Float = 1.25f,
         val animationLengthSec: Float = 0.5f,
         val glowThreshold: Int = 100,

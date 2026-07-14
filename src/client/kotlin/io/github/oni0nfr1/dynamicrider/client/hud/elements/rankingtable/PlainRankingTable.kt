@@ -164,7 +164,7 @@ class PlainRankingTable(
     @Serializable
     @SerialName("PLAIN_RANKING_TABLE")
     data class Spec(
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
         @Serializable(with = HexColorSerdes::class)
         val defaultTextColor: Int = 0x00FFFFFF,
         val shadow: Boolean = true,

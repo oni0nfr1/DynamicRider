@@ -83,8 +83,8 @@ class JiuIcons(
     @Serializable
     @SerialName("JIU_ICONS")
     data class Spec(
-        override val layout: HudLayoutSpec,
-        val draftBlinkSpeed: Double,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
+        val draftBlinkSpeed: Double = 1.0,
     ) : HudElementSpec<JiuIcons, JiuKartState> {
         override fun requiredStateClass() = JiuKartState::class.java
 

@@ -106,8 +106,8 @@ class JiuSpdMeter(
     @Serializable
     @SerialName("JIU_SPEEDOMETER")
     data class Spec(
-        override val layout: HudLayoutSpec,
-        val animationSpeed: Double,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
+        val animationSpeed: Double = 1.0,
     ) : HudElementSpec<JiuSpdMeter, SpeedKartState> {
         override fun requiredStateClass() = SpeedKartState::class.java
 

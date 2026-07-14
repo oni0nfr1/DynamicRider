@@ -211,7 +211,7 @@ class HudTimer(
     @Serializable
     @SerialName("RIDE_TIMER")
     data class Spec(
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
         val minWidth: Int = 100,
         @Serializable(with = HexColorSerdes::class)
         val txtColor: Int = 0xFFFFFFFF.toInt(),

@@ -175,7 +175,7 @@ class GradientGaugeBar(
     @HudElementInfo(category = "gauge")
     data class Spec(
         @HudLayout
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
         @HudRange(min = 1.0, max = 64.0, step = 1.0)
         val thickness: Int = 8,
         @HudRange(min = 1.0, max = 2_048.0, step = 1.0)

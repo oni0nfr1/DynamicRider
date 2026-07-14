@@ -276,7 +276,7 @@ class V1Tachometer(
     @Serializable
     @SerialName("V1_TACHOMETER")
     data class Spec(
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
         val draftBlinkSpeed: Double = 1.0,
 
     ) : HudElementSpec<V1Tachometer, V1KartState> {

@@ -95,7 +95,7 @@ class PlainNitroSlot(
     @HudElementInfo(category = "nitro")
     data class Spec(
         @HudLayout
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
         @HudProperty(
             descriptionKey = "dynamicrider.hud.element.plain_nitro_slot.property.slot_index.description",
         )

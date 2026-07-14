@@ -116,10 +116,10 @@ class DynNitroSlot(
     @Serializable
     @SerialName("NITRO_SLOT")
     data class Spec(
-        override val layout: HudLayoutSpec,
-        val slotIndex: Int,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
+        val slotIndex: Int = 1,
         @Serializable(with = HexColorSerdes::class)
-        val backgroundColor: Int,
+        val backgroundColor: Int = 0xFF0000FF.toInt(),
     ) : HudElementSpec<DynNitroSlot, NitroKartState> {
         override fun requiredStateClass() = NitroKartState::class.java
         override fun create(context: HudSceneContext<NitroKartState>, parent: ElementHolder) =

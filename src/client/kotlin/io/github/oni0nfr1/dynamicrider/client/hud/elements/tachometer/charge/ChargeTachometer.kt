@@ -30,11 +30,17 @@ class ChargeTachometer(
     @Serializable
     @SerialName("CHARGE_TACHOMETER")
     data class Spec(
-        override val layout: HudLayoutSpec,
-        val speedometer: ChargeSpdMeter.Spec,
-        val chargerGauge: ChargerGauge.Spec,
-        val gauge: ChargeGauge.Spec,
-        val icons: ChargeIcons.Spec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
+        val speedometer: ChargeSpdMeter.Spec = ChargeSpdMeter.Spec(),
+        val chargerGauge: ChargerGauge.Spec = ChargerGauge.Spec(
+            layout = HudLayoutSpec(x = 0, y = 27),
+        ),
+        val gauge: ChargeGauge.Spec = ChargeGauge.Spec(
+            layout = HudLayoutSpec(x = 79, y = 2),
+        ),
+        val icons: ChargeIcons.Spec = ChargeIcons.Spec(
+            layout = HudLayoutSpec(x = 152, y = 91),
+        ),
     ) : HudElementSpec<ChargeTachometer, ChargeKartState> {
         override fun requiredStateClass() = ChargeKartState::class.java
 

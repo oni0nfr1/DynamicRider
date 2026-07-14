@@ -1,11 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 object HudSceneCodec {
     private val json = Json {
-        serializersModule = HudElementSerializersModule
+        serializersModule = HudElementTypeRegistry.serializersModule
         classDiscriminator = "type"
         ignoreUnknownKeys = true
         encodeDefaults = true

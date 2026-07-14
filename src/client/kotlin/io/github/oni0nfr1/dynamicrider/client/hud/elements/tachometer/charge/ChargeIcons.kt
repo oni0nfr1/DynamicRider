@@ -83,8 +83,8 @@ class ChargeIcons(
     @Serializable
     @SerialName("CHARGE_ICONS")
     data class Spec(
-        override val layout: HudLayoutSpec,
-        val draftBlinkSpeed: Double,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
+        val draftBlinkSpeed: Double = 1.0,
     ) : HudElementSpec<ChargeIcons, ChargeKartState> {
         override fun requiredStateClass() = ChargeKartState::class.java
 

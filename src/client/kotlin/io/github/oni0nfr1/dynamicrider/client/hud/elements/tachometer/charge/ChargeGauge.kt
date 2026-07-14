@@ -71,7 +71,7 @@ class ChargeGauge(
     @Serializable
     @SerialName("CHARGE_GAUGE")
     data class Spec(
-        override val layout: HudLayoutSpec,
+        override val layout: HudLayoutSpec = HudLayoutSpec(),
     ) : HudElementSpec<ChargeGauge, NitroKartState> {
         override fun requiredStateClass() = NitroKartState::class.java
 
