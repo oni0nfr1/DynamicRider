@@ -27,7 +27,11 @@ interface DraftSpeedKartState : SpeedKartState, DraftKartState
 
 interface NitroDraftKartState : NitroKartState, DraftKartState
 
+interface XKartState : NitroDraftKartState
+interface EXKartState : NitroDraftKartState
 interface JiuKartState : NitroDraftKartState
+interface NewKartState : NitroDraftKartState
+interface Z7KartState : NitroDraftKartState
 
 interface ChargeKartState : NitroDraftKartState {
     val chargerGauge: Float
@@ -36,3 +40,17 @@ interface ChargeKartState : NitroDraftKartState {
 interface V1KartState : NitroDraftKartState {
     val exceedGauge: Float
 }
+
+interface A2KartState : NitroDraftKartState
+interface LegacyKartState : NitroDraftKartState
+interface ProKartState : NitroDraftKartState
+interface RushPlusKartState : NitroDraftKartState
+interface SRKartState : NitroDraftKartState
+interface N1KartState : NitroDraftKartState
+interface RXKartState : NitroDraftKartState
+interface KeyKartState : NitroKartState
+interface GearKartState : DraftSpeedKartState
+interface F1KartState : DraftSpeedKartState
+interface RallyKartState : DraftSpeedKartState
+interface MKKartState : DraftKartState
+interface BoatKartState : KartState

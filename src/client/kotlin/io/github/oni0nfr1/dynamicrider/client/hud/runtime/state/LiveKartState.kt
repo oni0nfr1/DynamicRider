@@ -1,39 +1,22 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.runtime.state
 
-import io.github.oni0nfr1.dynamicrider.client.hud.state.ChargeKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.DraftKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.DraftSpeedKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.JiuKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroDraftKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.SpeedKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.state.V1KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.*
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.inventory.KartTeamBoostCounter
-import io.github.oni0nfr1.skid.client.api.engine.ChargeEngine
-import io.github.oni0nfr1.skid.client.api.engine.DraftEngine
-import io.github.oni0nfr1.skid.client.api.engine.JiuEngine
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
-import io.github.oni0nfr1.skid.client.api.engine.NitroEngine
-import io.github.oni0nfr1.skid.client.api.engine.SpeedEngine
-import io.github.oni0nfr1.skid.client.api.engine.V1Engine
+import io.github.oni0nfr1.skid.client.api.engine.*
 import io.github.oni0nfr1.skid.client.api.kart.KartRef
 
-open class LiveKartState<E : KartEngine>(
-    protected val kart: KartRef.Specific<E>,
-) : KartState
-
-open class LiveSpeedKartState<E : SpeedEngine>(
-    kart: KartRef.Specific<E>,
-) : LiveKartState<E>(kart), SpeedKartState {
+class LiveSpeedKartState<E : SpeedEngine>(
+    private val kart: KartRef.Specific<E>,
+) : SpeedKartState {
     override val speed: Double
         get() = kart.accessEngine { it.tachometer?.speed } ?: 0.0
 }
 
-open class LiveNitroKartState<E : NitroEngine>(
-    kart: KartRef.Specific<E>,
-) : LiveSpeedKartState<E>(kart), NitroKartState {
+class LiveNitroKartState<E : NitroEngine>(
+    private val kart: KartRef.Specific<E>,
+) : NitroKartState,
+    SpeedKartState by LiveSpeedKartState(kart) {
     override val isDrifting: Boolean
         get() = kart.accessEngine { it.isDrifting } ?: false
     override val isBoosting: Boolean
@@ -52,50 +35,132 @@ open class LiveNitroKartState<E : NitroEngine>(
         get() = if (teamBoostGaugeAvailable) KartTeamBoostTracker.gauge else 0f
 }
 
-open class LiveNitroDraftKartState<E>(
-    kart: KartRef.Specific<E>,
-) : LiveNitroKartState<E>(kart), NitroDraftKartState
-    where E : NitroEngine, E : DraftEngine {
-    override val draftActive: Boolean
-        get() = kart.accessEngine { it.draftActive } ?: false
-    override val draftCharging: Boolean
-        get() = kart.accessEngine { it.draftCharging } ?: false
-}
-
-class LiveJiuKartState(
-    kart: KartRef.Specific<JiuEngine>,
-) : LiveNitroDraftKartState<JiuEngine>(kart), JiuKartState
-
-class LiveChargeKartState(
-    kart: KartRef.Specific<ChargeEngine>,
-) : LiveNitroDraftKartState<ChargeEngine>(kart), ChargeKartState {
-    override val chargerGauge: Float
-        get() = kart.accessEngine { it.tachometer?.chargerGauge } ?: 0f
-}
-
-class LiveV1KartState(
-    kart: KartRef.Specific<V1Engine>,
-) : LiveNitroDraftKartState<V1Engine>(kart), V1KartState {
-    override val exceedGauge: Float
-        get() = kart.accessEngine { it.tachometer?.exceedGauge?.div(0.9851485f) } ?: 0f
-}
-
-class LiveDraftSpeedKartState<E>(
-    kart: KartRef.Specific<E>,
-) : LiveSpeedKartState<E>(kart), DraftSpeedKartState
-    where E : SpeedEngine, E : DraftEngine {
-    override val draftActive: Boolean
-        get() = kart.accessEngine { it.draftActive } ?: false
-    override val draftCharging: Boolean
-        get() = kart.accessEngine { it.draftCharging } ?: false
-}
-
 class LiveDraftKartState<E>(
-    kart: KartRef.Specific<E>,
-) : LiveKartState<E>(kart), DraftKartState
+    private val kart: KartRef.Specific<E>,
+) : DraftKartState
     where E : KartEngine, E : DraftEngine {
     override val draftActive: Boolean
         get() = kart.accessEngine { it.draftActive } ?: false
     override val draftCharging: Boolean
         get() = kart.accessEngine { it.draftCharging } ?: false
 }
+
+class LiveXKartState(
+    kart: KartRef.Specific<XEngine>,
+) : XKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveEXKartState(
+    kart: KartRef.Specific<EXEngine>,
+) : EXKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveJiuKartState(
+    kart: KartRef.Specific<JiuEngine>,
+) : JiuKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveNewKartState(
+    kart: KartRef.Specific<NewEngine>,
+) : NewKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveZ7KartState(
+    kart: KartRef.Specific<Z7Engine>,
+) : Z7KartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveV1KartState(
+    private val kart: KartRef.Specific<V1Engine>,
+) : V1KartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart) {
+    override val exceedGauge: Float
+        get() = kart.accessEngine { it.tachometer?.exceedGauge?.div(0.9851485f) } ?: 0f
+}
+
+class LiveA2KartState(
+    kart: KartRef.Specific<A2Engine>,
+) : A2KartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveLegacyKartState(
+    kart: KartRef.Specific<LegacyEngine>,
+) : LegacyKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveProKartState(
+    kart: KartRef.Specific<ProEngine>,
+) : ProKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveRushPlusKartState(
+    kart: KartRef.Specific<RushPlusEngine>,
+) : RushPlusKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveChargeKartState(
+    private val kart: KartRef.Specific<ChargeEngine>,
+) : ChargeKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart) {
+    override val chargerGauge: Float
+        get() = kart.accessEngine { it.tachometer?.chargerGauge } ?: 0f
+}
+
+class LiveSRKartState(
+    kart: KartRef.Specific<SREngine>,
+) : SRKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveN1KartState(
+    kart: KartRef.Specific<N1Engine>,
+) : N1KartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveRXKartState(
+    kart: KartRef.Specific<RXEngine>,
+) : RXKartState,
+    NitroKartState by LiveNitroKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveKeyKartState(
+    kart: KartRef.Specific<KeyEngine>,
+) : KeyKartState,
+    NitroKartState by LiveNitroKartState(kart)
+
+class LiveGearKartState(
+    kart: KartRef.Specific<GearEngine>,
+) : GearKartState,
+    SpeedKartState by LiveSpeedKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveF1KartState(
+    kart: KartRef.Specific<F1Engine>,
+) : F1KartState,
+    SpeedKartState by LiveSpeedKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveRallyKartState(
+    kart: KartRef.Specific<RallyEngine>,
+) : RallyKartState,
+    SpeedKartState by LiveSpeedKartState(kart),
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveMKKartState(
+    kart: KartRef.Specific<MKEngine>,
+) : MKKartState,
+    DraftKartState by LiveDraftKartState(kart)
+
+class LiveBoatKartState : BoatKartState
