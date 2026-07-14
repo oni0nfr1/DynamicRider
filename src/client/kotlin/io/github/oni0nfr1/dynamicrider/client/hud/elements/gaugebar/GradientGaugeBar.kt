@@ -8,6 +8,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.Linea
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
@@ -168,13 +172,20 @@ class GradientGaugeBar(
 
     @Serializable
     @SerialName("GRADIENT_GAUGE_BAR")
+    @HudElementInfo(category = "gauge")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec,
+        @HudRange(min = 1.0, max = 64.0, step = 1.0)
         val thickness: Int = 8,
+        @HudRange(min = 1.0, max = 2_048.0, step = 1.0)
         val width: Int = 120,
+        @HudRange(min = 0.0, max = 64.0, step = 1.0)
         val padding: Int = 2,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val boxColor: Int = 0x80000000.toInt(),
+        @HudRange(min = 0.0, max = 255.0, step = 1.0)
         val gaugeAlpha: Int = 0xFF,
         val gradientStops: List<ColorStop> = ColorStop.default(),
     ) : HudElementSpec<GradientGaugeBar, NitroKartState> {
@@ -187,6 +198,7 @@ class GradientGaugeBar(
     @Serializable
     data class ColorStop(
         val offset: Int,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val color: Int,
     ) {

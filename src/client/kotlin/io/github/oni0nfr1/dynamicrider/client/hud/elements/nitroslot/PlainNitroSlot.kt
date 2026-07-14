@@ -4,6 +4,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudProperty
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.hud.state.NitroKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
@@ -87,13 +92,22 @@ class PlainNitroSlot(
 
     @Serializable
     @SerialName("PLAIN_NITRO_SLOT")
+    @HudElementInfo(category = "nitro")
     data class Spec(
+        @HudLayout
         override val layout: HudLayoutSpec,
+        @HudProperty(
+            descriptionKey = "dynamicrider.hud.element.plain_nitro_slot.property.slot_index.description",
+        )
+        @HudRange(min = 1.0, max = 16.0, step = 1.0)
         val slotIndex: Int = 1,
         val hideUntilOccupied: Boolean = false,
         val keepVisibleAfterOccupied: Boolean = true,
+        @HudRange(min = 1.0, max = 256.0, step = 1.0)
         val iconSize: Int = 32,
+        @HudRange(min = 0.0, max = 64.0, step = 1.0)
         val boxPadding: Int = 5,
+        @HudColor
         @Serializable(with = HexColorSerdes::class)
         val boxColor: Int = 0x80000000.toInt(),
     ) : HudElementSpec<PlainNitroSlot, NitroKartState> {
