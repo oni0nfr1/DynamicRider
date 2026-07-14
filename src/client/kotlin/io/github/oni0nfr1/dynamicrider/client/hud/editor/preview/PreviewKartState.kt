@@ -11,11 +11,11 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.V1KartState
 open class PreviewKartState : KartState
 
 open class PreviewSpeedKartState(
-    override var speed: Double = 180.0,
+    override var speed: Double = 169.9,
 ) : PreviewKartState(), SpeedKartState
 
 open class PreviewNitroKartState(
-    speed: Double = 180.0,
+    speed: Double = 169.9,
     override var isDrifting: Boolean = false,
     override var isBoosting: Boolean = false,
     override var maxBoost: Int = 3,
@@ -27,7 +27,7 @@ open class PreviewNitroKartState(
 ) : PreviewSpeedKartState(speed), NitroKartState
 
 open class PreviewNitroDraftKartState(
-    speed: Double = 180.0,
+    speed: Double = 169.9,
 ) : PreviewNitroKartState(speed), NitroDraftKartState {
     override var draftActive: Boolean = false
     override var draftCharging: Boolean = false
