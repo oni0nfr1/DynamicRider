@@ -211,7 +211,7 @@ object KartRankingManager: RiderBackend() {
 
     private fun isRaceActiveNow(): Boolean {
         return try {
-            DynamicRiderClient.instance.raceSession != null
+            DynamicRiderClient.instance.raceActive
         } catch (_: IllegalStateException) {
             false
         }

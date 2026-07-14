@@ -15,7 +15,6 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.HudStateManager
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle.HudSceneLifecycle
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.custom.HudSceneResourceRegistry
-import io.github.oni0nfr1.dynamicrider.client.rider.legacy.RaceSession
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
@@ -59,7 +58,8 @@ class DynamicRiderClient : ClientModInitializer {
 
     val stateManager = HudStateManager()
 
-    var raceSession: RaceSession? = null
+    var raceActive: Boolean = false
+        private set
     var currentScene: HudScene<*>? = null
         set(value) {
             field?.disable()
@@ -177,13 +177,12 @@ class DynamicRiderClient : ClientModInitializer {
     }
 
     fun onRaceStart(): HandleResult {
-        raceSession = RaceSession(stateManager)
+        raceActive = true
         return HandleResult.PASS
     }
 
     fun onRaceEnd(reason: RaceEndReason): HandleResult {
-        raceSession?.close()
-        raceSession = null
+        raceActive = false
         return HandleResult.PASS
     }
 }
