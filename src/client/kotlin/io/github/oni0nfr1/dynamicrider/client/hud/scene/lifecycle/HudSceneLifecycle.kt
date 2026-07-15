@@ -3,9 +3,11 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scene.lifecycle
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadResult
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoader
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneResolution
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpecResolution
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
 import io.github.oni0nfr1.dynamicrider.client.util.chatLog
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
@@ -30,13 +32,21 @@ object HudSceneLifecycle {
         mode: HudSceneMode,
         context: HudSceneContext<S>,
     ): HudScene<S> {
-        return when (val result = repository.resolve(mode, context)) {
-            is HudSceneResolution.Resolved -> {
-                if (result.diagnostics.isNotEmpty()) reportLoadFailure(result.diagnostics)
-                result.scene
+        return when (val resolution = repository.resolveSpec(mode, context.kartStateType)) {
+            is HudSceneSpecResolution.Resolved -> {
+                when (val result = HudSceneLoader.load(resolution.spec, resolution.sourcePath, context)) {
+                    is HudSceneLoadResult.Loaded -> {
+                        if (resolution.diagnostics.isNotEmpty()) reportLoadFailure(resolution.diagnostics)
+                        result.scene
+                    }
+                    is HudSceneLoadResult.Failed -> {
+                        reportLoadFailure(resolution.diagnostics + result.errors)
+                        HudScene(context)
+                    }
+                }
             }
-            is HudSceneResolution.Failed -> {
-                reportLoadFailure(result.errors)
+            is HudSceneSpecResolution.Failed -> {
+                reportLoadFailure(resolution.errors)
                 HudScene(context)
             }
         }

@@ -3,6 +3,9 @@ package io.github.oni0nfr1.dynamicrider.client.hud.validation
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
@@ -47,6 +50,47 @@ object HudSpecValidator {
         val errors = mutableListOf<HudSpecValidationError>()
         validateValue(serializer.descriptor, encoded, HudSpecPath(), errors)
         return if (errors.isEmpty()) HudSpecValidationResult.Valid else HudSpecValidationResult.Invalid(errors)
+    }
+
+    /** [scene]의 모든 요소가 [stateType]과 호환되고 개별 Spec 검증을 통과하는지 검사한다. */
+    fun validateScene(
+        scene: HudSceneSpec,
+        stateType: KartStateType<out KartState>,
+    ): HudSceneValidationResult {
+        val compatibilityErrors = scene.elements.mapIndexedNotNull { index, elementSpec ->
+            val requiredStateClass = elementSpec.requiredStateClass()
+            if (stateType.accepts(requiredStateClass)) {
+                null
+            } else {
+                HudSceneValidationError.IncompatibleState(
+                    elementIndex = index,
+                    elementId = scene.elementIds.getOrNull(index),
+                    specType = elementSpec::class.java.name,
+                    requiredStateClass = requiredStateClass,
+                    sceneStateClass = stateType.stateClass,
+                )
+            }
+        }
+        if (compatibilityErrors.isNotEmpty()) {
+            return HudSceneValidationResult.Invalid(compatibilityErrors)
+        }
+
+        val validationErrors = scene.elements.mapIndexedNotNull { index, elementSpec ->
+            when (val result = validate(elementSpec)) {
+                HudSpecValidationResult.Valid -> null
+                is HudSpecValidationResult.Invalid -> HudSceneValidationError.InvalidSpec(
+                    elementIndex = index,
+                    elementId = scene.elementIds.getOrNull(index),
+                    specType = elementSpec::class.java.name,
+                    errors = result.errors,
+                )
+            }
+        }
+        return if (validationErrors.isEmpty()) {
+            HudSceneValidationResult.Valid
+        } else {
+            HudSceneValidationResult.Invalid(validationErrors)
+        }
     }
 
     private fun validateValue(

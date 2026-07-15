@@ -2,8 +2,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.session
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneMode
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
 

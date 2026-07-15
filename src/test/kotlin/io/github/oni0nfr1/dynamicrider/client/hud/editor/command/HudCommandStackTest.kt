@@ -4,7 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentEle
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

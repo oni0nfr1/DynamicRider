@@ -5,6 +5,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTy
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import kotlinx.serialization.SerializationException
 import org.junit.jupiter.api.Assertions.assertEquals

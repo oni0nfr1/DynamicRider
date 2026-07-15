@@ -2,6 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
 import java.nio.file.Path
 import net.minecraft.resources.ResourceLocation
 

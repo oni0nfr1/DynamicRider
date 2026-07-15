@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 

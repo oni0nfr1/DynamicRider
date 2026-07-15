@@ -1,8 +1,11 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
-import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
+import kotlinx.serialization.SerializationException
+import java.io.IOException
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -17,29 +20,28 @@ class HudSceneRepository(
     private val customRoot: Path,
 ) {
     /**
-     * 현재 모드와 상태 타입에 적용할 HUD 장면을 결정하고 런타임 장면을 생성한다.
+     * 현재 모드와 상태 타입에 적용할 HUD 장면 명세를 결정한다.
      *
      * 손상된 config는 보존하며 진단을 첨부한 뒤 리소스 장면으로 fallback한다.
      *
-     * @return 선택된 장면과 출처 또는 모든 후보가 실패한 경우 오류 목록
+     * @return 선택된 명세, 출처와 진단 또는 모든 후보가 실패한 경우 오류 목록
      */
-    fun <S : KartState> resolve(
+    fun resolveSpec(
         mode: HudSceneMode,
-        context: HudSceneContext<S>,
-    ): HudSceneResolution<S> {
-        val stateType = context.kartStateType
+        stateType: KartStateType<*>,
+    ): HudSceneSpecResolution {
         val customPath = HudScenePaths.customHudScenePath(customRoot, mode, stateType)
-        val customResult = HudSceneLoader.load(customPath, context)
-        when (customResult) {
-            is HudSceneLoadResult.Loaded -> return HudSceneResolution.Resolved(
-                scene = customResult.scene,
+        when (val customResult = loadCandidate(customPath, stateType)) {
+            is CandidateResult.Loaded -> return HudSceneSpecResolution.Resolved(
+                spec = customResult.spec,
+                sourcePath = customPath,
                 source = HudSceneSource.CUSTOM_CONFIG,
             )
 
-            is HudSceneLoadResult.Failed -> {
+            is CandidateResult.Failed -> {
                 val onlyMissing = customResult.errors.all { it is HudSceneLoadError.FileNotFound }
                 val diagnostics = if (onlyMissing) emptyList() else customResult.errors
-                return resolveResource(mode, context, diagnostics)
+                return resolveResourceSpec(mode, stateType, diagnostics)
             }
         }
     }
@@ -88,12 +90,11 @@ class HudSceneRepository(
             Files.deleteIfExists(HudScenePaths.customHudScenePath(customRoot, mode, stateType))
         }
 
-    private fun <S : KartState> resolveResource(
+    private fun resolveResourceSpec(
         mode: HudSceneMode,
-        context: HudSceneContext<S>,
+        stateType: KartStateType<*>,
         customDiagnostics: List<HudSceneLoadError>,
-    ): HudSceneResolution<S> {
-        val stateType = context.kartStateType
+    ): HudSceneSpecResolution {
         val stateResourceId = HudScenePaths.resourceHudSceneId(mode, stateType)
         val stateResourceError = HudSceneResourceRegistry.getLoadError(stateResourceId)
         val useDefault = HudSceneResourceRegistry.get(stateResourceId) == null && stateResourceError == null
@@ -112,12 +113,15 @@ class HudSceneRepository(
             val resourceError = HudSceneResourceRegistry.getLoadError(resourceId)?.let {
                 HudSceneLoadError.DecodeFailure(resourcePath, it)
             } ?: HudSceneLoadError.FileNotFound(resourcePath)
-            return HudSceneResolution.Failed(customDiagnostics + resourceError)
+            return HudSceneSpecResolution.Failed(customDiagnostics + resourceError)
         }
 
-        return when (val result = HudSceneLoader.load(spec, resourcePath, context)) {
-            is HudSceneLoadResult.Loaded -> HudSceneResolution.Resolved(
-                scene = result.scene,
+        val validationErrors = HudSpecValidator.validateScene(spec, stateType)
+            .toLoadErrors(resourcePath)
+        return if (validationErrors.isEmpty()) {
+            HudSceneSpecResolution.Resolved(
+                spec = spec,
+                sourcePath = resourcePath,
                 source = if (customDiagnostics.isEmpty()) {
                     HudSceneSource.RESOURCE
                 } else {
@@ -125,10 +129,39 @@ class HudSceneRepository(
                 },
                 diagnostics = customDiagnostics,
             )
-
-            is HudSceneLoadResult.Failed -> HudSceneResolution.Failed(
-                customDiagnostics + result.errors
-            )
+        } else {
+            HudSceneSpecResolution.Failed(customDiagnostics + validationErrors)
         }
+    }
+
+    private fun loadCandidate(
+        path: Path,
+        stateType: KartStateType<*>,
+    ): CandidateResult {
+        if (!Files.exists(path)) {
+            return CandidateResult.Failed(listOf(HudSceneLoadError.FileNotFound(path)))
+        }
+        val content = try {
+            Files.readString(path)
+        } catch (exception: IOException) {
+            return CandidateResult.Failed(listOf(HudSceneLoadError.IoFailure(path, exception)))
+        }
+        val spec = try {
+            HudSceneCodec.decode(content)
+        } catch (exception: SerializationException) {
+            return CandidateResult.Failed(listOf(HudSceneLoadError.DecodeFailure(path, exception)))
+        }
+        val validationErrors = HudSpecValidator.validateScene(spec, stateType)
+            .toLoadErrors(path)
+        return if (validationErrors.isEmpty()) {
+            CandidateResult.Loaded(spec)
+        } else {
+            CandidateResult.Failed(validationErrors)
+        }
+    }
+
+    private sealed interface CandidateResult {
+        data class Loaded(val spec: HudSceneSpec) : CandidateResult
+        data class Failed(val errors: List<HudSceneLoadError>) : CandidateResult
     }
 }

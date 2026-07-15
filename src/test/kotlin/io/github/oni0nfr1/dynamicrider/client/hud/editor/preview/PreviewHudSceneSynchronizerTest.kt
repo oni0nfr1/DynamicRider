@@ -13,7 +13,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaug
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneElementFactory
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.JiuKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import net.minecraft.client.DeltaTracker

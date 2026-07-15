@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.document
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 
 /** 편집 중인 요소의 영속 ID와 직렬화 가능한 명세를 묶는다. */
 data class HudDocumentElement(

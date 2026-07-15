@@ -56,7 +56,7 @@ GUI는 Spec, document collection, command stack 및 config 파일을 직접 수�
 
 ```text
 GUI에서 mode와 KartStateType 선택
-→ HudEditorSession.open()
+→ HudEditorSessionFactory.open()
 → HudSceneRepository.resolveSpec()
 → 선택된 HudSceneSpec으로 HudSceneDocument 생성
 → PreviewHudSceneContextFactory로 preview 상태 생성

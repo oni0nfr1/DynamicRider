@@ -1,33 +1,29 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.session
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneElementFactory
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpec
-import io.github.oni0nfr1.dynamicrider.client.hud.state.JiuKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import kotlinx.serialization.json.JsonPrimitive
-import net.minecraft.client.DeltaTracker
-import net.minecraft.client.gui.GuiGraphics
-import org.joml.Vector2f
-import org.joml.Vector2i
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
 
 class HudEditorSessionTest {
+    @TempDir
+    lateinit var root: Path
+
     @Test
     fun `property edits undo and redo update state and one preview scene`() {
         val session = session()
@@ -36,26 +32,26 @@ class HudEditorSessionTest {
         session.addStateListener(listener = states::add)
 
         val result = session.updateProperty(
-            "gauge",
-            HudPropertyPath.parse("width"),
-            JsonPrimitive(240),
+            "slot",
+            HudPropertyPath.parse("iconSize"),
+            JsonPrimitive(64),
         )
 
-        assertEquals(HudEditorActionResult.Applied("gauge"), result)
+        assertEquals(HudEditorActionResult.Applied("slot"), result)
         assertSame(scene, session.previewScene)
-        assertEquals(240, (session.state.elements.single().spec as GradientGaugeBar.Spec).width)
-        assertEquals(240, (scene.entries.single().spec as GradientGaugeBar.Spec).width)
+        assertEquals(64, (session.state.elements.single().spec as PlainNitroSlot.Spec).iconSize)
+        assertEquals(64, (scene.entries.single().spec as PlainNitroSlot.Spec).iconSize)
         assertTrue(session.state.dirty)
         assertTrue(session.state.canUndo)
         assertFalse(session.state.canRedo)
 
         assertInstanceOf(HudEditorActionResult.Applied::class.java, session.undo())
-        assertEquals(100, (session.state.elements.single().spec as GradientGaugeBar.Spec).width)
+        assertEquals(32, (session.state.elements.single().spec as PlainNitroSlot.Spec).iconSize)
         assertFalse(session.state.dirty)
         assertTrue(session.state.canRedo)
 
         session.redo()
-        assertEquals(240, (session.state.elements.single().spec as GradientGaugeBar.Spec).width)
+        assertEquals(64, (session.state.elements.single().spec as PlainNitroSlot.Spec).iconSize)
         assertTrue(states.size >= 4)
         assertEquals(session.state, states.last())
     }
@@ -63,20 +59,20 @@ class HudEditorSessionTest {
     @Test
     fun `session owns element ids selection and structural commands`() {
         val session = session()
-        assertEquals(HudEditorActionResult.Applied("gauge"), session.selectElement("gauge"))
+        assertEquals(HudEditorActionResult.Applied("slot"), session.selectElement("slot"))
 
-        val added = session.addElement(GradientGaugeBar.Spec(width = 200))
+        val added = session.addElement(PlainNitroSlot.Spec(iconSize = 48))
 
         assertEquals(HudEditorActionResult.Applied("element-1"), added)
         assertEquals("element-1", session.state.selectedElementId)
-        assertEquals(listOf("gauge", "element-1"), session.state.elements.map { it.id })
+        assertEquals(listOf("slot", "element-1"), session.state.elements.map { it.id })
 
         assertEquals(HudEditorActionResult.Applied("element-1"), session.moveElement("element-1", 0))
-        assertEquals(listOf("element-1", "gauge"), session.state.elements.map { it.id })
+        assertEquals(listOf("element-1", "slot"), session.state.elements.map { it.id })
 
         assertEquals(HudEditorActionResult.Applied("element-1"), session.removeElement("element-1"))
-        assertEquals(listOf("gauge"), session.state.elements.map { it.id })
-        assertEquals("gauge", session.state.selectedElementId)
+        assertEquals(listOf("slot"), session.state.elements.map { it.id })
+        assertEquals("slot", session.state.selectedElementId)
         assertEquals(session.state.elements.map { it.id }, session.previewScene.entries.map { it.id })
     }
 
@@ -84,25 +80,25 @@ class HudEditorSessionTest {
     fun `rejected changes leave document history and preview unchanged`() {
         val session = session()
 
-        val invalid = session.addElement(GradientGaugeBar.Spec(width = 3_000))
+        val invalid = session.addElement(PlainNitroSlot.Spec(iconSize = 3_000))
         val incompatible = session.addElement(V1Tachometer.Spec())
         val rejectedProperty = session.updateProperty(
-            "gauge",
-            HudPropertyPath.parse("width"),
+            "slot",
+            HudPropertyPath.parse("iconSize"),
             JsonPrimitive(3_000),
         )
         val missing = session.updateProperty(
             "missing",
-            HudPropertyPath.parse("width"),
-            JsonPrimitive(200),
+            HudPropertyPath.parse("iconSize"),
+            JsonPrimitive(64),
         )
 
         assertInstanceOf(HudEditorActionResult.InvalidSpec::class.java, invalid)
         assertInstanceOf(HudEditorActionResult.IncompatibleState::class.java, incompatible)
         assertInstanceOf(HudEditorActionResult.PropertyRejected::class.java, rejectedProperty)
         assertEquals(HudEditorActionResult.ElementNotFound("missing"), missing)
-        assertEquals(listOf("gauge"), session.state.elements.map { it.id })
-        assertEquals(listOf("gauge"), session.previewScene.entries.map { it.id })
+        assertEquals(listOf("slot"), session.state.elements.map { it.id })
+        assertEquals(listOf("slot"), session.previewScene.entries.map { it.id })
         assertFalse(session.state.dirty)
         assertFalse(session.state.canUndo)
     }
@@ -119,57 +115,42 @@ class HudEditorSessionTest {
         assertFalse(session.previewScene.isActive)
         assertTrue(states.last().closed)
         assertSame(HudEditorActionResult.Closed, session.undo())
-        assertSame(HudEditorActionResult.Closed, session.selectElement("gauge"))
+        assertSame(HudEditorActionResult.Closed, session.selectElement("slot"))
     }
 
     @Test
-    fun `factory can create the preview context from a state type`() {
-        val viewport = object : ElementHolder {
-            override val width: Int = 800
-            override val height: Int = 600
-        }
-
-        val session = HudEditorSessionFactory.create(
+    fun `open distinguishes repository resolution failure`() {
+        val result = HudEditorSessionFactory(HudSceneRepository(root)).open(
             mode = HudSceneMode.RIDE,
-            source = HudSceneSource.RESOURCE,
-            spec = HudSceneSpec(elements = emptyList()),
             stateType = KartStateTypes.JIU,
-            viewport = viewport,
-        ).getOrThrow()
+            viewport = viewport(),
+        )
 
-        assertEquals(KartStateTypes.JIU, session.state.kartStateType)
-        assertTrue(session.previewScene.isActive)
-        session.close()
+        assertInstanceOf(HudEditorSessionOpenResult.ResolveFailed::class.java, result)
     }
 
-    private fun session(): HudEditorSession<JiuKartState> {
-        val context = PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState())
-        val viewport = object : ElementHolder {
-            override val width: Int = 800
-            override val height: Int = 600
-        }
-        return HudEditorSessionFactory.create(
-            mode = HudSceneMode.RIDE,
-            source = HudSceneSource.RESOURCE,
-            spec = HudSceneSpec(
-                elementIds = listOf("gauge"),
-                elements = listOf(GradientGaugeBar.Spec(width = 100)),
+    private fun session(): HudEditorSession<out KartState> {
+        val repository = HudSceneRepository(root)
+        repository.saveCustom(
+            HudSceneMode.RIDE,
+            KartStateTypes.JIU,
+            HudSceneSpec(
+                elementIds = listOf("slot"),
+                elements = listOf(PlainNitroSlot.Spec(iconSize = 32)),
             ),
-            previewContext = context,
-            viewport = viewport,
-            elementFactory = HudSceneElementFactory { spec, _, _ -> FakeHudElement(spec) },
         ).getOrThrow()
+        val result = HudEditorSessionFactory(repository).open(
+            mode = HudSceneMode.RIDE,
+            stateType = KartStateTypes.JIU,
+            viewport = viewport(),
+        )
+        val opened = assertInstanceOf(HudEditorSessionOpenResult.Opened::class.java, result)
+        assertEquals(HudSceneSource.CUSTOM_CONFIG, opened.session.source)
+        return opened.session
     }
 
-    private class FakeHudElement(
-        val spec: HudElementSpec<*, JiuKartState>,
-    ) : HudElement<JiuKartState> {
-        override var screenAnchor: HudAnchor = HudAnchor.TOP_LEFT
-        override var elementAnchor: HudAnchor = HudAnchor.TOP_LEFT
-        override var scale: Vector2f = Vector2f(1f)
-        override var position: Vector2i = Vector2i()
-        override var zIndex: Float = 0f
-
-        override fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) = Unit
+    private fun viewport(): ElementHolder = object : ElementHolder {
+        override val width: Int = 800
+        override val height: Int = 600
     }
 }

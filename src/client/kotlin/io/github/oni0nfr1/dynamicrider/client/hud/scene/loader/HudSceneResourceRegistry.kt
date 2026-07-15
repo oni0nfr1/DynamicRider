@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import kotlinx.serialization.SerializationException
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener
@@ -10,7 +11,7 @@ import net.minecraft.server.packs.resources.ResourceManager
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 활성 리소스팩에서 HUD 장면 JSON을 읽어 검증된 명세와 로드 오류를 캐시한다.
+ * 활성 리소스팩에서 HUD 장면 JSON을 읽어 decode된 명세와 로드 오류를 캐시한다.
  */
 object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener {
     private const val SCENE_DIRECTORY = "hud"
@@ -35,7 +36,7 @@ object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener {
     }
 
     /**
-     * 리소스 ID에 대응하는 검증된 장면 명세를 반환한다.
+     * 리소스 ID에 대응하는 decode된 장면 명세를 반환한다.
      *
      * @return 로드된 명세, 리소스가 없거나 역직렬화에 실패했으면 `null`
      */

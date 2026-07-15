@@ -30,6 +30,9 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 
 - [x] config/resource 우선순위를 `HudSceneRepository`로 통합한다.
 - [x] resolve 결과에 `CUSTOM_CONFIG`, `RESOURCE`, `CUSTOM_FALLBACK` 출처를 기록한다.
+- [x] repository resolve 결과를 runtime `HudScene`이 아닌 최종 `HudSceneSpec`, 원본 경로, 출처와 진단으로 분리한다.
+- [x] live lifecycle이 repository의 Spec resolve 결과를 별도 `HudSceneLoader`로 runtime 장면에 투영하도록 연결한다.
+- [x] `HudSceneSpec`과 `HudSceneMode`를 loader 전용 패키지에서 중립적인 `hud.scene.model`로 이동한다.
 - [x] 커스텀 저장 및 삭제 API를 제공한다.
 - [x] 장면 생성 실패 시 게임을 중단하지 않고 빈 장면으로 복구한다.
 - [x] 현재 ride/spectate 엔진 분기를 `KartStateType` 기반 조회로 교체한다.
@@ -66,7 +69,18 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 모든 등록 요소 Spec에 element/layout/color 및 필요한 range metadata와 `en_us`·`ko_kr` 번역을 제공한다.
 - [x] serializer, type ID, 상태 타입 호환성 및 runtime factory를 중앙 type registry에 등록하되 속성별 descriptor 코드는 작성하지 않는다.
 - [x] 현재 spec을 `JsonElement`로 encode하고 변경된 property만 교체한 뒤 같은 serializer로 decode하여 immutable spec을 갱신한다.
-- [ ] generic property 변경 결과는 `ReplaceElementSpecCommand`로 document에 적용한다.
+- [ ] registry metadata와 현재 Spec 값을 결합한 GUI용 읽기 모델을 제공한다.
+  - `HudElementEditorModel`은 element ID, type ID, 요소 이름·카테고리 번역 key, icon 및 편집 property 목록을 포함한다.
+  - `HudEditableProperty`는 안정적인 `HudPropertyPath`, 이름·설명 번역 key, `HudPropertyEditorType`, 현재 `JsonElement` 값과 optional·nullable 정보를 포함한다.
+  - `HudElementTypeRegistry.bySpec()`으로 serializer와 metadata를 찾고 현재 Spec을 `JsonObject`로 encode해 각 metadata의 `serialName`과 현재 값을 결합한다.
+  - `@HudHidden` property는 속성 패널에서 제외하고 `Unsupported` property는 기본 GUI에서 비활성 또는 미지원 상태로 구별한다.
+  - 미등록 Spec, 존재하지 않는 element ID 및 encode 실패는 구조화된 inspector 결과로 반환한다.
+- [ ] `HudEditorSession`에 GUI용 읽기 API를 추가한다.
+  - `inspectElement(elementId)`는 GUI가 registry나 serializer를 직접 참조하지 않고 선택 요소의 편집 모델을 읽게 한다.
+  - `availableElementTypes()`는 현재 `KartStateType`과 호환되는 요소만 팔레트 모델로 반환하며 기본 Spec 생성 정보도 세션 내부에 둔다.
+  - `HudEditorState` 변경을 받은 GUI는 선택 ID로 inspector를 다시 조회해 현재 property 값을 갱신한다.
+  - property 수정은 기존 `updateProperty(elementId, path, value)`만 사용해 읽기 모델과 쓰기 경로를 분리한다.
+- [x] generic property 변경 결과는 `ReplaceElementSpecCommand`로 document에 적용한다.
   - 변경 실패 시 document와 undo/redo stack을 수정하지 않는다.
   - 변경 성공 시 element ID를 유지하며 새 spec으로 교체한다.
   - 같은 요소의 같은 property에 대한 연속 변경을 이후 command 병합에 사용할 수 있도록 경로를 보존한다.
@@ -74,6 +88,8 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] `@HudRange` 등의 metadata를 GUI 입력 제한과 JSON load validation에서 공통으로 사용한다.
 - [x] 범위를 벗어난 외부 JSON 값은 자동 보정하지 않고 경로가 포함된 validation 오류로 반환한다.
   - `HudSpecValidator`는 registry의 serializer와 metadata를 입력으로 받아 전체 spec을 검사한다.
+  - `HudSpecValidator.validateScene()`은 파일 경로와 무관한 element ID·index·상태 호환성·개별 Spec 오류를 반환한다.
+  - repository와 loader는 중립적인 장면 validation 오류에 원본 경로를 결합해 `HudSceneLoadError`로 변환한다.
   - 유한값과 range 등의 의미 오류는 validation 결과로 반환하고, enum·color 형식 등의 구조 오류는 serializer가 검사해 호출자가 편집 또는 decode 오류로 변환한다.
   - 오류에는 element ID와 `property.path`를 포함할 수 있도록 구조화된 경로를 사용한다.
   - generic property 편집기와 resource/config JSON loader가 같은 validator를 사용한다.
@@ -155,7 +171,8 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 3. [x] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
 4. [ ] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
    - [x] document, command stack, property editor와 preview synchronizer를 소유하는 core session 및 GUI 상태·결과 모델을 구현한다.
-   - [ ] repository의 spec resolve 결과로 session을 여는 factory를 연결한다.
+   - [ ] registry metadata와 현재 Spec 값을 결합하는 element inspector 및 호환 요소 palette 조회 API를 session에 추가한다.
+   - [x] repository의 spec resolve 결과로 session을 여는 공개 `open()`을 연결하고 저수준 session 조립 함수는 비공개로 둔다.
 5. [ ] custom 저장·삭제 및 resource reload를 live HUD에 반영하는 lifecycle controller를 구현한다.
 6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
@@ -168,8 +185,12 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] client source output을 사용하는 JUnit 테스트 소스셋을 구성하고 `test`와 `build`에 연결한다.
 - [x] generic property 변경, registry/metadata 번역, built-in JSON, document command, layout 및 custom 저장·삭제의 기본 회귀 테스트를 제공한다.
 - [x] 공통 validator의 전체 spec 검사와 구조화된 오류 경로를 테스트한다.
+- [x] 장면 전체 validator가 element ID를 보존한 Spec 오류와 상태 비호환을 loader 문맥 없이 반환하는지 테스트한다.
 - [x] property 편집부터 command 실행 및 undo/redo까지의 통합 흐름을 테스트한다.
 - [x] document 변경에 따른 preview runtime element 재생성을 테스트한다.
+- [x] repository가 유효한 custom Spec을 runtime 생성 없이 resolve하고 잘못된 custom을 보존하며 진단하는지 테스트한다.
+- [ ] inspector가 metadata와 현재 Spec 값을 같은 property path로 결합하고 hidden·unsupported·오류 상태를 구별하는지 테스트한다.
+- [ ] palette 조회가 현재 `KartStateType`과 호환되는 요소와 기본 Spec 생성 정보만 제공하는지 테스트한다.
 - [ ] resource 장면의 첫 변경, custom 저장·삭제 및 fallback을 편집 세션 수준에서 테스트한다.
 - [ ] 저장·삭제·resource reload 후 live HUD 갱신을 테스트한다.
 - [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
