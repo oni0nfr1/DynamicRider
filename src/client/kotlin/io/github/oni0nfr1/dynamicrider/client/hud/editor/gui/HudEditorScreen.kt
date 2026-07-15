@@ -217,14 +217,19 @@ class HudEditorScreen(
             entries.drop(paletteScroll).take(visibleRows).forEachIndexed { index, entry ->
                 addRenderableWidget(
                     Button.builder(Component.translatable(entry.nameKey)) {
+                        activeTab = SideTab.PROPERTIES
+                        paletteOpen = false
                         when (val result = session.addElement(entry.typeId)) {
                             is HudEditorActionResult.Applied -> {
-                                activeTab = SideTab.PROPERTIES
-                                paletteOpen = false
                                 propertyErrors.clear()
                             }
-                            else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
+                            else -> {
+                                activeTab = SideTab.ELEMENTS
+                                paletteOpen = true
+                                status = Component.translatable("dynamicrider.hud.editor.action_failed")
+                            }
                         }
+                        rebuildWidgets()
                     }.bounds(sideX, contentY + index * 22, sideWidth, 20).build()
                 )
             }
