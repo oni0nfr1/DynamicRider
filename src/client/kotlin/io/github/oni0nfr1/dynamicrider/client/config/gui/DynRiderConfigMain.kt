@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.config.gui
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfigData
 import io.github.oni0nfr1.dynamicrider.client.config.FontStyle
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.HudEditorEntrypoint
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.CycleButton
@@ -57,6 +58,10 @@ class DynRiderConfigMain(
                 workingFontOption = newValue
             }
 
+        val editorButton = Button.builder(Component.translatable("dynamicrider.hud.editor.open")) {
+            Minecraft.getInstance().setScreen(HudEditorEntrypoint.createLauncher(this))
+        }.bounds(centerX - 110, firstRowY + rowGap * 2, 220, 20).build()
+
         val saveButton = Button.builder(Component.translatable("dynamicrider.config.save")) {
             val newConfig = DynRiderConfigData(
                 isModEnabled = workingIsModEnabled,
@@ -66,14 +71,15 @@ class DynRiderConfigMain(
             DynRiderConfig.apply(newConfig)
 
             Minecraft.getInstance().setScreen(parentScreen)
-        }.bounds(centerX - 110, firstRowY + rowGap * 3, 100, 20).build()
+        }.bounds(centerX - 110, firstRowY + rowGap * 4, 100, 20).build()
 
         val cancelButton = Button.builder(Component.translatable("dynamicrider.config.cancel")) {
             Minecraft.getInstance().setScreen(parentScreen)
-        }.bounds(centerX + 10, firstRowY + rowGap * 3, 100, 20).build()
+        }.bounds(centerX + 10, firstRowY + rowGap * 4, 100, 20).build()
 
         addRenderableWidget(enableToggleButton)
         addRenderableWidget(fontCycleButton)
+        addRenderableWidget(editorButton)
         addRenderableWidget(saveButton)
         addRenderableWidget(cancelButton)
     }

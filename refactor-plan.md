@@ -153,7 +153,14 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
   - resource 장면은 원본으로 유지하고 첫 실제 변경 시 custom 작업 사본을 만든다.
   - GUI는 파일 경로와 fallback 규칙을 직접 다루지 않고 세션 API만 사용한다.
 - [x] 리소스 장면은 메모리 작업 사본으로 편집하고 저장 시에만 config override를 생성한다.
-- [ ] 요소 팔레트, 캔버스 선택·이동, 속성 패널을 구현한다.
+- [x] 중앙 preview와 `요소`·`속성`·`프리뷰 상태` 탭을 가진 단일 side panel 화면 골격을 구현한다.
+  - 요소 목록 선택, 호환 요소 palette, 추가·삭제·재정렬을 session API에 연결한다.
+  - undo/redo, 저장 및 resource 복원 동작을 상단 도구 모음에 연결한다.
+  - 요소 목록·palette·속성 목록은 독립적인 scroll 위치와 scrollbar를 제공한다.
+  - side panel 구분선 drag로 너비를 조절하고 더블클릭으로 기본 너비를 복원하며 preview 최소 너비를 보장한다.
+  - 실제 해상도 테스트 후 preview 영역이 부족하면 side panel 숨기기 기능을 추가한다.
+- [ ] primitive·enum·color·layout 입력 widget과 property별 validation 오류 표시를 구현한다.
+- [ ] preview 캔버스 선택·이동을 구현한다.
 - [x] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 세션 API로 제공한다.
 - [ ] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
 - [x] 저장 또는 삭제 후 현재 live HUD를 자동 갱신하지 않고 이후 생성되는 HUD부터 최신 설정을 사용한다.
@@ -174,6 +181,10 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] repository의 spec resolve 결과로 session을 여는 공개 `open()`을 연결하고 저수준 session 조립 함수는 비공개로 둔다.
 5. [x] 편집 세션에 custom 저장·삭제 및 resource 기본값 복원 흐름을 구현한다.
 6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
+   - [x] 편집 mode·상태 타입 선택 화면과 탭식 editor 화면 골격을 구현한다.
+   - [x] 요소 목록·palette·구조 변경과 undo/redo·저장·복원 UI를 session에 연결한다.
+   - [x] 탭별 side panel scroll과 drag 기반 panel 너비 조절을 구현한다.
+   - [ ] inspector metadata 기반 property 입력 widget과 preview 상태 조절 UI를 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
 프레임 단위 상태 snapshot, KSP registry 생성 및 runtime element의 세부 property patch는
