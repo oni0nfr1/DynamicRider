@@ -25,9 +25,9 @@ abstract class HudElementImpl<S : KartState>(
     override var position: Vector2i = layout.toPosition()
     override var zIndex: Float = layout.zIndex
 
-    abstract val width: Int
+    abstract override val width: Int
 
-    abstract val height: Int
+    abstract override val height: Int
 
     private val transform = Matrix4f()
     private val renderPosition = Vector3f()

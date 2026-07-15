@@ -1,5 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat
+import com.mojang.blaze3d.vertex.VertexFormat
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
@@ -8,6 +10,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorPersis
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSession
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorState
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.layout.HudLayoutEngine
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.DynRiderRenderTypes
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.batch
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -15,7 +20,10 @@ import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 import kotlin.math.ceil
+import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 /** 중앙 HUD preview와 탭식 단일 side panel을 제공하는 첫 editor 화면이다. */
 class HudEditorScreen(
@@ -43,6 +51,8 @@ class HudEditorScreen(
     private var propertyScroll = 0
     private var layoutScroll = 0
     private var layoutEditorOpen = false
+    private var elementDrag: ElementDrag? = null
+    private var scaleDrag: ScaleDrag? = null
     private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
 
     private var previewX = 8
@@ -97,6 +107,32 @@ class HudEditorScreen(
             }
             return true
         }
+        if (button == 0 && isInsidePreview(mouseX, mouseY)) {
+            val localX = (mouseX - previewX).toFloat()
+            val localY = (mouseY - previewY).toFloat()
+            val guides = previewGuides()
+            val selectedGuide = session.state.selectedElementId
+                ?.let { selectedId -> guides.firstOrNull { it.elementId == selectedId } }
+            if (selectedGuide != null && isOverScaleHandle(selectedGuide, localX, localY)) {
+                beginScaleDrag(selectedGuide)
+                return true
+            }
+            val guide = HudPreviewElementGuideCalculator.hitTest(guides, localX, localY)
+            session.selectElement(guide?.elementId)
+            if (guide != null) {
+                activeTab = SideTab.PROPERTIES
+                paletteOpen = false
+                propertyErrors.clear()
+                elementDrag = ElementDrag(
+                    elementId = guide.elementId,
+                    grabOffsetX = localX - guide.elementAnchorX,
+                    grabOffsetY = localY - guide.elementAnchorY,
+                )
+                isDragging = true
+            }
+            rebuildWidgets()
+            return true
+        }
         return super.mouseClicked(mouseX, mouseY, button)
     }
 
@@ -112,12 +148,28 @@ class HudEditorScreen(
             rebuildWidgets()
             return true
         }
+        if (button == 0) {
+            scaleDrag?.let { drag ->
+                scaleSelectedElement(mouseX, mouseY, drag)
+                return true
+            }
+            elementDrag?.let { drag ->
+                dragSelectedElement(mouseX, mouseY, drag)
+                return true
+            }
+        }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY)
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if (resizingSidePanel && button == 0) {
             resizingSidePanel = false
+            isDragging = false
+            return true
+        }
+        if (button == 0 && (elementDrag != null || scaleDrag != null)) {
+            elementDrag = null
+            scaleDrag = null
             isDragging = false
             return true
         }
@@ -390,6 +442,7 @@ class HudEditorScreen(
         guiGraphics.pose().pushPose()
         guiGraphics.pose().translate(previewX.toFloat(), previewY.toFloat(), 0f)
         session.previewScene.draw(guiGraphics, Minecraft.getInstance().deltaTracker)
+        renderSelectionOverlay(guiGraphics)
         guiGraphics.pose().popPose()
         guiGraphics.disableScissor()
     }
@@ -547,6 +600,139 @@ class HudEditorScreen(
         }
     }
 
+    private fun dragSelectedElement(mouseX: Double, mouseY: Double, drag: ElementDrag) {
+        val guide = previewGuides().firstOrNull { it.elementId == drag.elementId } ?: return
+        val inspected = session.inspectElement(drag.elementId) as? HudElementInspectionResult.Inspected ?: return
+        val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor } ?: return
+        val anchorX = (mouseX - previewX).toFloat() - drag.grabOffsetX
+        val anchorY = (mouseY - previewY).toFloat() - drag.grabOffsetY
+        val (x, y) = HudLayoutEngine.offsetForElementAnchor(
+            guide.screenAnchorX,
+            guide.screenAnchorY,
+            anchorX,
+            anchorY,
+        )
+        val replacement = HudLayoutEditorModel.replacePosition(layout, x, y)
+        when (session.updateProperty(drag.elementId, layout.path, replacement, drag.commandStarted)) {
+            is HudEditorActionResult.Applied -> {
+                drag.commandStarted = true
+                status = null
+            }
+            is HudEditorActionResult.PropertyRejected -> status =
+                Component.translatable("dynamicrider.hud.editor.property.rejected")
+            else -> Unit
+        }
+    }
+
+    private fun renderSelectionOverlay(guiGraphics: GuiGraphics) {
+        val selectedId = session.state.selectedElementId ?: return
+        val guide = previewGuides().firstOrNull { it.elementId == selectedId } ?: return
+        val left = guide.bounds.left.roundToInt()
+        val top = guide.bounds.top.roundToInt()
+        val right = guide.bounds.right.roundToInt()
+        val bottom = guide.bounds.bottom.roundToInt()
+        guiGraphics.renderOutline(
+            left,
+            top,
+            (right - left).coerceAtLeast(1),
+            (bottom - top).coerceAtLeast(1),
+            SELECTION_COLOR,
+        )
+
+        val screenX = guide.screenAnchorX.roundToInt()
+        val screenY = guide.screenAnchorY.roundToInt()
+        val elementX = guide.elementAnchorX.roundToInt()
+        val elementY = guide.elementAnchorY.roundToInt()
+        drawAnchorCross(guiGraphics, screenX, screenY, SCREEN_ANCHOR_COLOR, 4)
+        drawAnchorLine(guiGraphics, screenX.toFloat(), screenY.toFloat(), elementX.toFloat(), elementY.toFloat())
+        drawAnchorCross(guiGraphics, elementX, elementY, ELEMENT_ANCHOR_COLOR, 3)
+        val (handleX, handleY) = guide.scaleHandle()
+        guiGraphics.fill(
+            handleX.roundToInt() - SCALE_HANDLE_RADIUS,
+            handleY.roundToInt() - SCALE_HANDLE_RADIUS,
+            handleX.roundToInt() + SCALE_HANDLE_RADIUS + 1,
+            handleY.roundToInt() + SCALE_HANDLE_RADIUS + 1,
+            SCALE_HANDLE_COLOR,
+        )
+    }
+
+    private fun drawAnchorCross(guiGraphics: GuiGraphics, x: Int, y: Int, color: Int, radius: Int) {
+        guiGraphics.fill(x - radius, y, x + radius + 1, y + 1, color)
+        guiGraphics.fill(x, y - radius, x + 1, y + radius + 1, color)
+    }
+
+    private fun drawAnchorLine(guiGraphics: GuiGraphics, startX: Float, startY: Float, endX: Float, endY: Float) {
+        val dx = endX - startX
+        val dy = endY - startY
+        val length = sqrt(dx * dx + dy * dy)
+        if (length == 0f) return
+        val perpendicularX = -dy / length * 0.5f
+        val perpendicularY = dx / length * 0.5f
+        guiGraphics.batch(
+            VertexFormat.Mode.QUADS,
+            DefaultVertexFormat.POSITION_COLOR,
+            DynRiderRenderTypes.ARC_CORE,
+        ) { poseMatrix ->
+            addVertex(poseMatrix, startX + perpendicularX, startY + perpendicularY, 0f).setColor(OFFSET_COLOR)
+            addVertex(poseMatrix, endX + perpendicularX, endY + perpendicularY, 0f).setColor(OFFSET_COLOR)
+            addVertex(poseMatrix, endX - perpendicularX, endY - perpendicularY, 0f).setColor(OFFSET_COLOR)
+            addVertex(poseMatrix, startX - perpendicularX, startY - perpendicularY, 0f).setColor(OFFSET_COLOR)
+        }
+    }
+
+    private fun beginScaleDrag(guide: HudPreviewElementGuide) {
+        val element = session.previewScene.entries.firstOrNull { it.id == guide.elementId }?.element ?: return
+        val (handleX, handleY) = guide.scaleHandle()
+        val vectorX = handleX - guide.elementAnchorX
+        val vectorY = handleY - guide.elementAnchorY
+        val vectorLengthSquared = vectorX * vectorX + vectorY * vectorY
+        if (vectorLengthSquared == 0f) return
+        scaleDrag = ScaleDrag(
+            elementId = guide.elementId,
+            anchorX = guide.elementAnchorX,
+            anchorY = guide.elementAnchorY,
+            handleVectorX = vectorX,
+            handleVectorY = vectorY,
+            handleLengthSquared = vectorLengthSquared,
+            initialScale = (abs(element.scale.x) + abs(element.scale.y)) / 2f,
+        )
+        elementDrag = null
+        isDragging = true
+    }
+
+    private fun scaleSelectedElement(mouseX: Double, mouseY: Double, drag: ScaleDrag) {
+        val inspected = session.inspectElement(drag.elementId) as? HudElementInspectionResult.Inspected ?: return
+        val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor } ?: return
+        val pointerX = (mouseX - previewX).toFloat() - drag.anchorX
+        val pointerY = (mouseY - previewY).toFloat() - drag.anchorY
+        val ratio = (pointerX * drag.handleVectorX + pointerY * drag.handleVectorY) / drag.handleLengthSquared
+        val scale = (drag.initialScale * ratio)
+            .coerceIn(MIN_UNIFORM_SCALE, MAX_UNIFORM_SCALE)
+            .let { (it * 100f).roundToInt() / 100f }
+        val replacement = HudLayoutEditorModel.replaceUniformScale(layout, scale)
+        when (session.updateProperty(drag.elementId, layout.path, replacement, drag.commandStarted)) {
+            is HudEditorActionResult.Applied -> {
+                drag.commandStarted = true
+                status = null
+            }
+            is HudEditorActionResult.PropertyRejected -> status =
+                Component.translatable("dynamicrider.hud.editor.property.rejected")
+            else -> Unit
+        }
+    }
+
+    private fun isOverScaleHandle(guide: HudPreviewElementGuide, x: Float, y: Float): Boolean {
+        val (handleX, handleY) = guide.scaleHandle()
+        return abs(x - handleX) <= SCALE_HANDLE_HIT_RADIUS && abs(y - handleY) <= SCALE_HANDLE_HIT_RADIUS
+    }
+
+    private fun previewGuides(): List<HudPreviewElementGuide> =
+        HudPreviewElementGuideCalculator.calculate(session.previewScene)
+
+    private fun isInsidePreview(mouseX: Double, mouseY: Double): Boolean =
+        mouseX >= previewX && mouseX < previewX + previewWidth &&
+            mouseY >= previewY && mouseY < previewY + previewHeight
+
     private fun selectedProperties() = session.state.selectedElementId
         ?.let(session::inspectElement)
         ?.let { (it as? HudElementInspectionResult.Inspected)?.model?.properties }
@@ -570,6 +756,24 @@ class HudEditorScreen(
         val offset: Int,
         val itemCount: Int,
         val visibleRows: Int,
+    )
+
+    private data class ElementDrag(
+        val elementId: String,
+        val grabOffsetX: Float,
+        val grabOffsetY: Float,
+        var commandStarted: Boolean = false,
+    )
+
+    private data class ScaleDrag(
+        val elementId: String,
+        val anchorX: Float,
+        val anchorY: Float,
+        val handleVectorX: Float,
+        val handleVectorY: Float,
+        val handleLengthSquared: Float,
+        val initialScale: Float,
+        var commandStarted: Boolean = false,
     )
 
     private fun currentScrollMetrics(): ScrollMetrics? = when (activeTab) {
@@ -619,5 +823,14 @@ class HudEditorScreen(
         const val ROW_HEIGHT = 22
         const val PROPERTY_ROW_HEIGHT = 34
         const val DOUBLE_CLICK_MILLIS = 250L
+        const val SELECTION_COLOR = 0xFFFFFFFF.toInt()
+        const val SCREEN_ANCHOR_COLOR = 0xFF55DDFF.toInt()
+        const val ELEMENT_ANCHOR_COLOR = 0xFFFFCC33.toInt()
+        const val OFFSET_COLOR = 0xAAFFFFFF.toInt()
+        const val SCALE_HANDLE_COLOR = 0xFFFFFFFF.toInt()
+        const val SCALE_HANDLE_RADIUS = 2
+        const val SCALE_HANDLE_HIT_RADIUS = 5f
+        const val MIN_UNIFORM_SCALE = 0.05f
+        const val MAX_UNIFORM_SCALE = 10f
     }
 }

@@ -27,6 +27,11 @@ class HudLayoutEngineTest {
         )
 
         assertEquals(HudBounds(310f, 285f, 510f, 305f), result.bounds)
+        assertEquals(400f, result.screenAnchorX)
+        assertEquals(300f, result.screenAnchorY)
+        assertEquals(410f, result.elementAnchorX)
+        assertEquals(295f, result.elementAnchorY)
+        assertEquals(35 to -25, result.offsetForElementAnchor(435f, 275f))
         assertEquals(50f to 20f, result.toLocal(410f, 295f))
         assertTrue(result.bounds.contains(310f, 285f))
         assertFalse(result.bounds.contains(309f, 285f))

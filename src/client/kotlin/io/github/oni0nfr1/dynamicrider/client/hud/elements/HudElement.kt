@@ -10,6 +10,9 @@ import org.joml.Vector2i
 // HudElement의 구현 클래스는 인터페이스를 통한 다중 상속을 이용해서 다양한 구조를 가질 수 있음
 interface HudElement<in S : KartState> {
 
+    val width: Int
+    val height: Int
+
     var screenAnchor: HudAnchor
     var elementAnchor: HudAnchor
     var scale: Vector2f

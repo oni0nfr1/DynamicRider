@@ -6,6 +6,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumberType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /** `HudLayoutSpec`의 고정 필드를 전용 editor가 사용할 property row로 변환한다. */
 object HudLayoutEditorModel {
@@ -34,6 +35,20 @@ object HudLayoutEditorModel {
             "Unknown HUD layout field '$serialName'"
         }
         return JsonObject(current + (serialName to value))
+    }
+
+    /** layout의 위치 두 축을 같은 Spec 교체에서 갱신한다. */
+    fun replacePosition(layout: HudEditableProperty, x: Int, y: Int): JsonObject {
+        val current = layout.value as? JsonObject
+            ?: error("HUD layout property must be a JSON object")
+        return JsonObject(current + mapOf("x" to JsonPrimitive(x), "y" to JsonPrimitive(y)))
+    }
+
+    /** layout의 두 scale 축을 같은 값으로 갱신한다. */
+    fun replaceUniformScale(layout: HudEditableProperty, scale: Float): JsonObject {
+        val current = layout.value as? JsonObject
+            ?: error("HUD layout property must be a JSON object")
+        return JsonObject(current + mapOf("scaleX" to JsonPrimitive(scale), "scaleY" to JsonPrimitive(scale)))
     }
 
     private data class FieldDefinition(

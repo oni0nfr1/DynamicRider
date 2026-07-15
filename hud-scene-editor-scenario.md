@@ -141,6 +141,9 @@ drag 시작
 
 drag 중 발생하는 연속 갱신은 undo stack을 매 프레임 증가시키지 않도록 하나의 command로 병합한다.
 
+선택 bounds에서 요소 anchor와 가장 먼 모서리 handle을 drag하면 `scaleX`와 `scaleY`를 같은 값으로
+변경한다. 음수 scale과 축별 비균등 scale은 handle에서 만들지 않고 속성 패널에서만 편집한다.
+
 ## 5. 요소 삭제와 재정렬
 
 ```text
@@ -255,7 +258,7 @@ resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작
    - [x] metadata 기반 primitive·enum·color property 입력 widget 구현
    - [x] layout property 입력 widget 구현
    - [ ] preview 상태 조절 구현
-7. [ ] 캔버스 선택·drag와 command 병합 구현
+7. [x] 캔버스 선택·drag와 command 병합 구현
 8. [x] 저장·삭제·복원 UI 구현
 9. [ ] 기본 GUI 완성 후 중첩 object/list 및 compound child 편집 구현
 

@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.layout
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /** 화면 좌표계에서 HUD 요소가 차지하는 축 정렬 영역이다. */
 data class HudBounds(
@@ -22,6 +23,10 @@ data class HudBounds(
 data class HudLayoutResult(
     val renderX: Float,
     val renderY: Float,
+    val screenAnchorX: Float,
+    val screenAnchorY: Float,
+    val elementAnchorX: Float,
+    val elementAnchorY: Float,
     val scaleX: Float,
     val scaleY: Float,
     val zIndex: Float,
@@ -36,10 +41,24 @@ data class HudLayoutResult(
         if (scaleX == 0f || scaleY == 0f) return null
         return (screenX - renderX) / scaleX to (screenY - renderY) / scaleY
     }
+
+    /** 원하는 요소 anchor 화면 좌표를 layout의 정수 `(x, y)` offset으로 역산한다. */
+    fun offsetForElementAnchor(anchorX: Float, anchorY: Float): Pair<Int, Int> =
+        HudLayoutEngine.offsetForElementAnchor(screenAnchorX, screenAnchorY, anchorX, anchorY)
 }
 
 /** HUD anchor와 layout 명세를 실제 화면 좌표로 변환한다. */
 object HudLayoutEngine {
+    /** 화면 anchor와 원하는 요소 anchor 사이의 정수 layout offset을 계산한다. */
+    fun offsetForElementAnchor(
+        screenAnchorX: Float,
+        screenAnchorY: Float,
+        elementAnchorX: Float,
+        elementAnchorY: Float,
+    ): Pair<Int, Int> =
+        (elementAnchorX - screenAnchorX).roundToInt() to
+            (elementAnchorY - screenAnchorY).roundToInt()
+
     /**
      * 부모 및 요소 크기를 기준으로 렌더 원점, scale, z-index와 hit-test 영역을 계산한다.
      *
@@ -61,6 +80,10 @@ object HudLayoutEngine {
         return HudLayoutResult(
             renderX = renderX,
             renderY = renderY,
+            screenAnchorX = parentPoint.x.toFloat(),
+            screenAnchorY = parentPoint.y.toFloat(),
+            elementAnchorX = (parentPoint.x + layout.x).toFloat(),
+            elementAnchorY = (parentPoint.y + layout.y).toFloat(),
             scaleX = layout.scaleX,
             scaleY = layout.scaleY,
             zIndex = layout.zIndex,

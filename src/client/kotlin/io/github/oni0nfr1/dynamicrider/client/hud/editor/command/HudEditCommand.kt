@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.command
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 
 /**
@@ -16,6 +17,12 @@ interface HudEditCommand {
 
     /** 앞서 적용한 변경을 document에서 되돌린다. */
     fun revert(document: HudSceneDocument): HudDocumentChange
+}
+
+/** 연속 입력을 최초 상태 하나로 되돌릴 수 있는 단일 history 항목으로 합칠 수 있는 명령이다. */
+interface HudMergeableEditCommand : HudEditCommand {
+    /** [newer]를 이 명령에 합쳐 즉시 적용하고, 호환되지 않으면 `null`을 반환한다. */
+    fun mergeAndApply(newer: HudEditCommand, document: HudSceneDocument): HudDocumentChange?
 }
 
 /** 지정한 위치에 요소를 추가하는 명령이다. */
@@ -61,8 +68,10 @@ class MoveElementCommand(
 /** 요소 ID를 유지하면서 전체 명세를 교체하는 명령이다. */
 class ReplaceElementSpecCommand(
     private val elementId: String,
-    private val replacement: HudElementSpec<*, *>,
-) : HudEditCommand {
+    replacement: HudElementSpec<*, *>,
+    private val mergeKey: HudPropertyPath? = null,
+) : HudMergeableEditCommand {
+    private var replacement: HudElementSpec<*, *> = replacement
     private var change: HudDocumentChange.SpecReplaced? = null
 
     override fun apply(document: HudSceneDocument): HudDocumentChange =
@@ -72,4 +81,14 @@ class ReplaceElementSpecCommand(
         elementId,
         checkNotNull(change) { "Command has not been applied" }.previous,
     )
+
+    override fun mergeAndApply(newer: HudEditCommand, document: HudSceneDocument): HudDocumentChange? {
+        if (newer !is ReplaceElementSpecCommand || mergeKey == null ||
+            newer.elementId != elementId || newer.mergeKey != mergeKey
+        ) {
+            return null
+        }
+        replacement = newer.replacement
+        return document.replace(elementId, replacement)
+    }
 }

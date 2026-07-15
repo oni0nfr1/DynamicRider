@@ -27,7 +27,16 @@ class HudCommandStack(
     }
 
     /** 명령을 적용하고 undo 기록에 추가하며 기존 redo 기록을 폐기한다. */
-    fun execute(command: HudEditCommand) {
+    fun execute(command: HudEditCommand, mergeWithPrevious: Boolean = false) {
+        if (mergeWithPrevious) {
+            val previous = undoStack.lastOrNull() as? HudMergeableEditCommand
+            val mergedChange = previous?.mergeAndApply(command, document)
+            if (mergedChange != null) {
+                redoStack.clear()
+                publish(mergedChange)
+                return
+            }
+        }
         val change = command.apply(document)
         undoStack.addLast(command)
         redoStack.clear()

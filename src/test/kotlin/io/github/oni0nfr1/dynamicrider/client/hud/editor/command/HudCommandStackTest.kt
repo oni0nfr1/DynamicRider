@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.command
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -49,6 +50,52 @@ class HudCommandStackTest {
         assertFalse(commands.canRedo)
         assertFalse(commands.redo())
         assertEquals(listOf("second"), document.elements.map { it.id })
+    }
+
+    @Test
+    fun `compatible replacements merge into one undo entry`() {
+        val original = GradientGaugeBar.Spec(width = 100)
+        val intermediate = GradientGaugeBar.Spec(width = 200)
+        val final = GradientGaugeBar.Spec(width = 300)
+        val document = HudSceneDocument.from(
+            HudSceneSpec(elementIds = listOf("gauge"), elements = listOf(original))
+        )
+        val commands = HudCommandStack(document)
+
+        commands.execute(ReplaceElementSpecCommand("gauge", intermediate, HudPropertyPath.of("layout")))
+        commands.execute(
+            ReplaceElementSpecCommand("gauge", final, HudPropertyPath.of("layout")),
+            mergeWithPrevious = true,
+        )
+
+        assertEquals(final, document.elements.single().spec)
+        assertTrue(commands.undo())
+        assertEquals(original, document.elements.single().spec)
+        assertFalse(commands.canUndo)
+        assertTrue(commands.redo())
+        assertEquals(final, document.elements.single().spec)
+    }
+
+    @Test
+    fun `different merge keys remain separate undo entries`() {
+        val original = GradientGaugeBar.Spec(width = 100)
+        val first = GradientGaugeBar.Spec(width = 200)
+        val second = GradientGaugeBar.Spec(width = 300)
+        val document = HudSceneDocument.from(
+            HudSceneSpec(elementIds = listOf("gauge"), elements = listOf(original))
+        )
+        val commands = HudCommandStack(document)
+
+        commands.execute(ReplaceElementSpecCommand("gauge", first, HudPropertyPath.of("layout")))
+        commands.execute(
+            ReplaceElementSpecCommand("gauge", second, HudPropertyPath.of("width")),
+            mergeWithPrevious = true,
+        )
+
+        assertTrue(commands.undo())
+        assertEquals(first, document.elements.single().spec)
+        assertTrue(commands.undo())
+        assertEquals(original, document.elements.single().spec)
     }
 
     @Test

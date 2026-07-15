@@ -168,11 +168,12 @@ class HudEditorSession<S : KartState> internal constructor(
         elementId: String,
         path: HudPropertyPath,
         value: JsonElement,
+        mergeWithPrevious: Boolean = false,
     ): HudEditorActionResult {
         if (closed) return HudEditorActionResult.Closed
         return when (val result = editService.createPropertyChangeCommand(elementId, path, value)) {
             is HudSpecEditCommandResult.Created -> {
-                commandStack.execute(result.command)
+                commandStack.execute(result.command, mergeWithPrevious)
                 HudEditorActionResult.Applied(elementId)
             }
             is HudSpecEditCommandResult.Unchanged -> HudEditorActionResult.Unchanged

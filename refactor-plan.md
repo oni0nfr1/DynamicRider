@@ -54,7 +54,7 @@ config/dynrider/hud/{mode}/{kartStateType}.json
   - [x] element ID와 runtime element의 대응을 유지한다.
   - [x] 추가·삭제·재정렬은 scene의 runtime element 목록에 반영한다.
   - [x] spec 교체 시 context는 유지하고 해당 runtime element만 재생성한다.
-- [ ] preview 선택 및 hit-test에 사용할 element ID별 runtime bounds 조회를 제공한다.
+- [x] preview 선택 및 hit-test에 사용할 element ID별 runtime bounds 조회를 제공한다.
 - [ ] compound element의 자식에도 영속 ID와 편집 가능한 bounds를 제공한다.
 
 ## 4. Annotation 기반 요소 메타데이터와 Preview 데이터
@@ -165,9 +165,11 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [x] `HudLayoutSpec` 전용 layout 입력 widget을 구현한다.
   - 일반 중첩 object 편집으로 확장하지 않고 속성 탭 내부의 전용 하위 화면에서 anchor·scale·offset·zIndex를 편집한다.
   - 하위 필드 변경은 현재 layout JSON에서 해당 값만 교체한 새 `JsonObject`를 top-level `layout` 변경으로 적용한다.
-- [ ] preview 캔버스 선택·이동을 구현한다.
+- [x] preview 캔버스 선택·이동을 구현한다.
+  - 선택 요소의 bounds, 화면 anchor, 요소 anchor와 두 anchor 사이 offset을 overlay로 표시한다.
+  - 선택 bounds의 단일 모서리 handle로 `scaleX`와 `scaleY`를 같은 값으로 조절한다.
 - [x] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 세션 API로 제공한다.
-- [ ] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
+- [x] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
 - [x] 저장 또는 삭제 후 현재 live HUD를 자동 갱신하지 않고 이후 생성되는 HUD부터 최신 설정을 사용한다.
 - [ ] 기본 편집기 완성 후 중첩 object와 list property의 재귀 metadata 및 편집 UI를 추가한다.
 

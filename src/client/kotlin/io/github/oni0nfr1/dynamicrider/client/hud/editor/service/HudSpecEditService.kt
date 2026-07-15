@@ -31,7 +31,7 @@ class HudSpecEditService(
                     HudSpecEditCommandResult.Unchanged(elementId)
                 } else {
                     HudSpecEditCommandResult.Created(
-                        ReplaceElementSpecCommand(elementId, result.spec)
+                        ReplaceElementSpecCommand(elementId, result.spec, path)
                     )
                 }
             }

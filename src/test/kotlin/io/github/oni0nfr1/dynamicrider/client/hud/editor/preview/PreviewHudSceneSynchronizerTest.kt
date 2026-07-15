@@ -112,6 +112,8 @@ class PreviewHudSceneSynchronizerTest {
     private class FakeHudElement(
         val spec: HudElementSpec<*, JiuKartState>,
     ) : HudElement<JiuKartState> {
+        override val width: Int = 1
+        override val height: Int = 1
         override var screenAnchor: HudAnchor = HudAnchor.TOP_LEFT
         override var elementAnchor: HudAnchor = HudAnchor.TOP_LEFT
         override var scale: Vector2f = Vector2f(1f)
