@@ -76,6 +76,9 @@ class HudEditorScreen(
         super.render(guiGraphics, mouseX, mouseY, partialTick)
     }
 
+    /** Editor는 자체 배경을 그리므로 vanilla menu blur와 배경 texture를 적용하지 않는다. */
+    override fun renderBackground(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) = Unit
+
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if (button == 0 && isOverDivider(mouseX, mouseY)) {
             val now = System.currentTimeMillis()
