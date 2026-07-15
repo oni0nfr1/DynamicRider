@@ -154,6 +154,8 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 2. [x] generic property 변경 성공 결과를 `ReplaceElementSpecCommand`와 `HudCommandStack`에 연결한다.
 3. [x] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
 4. [ ] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
+   - [x] document, command stack, property editor와 preview synchronizer를 소유하는 core session 및 GUI 상태·결과 모델을 구현한다.
+   - [ ] repository의 spec resolve 결과로 session을 여는 factory를 연결한다.
 5. [ ] custom 저장·삭제 및 resource reload를 live HUD에 반영하는 lifecycle controller를 구현한다.
 6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
