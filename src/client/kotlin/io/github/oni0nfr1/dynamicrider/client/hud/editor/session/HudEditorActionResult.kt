@@ -18,6 +18,10 @@ sealed interface HudEditorActionResult {
         val elementId: String,
     ) : HudEditorActionResult
 
+    data class ElementTypeNotFound(
+        val typeId: String,
+    ) : HudEditorActionResult
+
     data class IncompatibleState(
         val requiredStateClass: Class<out KartState>,
         val sceneStateClass: Class<out KartState>,

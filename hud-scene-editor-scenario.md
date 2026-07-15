@@ -35,6 +35,8 @@ GUI는 세션에서 다음 상태를 읽는다.
 - 현재 `HudSceneMode`와 `KartStateType`
 - 장면 출처 `CUSTOM_CONFIG`, `RESOURCE` 또는 `CUSTOM_FALLBACK`
 - 요소 ID와 Spec의 순서가 보존된 document snapshot
+- 선택 요소의 현재 값과 registry metadata가 결합된 inspector model
+- 현재 `KartStateType`과 호환되는 요소의 palette model
 - 현재 선택된 element ID
 - dirty, undo 가능 여부 및 redo 가능 여부
 - property 경로가 포함된 validation 또는 저장 오류
@@ -74,9 +76,10 @@ GUI에서 mode와 KartStateType 선택
 
 ```text
 GUI가 현재 KartStateType과 호환되는 요소 팔레트 요청
-→ HudElementTypeRegistry.compatibleWith()
+→ session.availableElementTypes()
 → 사용자가 요소 타입 선택
-→ HudElementType.createDefaultSpec()
+→ session.addElement(typeId, index)
+→ 세션 내부에서 HudElementTypeRegistry 조회 및 기본 Spec 생성
 → HudSpecValidator
 → AddElementCommand
 → HudCommandStack.execute()
@@ -87,6 +90,12 @@ GUI가 현재 KartStateType과 호환되는 요소 팔레트 요청
 새 element ID는 세션 또는 document의 ID 정책에서 생성한다. GUI는 ID 생성 규칙을 소유하지 않는다.
 
 ## 3. 속성 편집
+
+```text
+GUI가 요소 선택 또는 HudEditorState 변경 수신
+→ session.inspectElement(elementId)
+→ 현재 Spec 값과 metadata가 결합된 HudElementEditorModel로 속성 패널 갱신
+```
 
 ```text
 GUI 속성 패널 입력
@@ -177,12 +186,11 @@ GUI 저장
 → HudSceneRepository.saveCustom()
 → 성공 시 document.markClean()
 → 장면 출처를 CUSTOM_CONFIG로 갱신
-→ Live HUD Lifecycle Controller가 현재 장면을 다시 resolve
-→ live HUD 재생성
 ```
 
 resource 장면을 열어 편집하더라도 resource 파일은 수정하지 않는다. 변경 내용은 메모리 document에만
 존재하다가 저장 시 config override로 생성된다. 저장 실패 시 document는 dirty 상태를 유지한다.
+저장된 장면은 이후 생성되는 HUD부터 사용하며 현재 live HUD는 자동으로 교체하지 않는다.
 
 ## 8. Custom 삭제와 Resource 복원
 
@@ -192,10 +200,10 @@ GUI custom 삭제 또는 resource 기본값 복원
 → HudSceneRepository.deleteCustom()
 → 현재 resource 장면 다시 resolve
 → document, command stack과 preview scene 교체
-→ Live HUD Lifecycle Controller로 live HUD 갱신
 ```
 
 삭제 전에 dirty 변경이 있으면 GUI가 폐기 확인을 받을 수 있도록 세션이 별도의 확인 필요 결과를 반환한다.
+삭제 후에도 현재 live HUD는 유지하고 이후 생성되는 HUD부터 resource 장면을 사용한다.
 
 ## 9. Preview 상태와 Preset
 
@@ -219,11 +227,11 @@ Preview 상태 변경은 장면 Spec, document dirty 상태와 undo/redo stack�
 ```text
 리소스팩 reload
 → HudSceneResourceRegistry 재검증 및 cache 교체
-→ Live HUD Lifecycle Controller가 현재 live 장면 재생성
 → resource 기반 editor session에 변경 알림
 ```
 
 resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작업 사본을 자동 덮어쓰지 않는다.
+현재 live HUD는 자동으로 재생성하지 않으며, 필요하면 별도의 명시적 apply 기능을 추가한다.
 세션은 resource 변경 사실을 GUI에 알리고 reload 또는 현재 작업 유지 선택을 받는다.
 
 ## 오류 처리 원칙
@@ -240,7 +248,7 @@ resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작
 2. [x] `HudDocumentChange`, clean snapshot 기반 dirty와 command stack event 발행 구현
 3. [x] element ID 기반 `PreviewHudSceneSynchronizer` 구현
 4. [x] `HudEditorSession`과 GUI용 상태 및 결과 모델 구현
-5. [ ] 저장·삭제·resource reload용 live lifecycle controller 구현
+5. [ ] 편집 세션의 custom 저장·삭제 및 resource 기본값 복원 구현
 6. [ ] 요소 목록, 팔레트와 속성 패널 구현
 7. [ ] 캔버스 선택·drag와 command 병합 구현
 8. [ ] 저장·삭제·복원 UI 구현

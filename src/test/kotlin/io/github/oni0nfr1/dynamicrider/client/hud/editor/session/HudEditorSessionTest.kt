@@ -2,7 +2,9 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.session
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
@@ -11,6 +13,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -41,6 +44,15 @@ class HudEditorSessionTest {
         assertSame(scene, session.previewScene)
         assertEquals(64, (session.state.elements.single().spec as PlainNitroSlot.Spec).iconSize)
         assertEquals(64, (scene.entries.single().spec as PlainNitroSlot.Spec).iconSize)
+        val inspected = assertInstanceOf(
+            HudElementInspectionResult.Inspected::class.java,
+            session.inspectElement("slot"),
+        )
+        assertEquals(
+            64,
+            inspected.model.properties.single { it.path == HudPropertyPath.of("iconSize") }
+                .value.jsonPrimitive.content.toInt(),
+        )
         assertTrue(session.state.dirty)
         assertTrue(session.state.canUndo)
         assertFalse(session.state.canRedo)
@@ -61,7 +73,11 @@ class HudEditorSessionTest {
         val session = session()
         assertEquals(HudEditorActionResult.Applied("slot"), session.selectElement("slot"))
 
-        val added = session.addElement(PlainNitroSlot.Spec(iconSize = 48))
+        val palette = session.availableElementTypes()
+        assertTrue(palette.any { it.typeId == HudElementTypeRegistry.PLAIN_NITRO_SLOT.id })
+        assertTrue(palette.none { it.typeId == HudElementTypeRegistry.V1_TACHOMETER.id })
+
+        val added = session.addElement(HudElementTypeRegistry.PLAIN_NITRO_SLOT.id)
 
         assertEquals(HudEditorActionResult.Applied("element-1"), added)
         assertEquals("element-1", session.state.selectedElementId)
@@ -74,6 +90,10 @@ class HudEditorSessionTest {
         assertEquals(listOf("slot"), session.state.elements.map { it.id })
         assertEquals("slot", session.state.selectedElementId)
         assertEquals(session.state.elements.map { it.id }, session.previewScene.entries.map { it.id })
+        assertEquals(
+            HudEditorActionResult.ElementTypeNotFound("missing-type"),
+            session.addElement("missing-type"),
+        )
     }
 
     @Test

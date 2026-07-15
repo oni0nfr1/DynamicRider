@@ -36,11 +36,10 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 커스텀 저장 및 삭제 API를 제공한다.
 - [x] 장면 생성 실패 시 게임을 중단하지 않고 빈 장면으로 복구한다.
 - [x] 현재 ride/spectate 엔진 분기를 `KartStateType` 기반 조회로 교체한다.
-- [ ] 저장·삭제·리소스 reload 후 현재 장면을 즉시 다시 생성하는 controller를 도입한다.
-  - custom 저장 후 현재 live HUD에 저장된 장면을 다시 적용한다.
-  - custom 삭제 후 resource fallback 장면을 즉시 적용한다.
-  - 리소스팩 reload 후 현재 mode와 `KartStateType`의 장면을 다시 resolve한다.
-  - 재생성 실패 시 기존의 빈 장면 복구와 진단 전달 정책을 유지한다.
+- [x] 저장·삭제·리소스 reload와 현재 live HUD의 재생성을 분리한다.
+  - 편집 중 변경은 preview 장면에만 즉시 반영한다.
+  - custom 저장·삭제와 리소스 reload는 repository 상태를 갱신하고 이후 생성되는 HUD부터 적용한다.
+  - 현재 live HUD 갱신은 자동으로 수행하지 않으며, 필요해지면 명시적인 apply 기능으로 별도 구현한다.
 
 ## 3. 편집 문서와 레이아웃
 
@@ -69,13 +68,13 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 모든 등록 요소 Spec에 element/layout/color 및 필요한 range metadata와 `en_us`·`ko_kr` 번역을 제공한다.
 - [x] serializer, type ID, 상태 타입 호환성 및 runtime factory를 중앙 type registry에 등록하되 속성별 descriptor 코드는 작성하지 않는다.
 - [x] 현재 spec을 `JsonElement`로 encode하고 변경된 property만 교체한 뒤 같은 serializer로 decode하여 immutable spec을 갱신한다.
-- [ ] registry metadata와 현재 Spec 값을 결합한 GUI용 읽기 모델을 제공한다.
+- [x] registry metadata와 현재 Spec 값을 결합한 GUI용 읽기 모델을 제공한다.
   - `HudElementEditorModel`은 element ID, type ID, 요소 이름·카테고리 번역 key, icon 및 편집 property 목록을 포함한다.
   - `HudEditableProperty`는 안정적인 `HudPropertyPath`, 이름·설명 번역 key, `HudPropertyEditorType`, 현재 `JsonElement` 값과 optional·nullable 정보를 포함한다.
   - `HudElementTypeRegistry.bySpec()`으로 serializer와 metadata를 찾고 현재 Spec을 `JsonObject`로 encode해 각 metadata의 `serialName`과 현재 값을 결합한다.
   - `@HudHidden` property는 속성 패널에서 제외하고 `Unsupported` property는 기본 GUI에서 비활성 또는 미지원 상태로 구별한다.
   - 미등록 Spec, 존재하지 않는 element ID 및 encode 실패는 구조화된 inspector 결과로 반환한다.
-- [ ] `HudEditorSession`에 GUI용 읽기 API를 추가한다.
+- [x] `HudEditorSession`에 GUI용 읽기 API를 추가한다.
   - `inspectElement(elementId)`는 GUI가 registry나 serializer를 직접 참조하지 않고 선택 요소의 편집 모델을 읽게 한다.
   - `availableElementTypes()`는 현재 `KartStateType`과 호환되는 요소만 팔레트 모델로 반환하며 기본 Spec 생성 정보도 세션 내부에 둔다.
   - `HudEditorState` 변경을 받은 GUI는 선택 ID로 inspector를 다시 조회해 현재 property 값을 갱신한다.
@@ -157,7 +156,7 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [ ] 요소 팔레트, 캔버스 선택·이동, 속성 패널을 구현한다.
 - [ ] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 제공한다.
 - [ ] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
-- [ ] 저장 또는 삭제 후 현재 HUD를 즉시 갱신한다.
+- [x] 저장 또는 삭제 후 현재 live HUD를 자동 갱신하지 않고 이후 생성되는 HUD부터 최신 설정을 사용한다.
 - [ ] 기본 편집기 완성 후 중첩 object와 list property의 재귀 metadata 및 편집 UI를 추가한다.
 
 초기 GUI 구현 순서는 요소 목록과 선택, 요소 팔레트, primitive·enum·color 속성 패널,
@@ -171,9 +170,9 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 3. [x] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
 4. [ ] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
    - [x] document, command stack, property editor와 preview synchronizer를 소유하는 core session 및 GUI 상태·결과 모델을 구현한다.
-   - [ ] registry metadata와 현재 Spec 값을 결합하는 element inspector 및 호환 요소 palette 조회 API를 session에 추가한다.
+   - [x] registry metadata와 현재 Spec 값을 결합하는 element inspector 및 호환 요소 palette 조회 API를 session에 추가한다.
    - [x] repository의 spec resolve 결과로 session을 여는 공개 `open()`을 연결하고 저수준 session 조립 함수는 비공개로 둔다.
-5. [ ] custom 저장·삭제 및 resource reload를 live HUD에 반영하는 lifecycle controller를 구현한다.
+5. [ ] 편집 세션에 custom 저장·삭제 및 resource 기본값 복원 흐름을 구현한다.
 6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
@@ -190,9 +189,9 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] document 변경에 따른 preview runtime element 재생성을 테스트한다.
 - [x] repository가 유효한 custom Spec을 runtime 생성 없이 resolve하고 잘못된 custom을 보존하며 진단하는지 테스트한다.
 - [ ] inspector가 metadata와 현재 Spec 값을 같은 property path로 결합하고 hidden·unsupported·오류 상태를 구별하는지 테스트한다.
-- [ ] palette 조회가 현재 `KartStateType`과 호환되는 요소와 기본 Spec 생성 정보만 제공하는지 테스트한다.
+- [x] palette 조회가 현재 `KartStateType`과 호환되는 요소만 제공하고 type ID 추가가 세션 내부에서 기본 Spec을 생성하는지 테스트한다.
 - [ ] resource 장면의 첫 변경, custom 저장·삭제 및 fallback을 편집 세션 수준에서 테스트한다.
-- [ ] 저장·삭제·resource reload 후 live HUD 갱신을 테스트한다.
+- [ ] 저장·삭제 후 repository와 편집 세션 상태가 갱신되고 현재 live HUD에는 자동 적용되지 않는지 테스트한다.
 - [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
 
 - 모든 resource JSON이 codec과 상태 타입 호환성 검사를 통과한다.

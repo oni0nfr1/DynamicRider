@@ -7,12 +7,16 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.command.RemoveElementCo
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspector
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementPaletteEntry
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneSynchronizer
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditCommandResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditService
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
@@ -44,6 +48,7 @@ class HudEditorSession<S : KartState> internal constructor(
     private var closed: Boolean = false
     private val diagnostics: List<HudSceneLoadError> = diagnostics.toList()
     private var nextElementNumber: Int = 1
+    private val elementInspector = HudElementInspector(document)
 
     /** 현재 document, selection, history 및 preview 상태의 snapshot이다. */
     val state: HudEditorState
@@ -89,6 +94,33 @@ class HudEditorSession<S : KartState> internal constructor(
         selectedElementId = elementId
         publishState()
         return HudEditorActionResult.Applied(elementId)
+    }
+
+    /** [elementId]의 현재 Spec 값과 편집 metadata를 결합한 속성 패널 모델을 반환한다. */
+    fun inspectElement(elementId: String): HudElementInspectionResult = elementInspector.inspect(elementId)
+
+    /** 현재 카트 상태 타입과 호환되는 요소 팔레트의 읽기 전용 snapshot을 반환한다. */
+    fun availableElementTypes(): List<HudElementPaletteEntry> =
+        HudElementTypeRegistry.compatibleWith(previewContext.kartStateType).map { type ->
+            val metadata = type.metadata
+            HudElementPaletteEntry(
+                typeId = type.id,
+                nameKey = metadata.nameKey,
+                category = metadata.category,
+                categoryNameKey = metadata.categoryNameKey,
+                icon = metadata.icon,
+            )
+        }
+
+    /** Registry의 [typeId]에 대응하는 기본 Spec을 생성해 [index]에 추가하고 선택한다. */
+    fun addElement(
+        typeId: String,
+        index: Int = Int.MAX_VALUE,
+    ): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        val type = HudElementTypeRegistry.byId(typeId)
+            ?: return HudEditorActionResult.ElementTypeNotFound(typeId)
+        return addElement(type.createDefaultSpec(), index)
     }
 
     /** 검증된 [spec]을 새 영속 ID와 함께 [index]에 추가하고 선택한다. */
