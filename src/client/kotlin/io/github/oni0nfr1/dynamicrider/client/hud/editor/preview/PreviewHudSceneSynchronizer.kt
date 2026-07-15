@@ -62,6 +62,10 @@ class PreviewHudSceneSynchronizer<S : KartState>(
             is HudDocumentChange.Removed -> scene.removeElement(change.element.id)
             is HudDocumentChange.Moved -> scene.moveElement(change.elementId, change.toIndex)
             is HudDocumentChange.SpecReplaced -> scene.replaceElement(change.elementId, change.replacement)
+            is HudDocumentChange.Reset -> {
+                rebuildFromDocument()
+                return
+            }
         }
         result.requireApplied("apply $change")
     }

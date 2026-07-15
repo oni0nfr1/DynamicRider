@@ -148,13 +148,13 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 
 ## 6. 인게임 GUI 편집기
 
-- [ ] repository, document, command stack, preview context와 preview scene을 묶는 편집 세션 모델을 제공한다.
+- [x] repository, document, command stack, preview context와 preview scene을 묶는 편집 세션 모델을 제공한다.
   - 현재 mode, `KartStateType`, 장면 출처 및 dirty 상태를 소유한다.
   - resource 장면은 원본으로 유지하고 첫 실제 변경 시 custom 작업 사본을 만든다.
   - GUI는 파일 경로와 fallback 규칙을 직접 다루지 않고 세션 API만 사용한다.
-- [ ] 리소스 장면은 읽기 전용으로 열고 첫 변경 시 config 문서를 생성한다.
+- [x] 리소스 장면은 메모리 작업 사본으로 편집하고 저장 시에만 config override를 생성한다.
 - [ ] 요소 팔레트, 캔버스 선택·이동, 속성 패널을 구현한다.
-- [ ] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 제공한다.
+- [x] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 세션 API로 제공한다.
 - [ ] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
 - [x] 저장 또는 삭제 후 현재 live HUD를 자동 갱신하지 않고 이후 생성되는 HUD부터 최신 설정을 사용한다.
 - [ ] 기본 편집기 완성 후 중첩 object와 list property의 재귀 metadata 및 편집 UI를 추가한다.
@@ -168,11 +168,11 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 1. [x] 공통 `HudSpecValidator`와 구조화된 validation 오류를 구현하고 JSON loader와 generic property 편집기에 적용한다.
 2. [x] generic property 변경 성공 결과를 `ReplaceElementSpecCommand`와 `HudCommandStack`에 연결한다.
 3. [x] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
-4. [ ] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
+4. [x] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
    - [x] document, command stack, property editor와 preview synchronizer를 소유하는 core session 및 GUI 상태·결과 모델을 구현한다.
    - [x] registry metadata와 현재 Spec 값을 결합하는 element inspector 및 호환 요소 palette 조회 API를 session에 추가한다.
    - [x] repository의 spec resolve 결과로 session을 여는 공개 `open()`을 연결하고 저수준 session 조립 함수는 비공개로 둔다.
-5. [ ] 편집 세션에 custom 저장·삭제 및 resource 기본값 복원 흐름을 구현한다.
+5. [x] 편집 세션에 custom 저장·삭제 및 resource 기본값 복원 흐름을 구현한다.
 6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
@@ -190,7 +190,7 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] repository가 유효한 custom Spec을 runtime 생성 없이 resolve하고 잘못된 custom을 보존하며 진단하는지 테스트한다.
 - [ ] inspector가 metadata와 현재 Spec 값을 같은 property path로 결합하고 hidden·unsupported·오류 상태를 구별하는지 테스트한다.
 - [x] palette 조회가 현재 `KartStateType`과 호환되는 요소만 제공하고 type ID 추가가 세션 내부에서 기본 Spec을 생성하는지 테스트한다.
-- [ ] resource 장면의 첫 변경, custom 저장·삭제 및 fallback을 편집 세션 수준에서 테스트한다.
+- [x] resource 작업 사본의 custom 저장, 삭제 확인 및 resource 기본값 복원을 편집 세션 수준에서 테스트한다.
 - [ ] 저장·삭제 후 repository와 편집 세션 상태가 갱신되고 현재 live HUD에는 자동 적용되지 않는지 테스트한다.
 - [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
 

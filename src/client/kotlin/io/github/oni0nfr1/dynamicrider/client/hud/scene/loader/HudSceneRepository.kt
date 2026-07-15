@@ -18,7 +18,10 @@ import java.nio.file.StandardCopyOption
  */
 class HudSceneRepository(
     private val customRoot: Path,
+    private val resources: HudSceneResourceSource,
 ) {
+    constructor(customRoot: Path) : this(customRoot, HudSceneResourceRegistry)
+
     /**
      * 현재 모드와 상태 타입에 적용할 HUD 장면 명세를 결정한다.
      *
@@ -96,8 +99,8 @@ class HudSceneRepository(
         customDiagnostics: List<HudSceneLoadError>,
     ): HudSceneSpecResolution {
         val stateResourceId = HudScenePaths.resourceHudSceneId(mode, stateType)
-        val stateResourceError = HudSceneResourceRegistry.getLoadError(stateResourceId)
-        val useDefault = HudSceneResourceRegistry.get(stateResourceId) == null && stateResourceError == null
+        val stateResourceError = resources.getLoadError(stateResourceId)
+        val useDefault = resources.get(stateResourceId) == null && stateResourceError == null
         val resourceId = if (useDefault) {
             HudScenePaths.defaultResourceHudSceneId(mode)
         } else {
@@ -108,9 +111,9 @@ class HudSceneRepository(
         } else {
             HudScenePaths.resourceDisplayPath(mode, stateType)
         }
-        val spec = HudSceneResourceRegistry.get(resourceId)
+        val spec = resources.get(resourceId)
         if (spec == null) {
-            val resourceError = HudSceneResourceRegistry.getLoadError(resourceId)?.let {
+            val resourceError = resources.getLoadError(resourceId)?.let {
                 HudSceneLoadError.DecodeFailure(resourcePath, it)
             } ?: HudSceneLoadError.FileNotFound(resourcePath)
             return HudSceneSpecResolution.Failed(customDiagnostics + resourceError)

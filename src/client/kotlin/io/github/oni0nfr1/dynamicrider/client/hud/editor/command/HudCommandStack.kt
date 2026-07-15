@@ -2,6 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.command
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 
 /** document 변경 명령의 실행 순서와 undo/redo 기록을 관리한다. */
 class HudCommandStack(
@@ -59,6 +60,14 @@ class HudCommandStack(
         undoStack.addLast(command)
         publish(change)
         return true
+    }
+
+    /** 저장소에서 다시 읽은 [spec]으로 document를 교체하고 기존 undo/redo 기록을 폐기한다. */
+    fun reset(spec: HudSceneSpec) {
+        val change = document.reset(spec)
+        undoStack.clear()
+        redoStack.clear()
+        publish(change)
     }
 
     private fun publish(change: HudDocumentChange) {

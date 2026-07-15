@@ -77,6 +77,7 @@ class HudEditorSessionFactory(
             commandStack = commandStack,
             editService = HudSpecEditService(document),
             synchronizer = synchronizer,
+            repository = repository,
         )
     }
 }

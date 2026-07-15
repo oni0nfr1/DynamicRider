@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * 활성 리소스팩에서 HUD 장면 JSON을 읽어 decode된 명세와 로드 오류를 캐시한다.
  */
-object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener {
+object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener, HudSceneResourceSource {
     private const val SCENE_DIRECTORY = "hud"
     private const val JSON_EXTENSION = ".json"
 
@@ -40,14 +40,14 @@ object HudSceneResourceRegistry : SimpleSynchronousResourceReloadListener {
      *
      * @return 로드된 명세, 리소스가 없거나 역직렬화에 실패했으면 `null`
      */
-    fun get(id: ResourceLocation): HudSceneSpec? = loadedScenes[id]
+    override fun get(id: ResourceLocation): HudSceneSpec? = loadedScenes[id]
 
     /**
      * 리소스 ID를 읽는 중 발생한 역직렬화 오류를 반환한다.
      *
      * 리소스가 단순히 존재하지 않는 경우에는 `null`이다.
      */
-    fun getLoadError(id: ResourceLocation): SerializationException? = loadErrors[id]
+    override fun getLoadError(id: ResourceLocation): SerializationException? = loadErrors[id]
 
     override fun getFabricId(): ResourceLocation = reloadListenerId
 

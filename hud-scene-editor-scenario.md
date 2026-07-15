@@ -248,7 +248,7 @@ resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작
 2. [x] `HudDocumentChange`, clean snapshot 기반 dirty와 command stack event 발행 구현
 3. [x] element ID 기반 `PreviewHudSceneSynchronizer` 구현
 4. [x] `HudEditorSession`과 GUI용 상태 및 결과 모델 구현
-5. [ ] 편집 세션의 custom 저장·삭제 및 resource 기본값 복원 구현
+5. [x] 편집 세션의 custom 저장·삭제 및 resource 기본값 복원 구현
 6. [ ] 요소 목록, 팔레트와 속성 패널 구현
 7. [ ] 캔버스 선택·drag와 command 병합 구현
 8. [ ] 저장·삭제·복원 UI 구현

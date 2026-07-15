@@ -74,6 +74,16 @@ class HudSceneDocument private constructor(
         return HudDocumentChange.SpecReplaced(id, previous, spec)
     }
 
+    /** 현재 작업 사본과 clean 기준점을 [spec]으로 함께 교체한다. */
+    internal fun reset(spec: HudSceneSpec): HudDocumentChange.Reset {
+        val previous = currentSpec()
+        val replacement = from(spec).elements
+        mutableElements.clear()
+        mutableElements.addAll(replacement)
+        cleanSpec = currentSpec()
+        return HudDocumentChange.Reset(previous, cleanSpec)
+    }
+
     companion object {
         /**
          * 저장된 장면 명세로 편집 document를 생성한다.

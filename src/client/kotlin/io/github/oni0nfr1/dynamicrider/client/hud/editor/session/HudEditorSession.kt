@@ -19,7 +19,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpecResolution
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
@@ -33,7 +35,7 @@ import kotlinx.serialization.json.JsonElement
  */
 class HudEditorSession<S : KartState> internal constructor(
     val mode: HudSceneMode,
-    val source: HudSceneSource,
+    source: HudSceneSource,
     val previewContext: PreviewHudSceneContext<S>,
     val previewScene: HudScene<S>,
     diagnostics: List<HudSceneLoadError>,
@@ -41,14 +43,20 @@ class HudEditorSession<S : KartState> internal constructor(
     private val commandStack: HudCommandStack,
     private val editService: HudSpecEditService,
     private val synchronizer: PreviewHudSceneSynchronizer<S>,
+    private val repository: HudSceneRepository,
 ) : AutoCloseable {
     private val stateListeners = LinkedHashSet<(HudEditorState) -> Unit>()
     private val documentSubscription: AutoCloseable
     private var selectedElementId: String? = null
     private var closed: Boolean = false
-    private val diagnostics: List<HudSceneLoadError> = diagnostics.toList()
+    private var currentSource: HudSceneSource = source
+    private var currentDiagnostics: List<HudSceneLoadError> = diagnostics.toList()
     private var nextElementNumber: Int = 1
     private val elementInspector = HudElementInspector(document)
+
+    /** 현재 document가 유래한 custom 또는 resource 출처다. */
+    val source: HudSceneSource
+        get() = currentSource
 
     /** 현재 document, selection, history 및 preview 상태의 snapshot이다. */
     val state: HudEditorState
@@ -61,7 +69,7 @@ class HudEditorSession<S : KartState> internal constructor(
             dirty = document.dirty,
             canUndo = commandStack.canUndo,
             canRedo = commandStack.canRedo,
-            diagnostics = diagnostics,
+            diagnostics = currentDiagnostics,
             previewFailure = synchronizer.lastFailure,
             closed = closed,
         )
@@ -185,6 +193,60 @@ class HudEditorSession<S : KartState> internal constructor(
         return if (commandStack.redo()) HudEditorActionResult.Applied() else HudEditorActionResult.Unchanged
     }
 
+    /** 현재 document를 config override로 저장하고 성공한 snapshot을 clean 기준점으로 표시한다. */
+    fun save(): HudEditorPersistenceResult {
+        if (closed) return HudEditorPersistenceResult.Closed
+        return repository.saveCustom(mode, previewContext.kartStateType, document.toSpec()).fold(
+            onSuccess = { path ->
+                document.markClean()
+                currentSource = HudSceneSource.CUSTOM_CONFIG
+                currentDiagnostics = emptyList()
+                publishState()
+                HudEditorPersistenceResult.Saved(path)
+            },
+            onFailure = { cause ->
+                HudEditorPersistenceResult.IoFailed(
+                    operation = HudEditorPersistenceResult.Operation.SAVE,
+                    cause = cause,
+                )
+            },
+        )
+    }
+
+    /**
+     * Config override를 삭제하고 repository가 다시 선택한 resource 장면으로 작업 사본을 복원한다.
+     *
+     * 저장되지 않은 변경이 있으면 [discardUnsavedChanges]가 `true`일 때만 폐기한다.
+     * 현재 live HUD에는 복원 결과를 자동으로 적용하지 않는다.
+     */
+    fun deleteCustom(discardUnsavedChanges: Boolean = false): HudEditorPersistenceResult {
+        if (closed) return HudEditorPersistenceResult.Closed
+        if (document.dirty && !discardUnsavedChanges) {
+            return HudEditorPersistenceResult.DiscardConfirmationRequired
+        }
+        val customDeleted = repository.deleteCustom(mode, previewContext.kartStateType).fold(
+            onSuccess = { it },
+            onFailure = { cause ->
+                return HudEditorPersistenceResult.IoFailed(
+                    operation = HudEditorPersistenceResult.Operation.DELETE,
+                    cause = cause,
+                )
+            },
+        )
+        return when (val resolution = repository.resolveSpec(mode, previewContext.kartStateType)) {
+            is HudSceneSpecResolution.Failed -> HudEditorPersistenceResult.ResolveFailed(resolution.errors)
+            is HudSceneSpecResolution.Resolved -> {
+                currentSource = resolution.source
+                currentDiagnostics = resolution.diagnostics.toList()
+                commandStack.reset(resolution.spec)
+                HudEditorPersistenceResult.Restored(
+                    source = resolution.source,
+                    customDeleted = customDeleted,
+                )
+            }
+        }
+    }
+
     override fun close() {
         if (closed) return
         documentSubscription.close()
@@ -198,6 +260,9 @@ class HudEditorSession<S : KartState> internal constructor(
         if (change is HudDocumentChange.Removed && selectedElementId == change.element.id) {
             val elements = document.elements
             selectedElementId = elements.getOrNull(change.index.coerceAtMost(elements.lastIndex))?.id
+        }
+        if (change is HudDocumentChange.Reset && document.elementById(selectedElementId ?: "") == null) {
+            selectedElementId = document.elements.firstOrNull()?.id
         }
         publishState()
     }

@@ -7,6 +7,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneCodec
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudScenePaths
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneResourceSource
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
@@ -14,6 +17,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.SerializationException
+import net.minecraft.resources.ResourceLocation
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -22,6 +27,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
+import java.nio.file.Files
 
 class HudEditorSessionTest {
     @TempDir
@@ -149,8 +155,72 @@ class HudEditorSessionTest {
         assertInstanceOf(HudEditorSessionOpenResult.ResolveFailed::class.java, result)
     }
 
-    private fun session(): HudEditorSession<out KartState> {
-        val repository = HudSceneRepository(root)
+    @Test
+    fun `save writes current document and moves the clean snapshot without replacing preview`() {
+        val resourceSpec = HudSceneSpec(
+            elementIds = listOf("slot"),
+            elements = listOf(PlainNitroSlot.Spec(iconSize = 32)),
+        )
+        val resources = FakeHudSceneResourceSource(
+            mapOf(HudScenePaths.resourceHudSceneId(HudSceneMode.RIDE, KartStateTypes.JIU) to resourceSpec)
+        )
+        val session = openSession(HudSceneRepository(root, resources))
+        val previewScene = session.previewScene
+        assertEquals(HudSceneSource.RESOURCE, session.state.source)
+        session.updateProperty("slot", HudPropertyPath.of("iconSize"), JsonPrimitive(64))
+
+        val result = assertInstanceOf(HudEditorPersistenceResult.Saved::class.java, session.save())
+
+        assertEquals(
+            64,
+            (HudSceneCodec.decode(Files.readString(result.path)).elements.single() as PlainNitroSlot.Spec).iconSize,
+        )
+        assertSame(previewScene, session.previewScene)
+        assertEquals(HudSceneSource.CUSTOM_CONFIG, session.state.source)
+        assertFalse(session.state.dirty)
+        assertTrue(session.state.canUndo)
+
+        session.undo()
+        assertTrue(session.state.dirty)
+    }
+
+    @Test
+    fun `delete requires confirmation then restores resource document history and preview`() {
+        val resourceSpec = HudSceneSpec(
+            elementIds = listOf("resource-slot"),
+            elements = listOf(PlainNitroSlot.Spec(iconSize = 48)),
+        )
+        val resources = FakeHudSceneResourceSource(
+            mapOf(HudScenePaths.resourceHudSceneId(HudSceneMode.RIDE, KartStateTypes.JIU) to resourceSpec)
+        )
+        val repository = HudSceneRepository(root, resources)
+        val session = session(repository)
+        val previewScene = session.previewScene
+        session.updateProperty("slot", HudPropertyPath.of("iconSize"), JsonPrimitive(64))
+
+        assertSame(HudEditorPersistenceResult.DiscardConfirmationRequired, session.deleteCustom())
+        assertTrue(Files.exists(HudScenePaths.customHudScenePath(root, HudSceneMode.RIDE, KartStateTypes.JIU)))
+
+        val restored = assertInstanceOf(
+            HudEditorPersistenceResult.Restored::class.java,
+            session.deleteCustom(discardUnsavedChanges = true),
+        )
+
+        assertTrue(restored.customDeleted)
+        assertEquals(HudSceneSource.RESOURCE, restored.source)
+        assertEquals(HudSceneSource.RESOURCE, session.state.source)
+        assertEquals(listOf("resource-slot"), session.state.elements.map { it.id })
+        assertEquals(48, (session.state.elements.single().spec as PlainNitroSlot.Spec).iconSize)
+        assertEquals(session.state.elements.map { it.id }, previewScene.entries.map { it.id })
+        assertSame(previewScene, session.previewScene)
+        assertFalse(session.state.dirty)
+        assertFalse(session.state.canUndo)
+        assertFalse(session.state.canRedo)
+    }
+
+    private fun session(
+        repository: HudSceneRepository = HudSceneRepository(root),
+    ): HudEditorSession<out KartState> {
         repository.saveCustom(
             HudSceneMode.RIDE,
             KartStateTypes.JIU,
@@ -159,18 +229,29 @@ class HudEditorSessionTest {
                 elements = listOf(PlainNitroSlot.Spec(iconSize = 32)),
             ),
         ).getOrThrow()
+        return openSession(repository)
+    }
+
+    private fun openSession(repository: HudSceneRepository): HudEditorSession<out KartState> {
         val result = HudEditorSessionFactory(repository).open(
             mode = HudSceneMode.RIDE,
             stateType = KartStateTypes.JIU,
             viewport = viewport(),
         )
         val opened = assertInstanceOf(HudEditorSessionOpenResult.Opened::class.java, result)
-        assertEquals(HudSceneSource.CUSTOM_CONFIG, opened.session.source)
         return opened.session
     }
 
     private fun viewport(): ElementHolder = object : ElementHolder {
         override val width: Int = 800
         override val height: Int = 600
+    }
+
+    private class FakeHudSceneResourceSource(
+        private val scenes: Map<ResourceLocation, HudSceneSpec>,
+    ) : HudSceneResourceSource {
+        override fun get(id: ResourceLocation): HudSceneSpec? = scenes[id]
+
+        override fun getLoadError(id: ResourceLocation): SerializationException? = null
     }
 }
