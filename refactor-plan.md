@@ -162,7 +162,9 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [x] boolean·string·number·range slider·enum·color 입력 widget과 property별 validation 오류 표시를 구현한다.
   - text 기반 입력은 확인 시점에만 적용하고 range slider는 drag release 시 한 번만 command를 생성한다.
   - 긴 property 목록과 widget scroll을 수동 검증할 수 있는 editor stress-test 요소를 registry에 제공한다.
-- [ ] `HudLayoutSpec` 전용 layout 입력 widget을 구현한다.
+- [x] `HudLayoutSpec` 전용 layout 입력 widget을 구현한다.
+  - 일반 중첩 object 편집으로 확장하지 않고 속성 탭 내부의 전용 하위 화면에서 anchor·scale·offset·zIndex를 편집한다.
+  - 하위 필드 변경은 현재 layout JSON에서 해당 값만 교체한 새 `JsonObject`를 top-level `layout` 변경으로 적용한다.
 - [ ] preview 캔버스 선택·이동을 구현한다.
 - [x] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 세션 API로 제공한다.
 - [ ] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
@@ -188,7 +190,8 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] 요소 목록·palette·구조 변경과 undo/redo·저장·복원 UI를 session에 연결한다.
    - [x] 탭별 side panel scroll과 drag 기반 panel 너비 조절을 구현한다.
    - [x] inspector metadata 기반 primitive·enum·color property 입력 widget을 구현한다.
-   - [ ] layout property 입력 widget과 preview 상태 조절 UI를 구현한다.
+   - [x] layout property 입력 widget을 구현한다.
+   - [ ] preview 상태 조절 UI를 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
 프레임 단위 상태 snapshot, KSP registry 생성 및 runtime element의 세부 property patch는

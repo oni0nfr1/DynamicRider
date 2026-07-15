@@ -7,6 +7,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorAction
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorPersistenceResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSession
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorState
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -40,6 +41,8 @@ class HudEditorScreen(
     private var elementScroll = 0
     private var paletteScroll = 0
     private var propertyScroll = 0
+    private var layoutScroll = 0
+    private var layoutEditorOpen = false
     private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
 
     private var previewX = 8
@@ -143,8 +146,13 @@ class HudEditorScreen(
                 elementScroll = clampScroll(elementScroll + direction, session.state.elements.size, elementVisibleRows())
             }
             SideTab.PROPERTIES -> {
-                val count = selectedProperties()?.size ?: 0
-                propertyScroll = clampScroll(propertyScroll + direction, count, propertyVisibleRows())
+                if (layoutEditorOpen) {
+                    val count = selectedLayoutFields()?.size ?: 0
+                    layoutScroll = clampScroll(layoutScroll + direction, count, layoutVisibleRows())
+                } else {
+                    val count = selectedProperties()?.size ?: 0
+                    propertyScroll = clampScroll(propertyScroll + direction, count, propertyVisibleRows())
+                }
             }
             SideTab.PREVIEW_STATE -> return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
         }
@@ -200,6 +208,7 @@ class HudEditorScreen(
                 Button.builder(Component.translatable(tab.key)) {
                     activeTab = tab
                     paletteOpen = false
+                    layoutEditorOpen = false
                     rebuildWidgets()
                 }.bounds(sideX + index * tabWidth, previewY, tabWidth, 20).build().also {
                     it.active = activeTab != tab
@@ -219,6 +228,7 @@ class HudEditorScreen(
                     Button.builder(Component.translatable(entry.nameKey)) {
                         activeTab = SideTab.PROPERTIES
                         paletteOpen = false
+                        layoutEditorOpen = false
                         when (val result = session.addElement(entry.typeId)) {
                             is HudEditorActionResult.Applied -> {
                                 propertyErrors.clear()
@@ -254,6 +264,7 @@ class HudEditorScreen(
                 Button.builder(label) {
                     session.selectElement(element.id)
                     activeTab = SideTab.PROPERTIES
+                    layoutEditorOpen = false
                     propertyErrors.clear()
                     rebuildWidgets()
                 }.bounds(sideX, contentY + index * 22, sideWidth, 20).build().also {
@@ -286,6 +297,15 @@ class HudEditorScreen(
         val elementId = session.state.selectedElementId ?: return
         val inspected = session.inspectElement(elementId) as? HudElementInspectionResult.Inspected ?: return
         val properties = inspected.model.properties
+        if (layoutEditorOpen) {
+            val layout = properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor }
+                ?: run {
+                    layoutEditorOpen = false
+                    return
+                }
+            buildLayoutEditor(elementId, layout)
+            return
+        }
         val visibleRows = propertyVisibleRows()
         propertyScroll = clampScroll(propertyScroll, properties.size, visibleRows)
         val widgetX = sideX + sideWidth / 2
@@ -302,6 +322,44 @@ class HudEditorScreen(
                 onCommit = { value -> updateProperty(elementId, property, value) },
                 onInvalidInput = { message ->
                     propertyErrors[elementId to property.path] = message
+                    status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
+                },
+                onOpenLayout = {
+                    layoutEditorOpen = true
+                    layoutScroll = 0
+                    rebuildWidgets()
+                },
+            ).forEach(::addRenderableWidget)
+        }
+    }
+
+    private fun buildLayoutEditor(elementId: String, layout: HudEditableProperty) {
+        val fields = HudLayoutEditorModel.fields(layout)
+        val visibleRows = layoutVisibleRows()
+        layoutScroll = clampScroll(layoutScroll, fields.size, visibleRows)
+        addRenderableWidget(
+            Button.builder(Component.translatable("gui.back")) {
+                layoutEditorOpen = false
+                rebuildWidgets()
+            }.bounds(sideX, previewY + 26, 52, 20).build()
+        )
+        val widgetX = sideX + sideWidth / 2
+        val widgetWidth = (sideWidth / 2 - 8).coerceAtLeast(40)
+        val firstRowY = previewY + 52
+        val factory = HudPropertyWidgetFactory(font)
+        fields.drop(layoutScroll).take(visibleRows).forEachIndexed { index, field ->
+            val y = firstRowY + index * PROPERTY_ROW_HEIGHT
+            factory.create(
+                property = field,
+                x = widgetX,
+                y = y,
+                width = widgetWidth,
+                onCommit = { value ->
+                    val replacement = HudLayoutEditorModel.replace(layout, field, value)
+                    updateProperty(elementId, layout, replacement, field.path)
+                },
+                onInvalidInput = { message ->
+                    propertyErrors[elementId to field.path] = message
                     status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
                 },
             ).forEach(::addRenderableWidget)
@@ -380,6 +438,13 @@ class HudEditorScreen(
             guiGraphics.drawString(font, Component.translatable("dynamicrider.hud.editor.inspect_failed"), sideX + 6, contentY, 0xFFFF7777.toInt())
             return
         }
+        if (layoutEditorOpen) {
+            val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor }
+            if (layout != null) {
+                renderLayoutEditor(guiGraphics, selectedId, layout)
+                return
+            }
+        }
         guiGraphics.drawString(font, Component.translatable(inspected.model.nameKey), sideX + 6, contentY, 0xFFFFFFFF.toInt())
         val maxRows = propertyVisibleRows()
         propertyScroll = clampScroll(propertyScroll, inspected.model.properties.size, maxRows)
@@ -388,6 +453,30 @@ class HudEditorScreen(
             val color = if (property.supported) 0xFFDDDDDD.toInt() else 0xFF777777.toInt()
             guiGraphics.drawString(font, Component.translatable(property.nameKey), sideX + 6, y, color)
             propertyErrors[selectedId to property.path]?.let { message ->
+                guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
+            }
+        }
+    }
+
+    private fun renderLayoutEditor(
+        guiGraphics: GuiGraphics,
+        elementId: String,
+        layout: HudEditableProperty,
+    ) {
+        guiGraphics.drawString(
+            font,
+            Component.translatable("dynamicrider.hud.editor.layout.title"),
+            sideX + 58,
+            previewY + 32,
+            0xFFFFFFFF.toInt(),
+        )
+        val fields = HudLayoutEditorModel.fields(layout)
+        val visibleRows = layoutVisibleRows()
+        layoutScroll = clampScroll(layoutScroll, fields.size, visibleRows)
+        fields.drop(layoutScroll).take(visibleRows).forEachIndexed { index, field ->
+            val y = previewY + 52 + index * PROPERTY_ROW_HEIGHT
+            guiGraphics.drawString(font, Component.translatable(field.nameKey), sideX + 6, y, 0xFFDDDDDD.toInt())
+            propertyErrors[elementId to field.path]?.let { message ->
                 guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
             }
         }
@@ -437,8 +526,9 @@ class HudEditorScreen(
         elementId: String,
         property: HudEditableProperty,
         value: kotlinx.serialization.json.JsonElement,
+        errorPath: HudPropertyPath = property.path,
     ) {
-        val key = elementId to property.path
+        val key = elementId to errorPath
         when (val result = session.updateProperty(elementId, property.path, value)) {
             is HudEditorActionResult.Applied -> {
                 propertyErrors.remove(key)
@@ -461,11 +551,17 @@ class HudEditorScreen(
         ?.let(session::inspectElement)
         ?.let { (it as? HudElementInspectionResult.Inspected)?.model?.properties }
 
+    private fun selectedLayoutFields(): List<HudEditableProperty>? = selectedProperties()
+        ?.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor }
+        ?.let(HudLayoutEditorModel::fields)
+
     private fun elementVisibleRows(): Int = ((height - (previewY + 26) - 58) / ROW_HEIGHT).coerceAtLeast(0)
 
     private fun paletteVisibleRows(): Int = ((height - (previewY + 26) - 34) / ROW_HEIGHT).coerceAtLeast(0)
 
     private fun propertyVisibleRows(): Int = ((height - (previewY + 28) - 24) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
+
+    private fun layoutVisibleRows(): Int = ((height - (previewY + 52) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
 
     private fun clampScroll(offset: Int, itemCount: Int, visibleRows: Int): Int =
         offset.coerceIn(0, (itemCount - visibleRows).coerceAtLeast(0))
@@ -482,8 +578,10 @@ class HudEditorScreen(
         } else {
             ScrollMetrics(elementScroll, session.state.elements.size, elementVisibleRows())
         }
-        SideTab.PROPERTIES -> selectedProperties()?.let {
-            ScrollMetrics(propertyScroll, it.size, propertyVisibleRows())
+        SideTab.PROPERTIES -> if (layoutEditorOpen) {
+            selectedLayoutFields()?.let { ScrollMetrics(layoutScroll, it.size, layoutVisibleRows()) }
+        } else {
+            selectedProperties()?.let { ScrollMetrics(propertyScroll, it.size, propertyVisibleRows()) }
         }
         SideTab.PREVIEW_STATE -> null
     }?.takeIf { it.visibleRows > 0 && it.itemCount > it.visibleRows }
