@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
@@ -10,42 +10,109 @@ import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 
+/** ID, Spec 및 선택적으로 생성된 runtime 요소를 묶은 HUD scene entry snapshot이다. */
+data class HudSceneEntry<S : KartState>(
+    val id: String,
+    val spec: HudElementSpec<*, S>,
+    val element: HudElement<S>?,
+)
+
+/** 검증된 Spec으로 scene이 보관할 runtime 요소를 생성한다. */
+fun interface HudSceneElementFactory<S : KartState> {
+    fun create(
+        spec: HudElementSpec<*, S>,
+        context: HudSceneContext<S>,
+        parent: ElementHolder,
+    ): HudElement<S>
+}
+
 class HudScene<S : KartState>(
     private val context: HudSceneContext<S>,
+    private val viewport: ElementHolder?,
+    private val elementFactory: HudSceneElementFactory<S>,
 ) : ElementHolder {
+    constructor(context: HudSceneContext<S>) : this(context, null)
 
-    private var elementSpecs: MutableList<HudElementSpec<*, S>> = mutableListOf()
+    constructor(context: HudSceneContext<S>, viewport: ElementHolder?) : this(
+        context,
+        viewport,
+        HudSceneElementFactory { spec, sceneContext, parent -> spec.create(sceneContext, parent) },
+    )
+
+    private data class MutableEntry<S : KartState>(
+        val id: String,
+        var spec: HudElementSpec<*, S>,
+        var element: HudElement<S>? = null,
+    )
+
+    private val mutableEntries = mutableListOf<MutableEntry<S>>()
     private val onEnableCallbacks: MutableList<() -> Unit> = mutableListOf()
     private val onDisableCallbacks: MutableList<() -> Unit> = mutableListOf()
+    private var active: Boolean = false
+
+    /** 현재 ID, 순서, Spec 및 runtime 요소의 읽기 전용 snapshot이다. */
+    val entries: List<HudSceneEntry<S>>
+        get() = mutableEntries.map { HudSceneEntry(it.id, it.spec, it.element) }
+
+    val isActive: Boolean
+        get() = active
 
     override val width: Int
-        get() = Minecraft.getInstance().window.guiScaledWidth
+        get() = viewport?.width ?: Minecraft.getInstance().window.guiScaledWidth
     override val height: Int
-        get() = Minecraft.getInstance().window.guiScaledHeight
+        get() = viewport?.height ?: Minecraft.getInstance().window.guiScaledHeight
 
-    private var elements: List<HudElement<S>> = mutableListOf()
-
-    fun addSpec(spec: HudElementSpec<*, *>): HudSceneSpecAddResult {
-        val requiredStateClass = spec.requiredStateClass()
-        val sceneStateClass = context.kartStateType.stateClass
-        if (!requiredStateClass.isAssignableFrom(sceneStateClass)) {
-            return HudSceneSpecAddResult.IncompatibleState(
-                requiredStateClass = requiredStateClass,
-                sceneStateClass = sceneStateClass,
-                specType = spec::class.java.name,
-            )
-        }
-
-        when (val validation = HudSpecValidator.validate(spec)) {
-            HudSpecValidationResult.Valid -> Unit
-            is HudSpecValidationResult.Invalid -> {
-                return HudSceneSpecAddResult.InvalidSpec(validation.errors)
-            }
-        }
+    /** [id]와 [spec]으로 scene entry를 [index]에 추가한다. */
+    fun addElement(
+        id: String,
+        spec: HudElementSpec<*, *>,
+        index: Int = Int.MAX_VALUE,
+    ): HudSceneMutationResult {
+        if (mutableEntries.any { it.id == id }) return HudSceneMutationResult.DuplicateElementId(id)
+        validateSpec(spec)?.let { return it }
 
         @Suppress("UNCHECKED_CAST")
-        elementSpecs += spec as HudElementSpec<*, S>
-        return HudSceneSpecAddResult.Added
+        val typedSpec = spec as HudElementSpec<*, S>
+        val element = if (active) elementFactory.create(typedSpec, context, this) else null
+        val actualIndex = index.coerceIn(0, mutableEntries.size)
+        mutableEntries.add(actualIndex, MutableEntry(id, typedSpec, element))
+        return HudSceneMutationResult.Applied
+    }
+
+    /** [id]에 해당하는 scene entry를 제거한다. */
+    fun removeElement(id: String): HudSceneMutationResult {
+        val index = mutableEntries.indexOfFirst { it.id == id }
+        if (index < 0) return HudSceneMutationResult.ElementNotFound(id)
+        mutableEntries.removeAt(index)
+        return HudSceneMutationResult.Applied
+    }
+
+    /** [id]에 해당하는 entry를 [targetIndex]로 이동한다. */
+    fun moveElement(id: String, targetIndex: Int): HudSceneMutationResult {
+        val sourceIndex = mutableEntries.indexOfFirst { it.id == id }
+        if (sourceIndex < 0) return HudSceneMutationResult.ElementNotFound(id)
+        val entry = mutableEntries.removeAt(sourceIndex)
+        mutableEntries.add(targetIndex.coerceIn(0, mutableEntries.size), entry)
+        return HudSceneMutationResult.Applied
+    }
+
+    /** [id]를 유지하면서 Spec과 활성 runtime 요소를 교체한다. */
+    fun replaceElement(id: String, spec: HudElementSpec<*, *>): HudSceneMutationResult {
+        val index = mutableEntries.indexOfFirst { it.id == id }
+        if (index < 0) return HudSceneMutationResult.ElementNotFound(id)
+        validateSpec(spec)?.let { return it }
+
+        @Suppress("UNCHECKED_CAST")
+        val typedSpec = spec as HudElementSpec<*, S>
+        val element = if (active) elementFactory.create(typedSpec, context, this) else null
+        mutableEntries[index].spec = typedSpec
+        mutableEntries[index].element = element
+        return HudSceneMutationResult.Applied
+    }
+
+    /** 모든 scene entry를 제거한다. */
+    fun clearElements() {
+        mutableEntries.clear()
     }
 
     fun onEnable(block: () -> Unit) {
@@ -56,18 +123,39 @@ class HudScene<S : KartState>(
         onDisableCallbacks += block
     }
 
-    private fun createElements(): List<HudElement<S>> = elementSpecs.map { it.create(context, this) }
-
     fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        elements.forEach { it.draw(guiGraphics, deltaTracker) }
+        mutableEntries.forEach { it.element?.draw(guiGraphics, deltaTracker) }
     }
 
     internal fun enable() {
+        if (active) return
         onEnableCallbacks.forEach { it() }
-        elements = createElements()
+        val created = mutableEntries.map { elementFactory.create(it.spec, context, this) }
+        mutableEntries.zip(created).forEach { (entry, element) -> entry.element = element }
+        active = true
     }
 
     internal fun disable() {
+        if (!active) return
         onDisableCallbacks.forEach { it() }
+        mutableEntries.forEach { it.element = null }
+        active = false
+    }
+
+    private fun validateSpec(spec: HudElementSpec<*, *>): HudSceneMutationResult? {
+        val requiredStateClass = spec.requiredStateClass()
+        val sceneStateClass = context.kartStateType.stateClass
+        if (!requiredStateClass.isAssignableFrom(sceneStateClass)) {
+            return HudSceneMutationResult.IncompatibleState(
+                requiredStateClass = requiredStateClass,
+                sceneStateClass = sceneStateClass,
+                specType = spec::class.java.name,
+            )
+        }
+
+        return when (val validation = HudSpecValidator.validate(spec)) {
+            HudSpecValidationResult.Valid -> null
+            is HudSpecValidationResult.Invalid -> HudSceneMutationResult.InvalidSpec(validation.errors)
+        }
     }
 }

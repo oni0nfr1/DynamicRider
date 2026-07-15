@@ -238,7 +238,7 @@ resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작
 
 1. [x] Generic Spec 편집 결과를 검증된 `ReplaceElementSpecCommand`로 변환
 2. [x] `HudDocumentChange`, clean snapshot 기반 dirty와 command stack event 발행 구현
-3. [ ] element ID 기반 `PreviewHudSceneSynchronizer` 구현
+3. [x] element ID 기반 `PreviewHudSceneSynchronizer` 구현
 4. [ ] `HudEditorSession`과 GUI용 상태 및 결과 모델 구현
 5. [ ] 저장·삭제·resource reload용 live lifecycle controller 구현
 6. [ ] 요소 목록, 팔레트와 속성 패널 구현

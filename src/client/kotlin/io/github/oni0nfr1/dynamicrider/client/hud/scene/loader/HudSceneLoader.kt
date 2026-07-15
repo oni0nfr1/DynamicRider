@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
-import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneSpecAddResult
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneMutationResult
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import kotlinx.serialization.SerializationException
 import java.io.IOException
@@ -75,9 +75,10 @@ object HudSceneLoader {
 
         val scene = HudScene(context)
         spec.elements.forEachIndexed { elementIndex, elementSpec ->
-            when (val result = scene.addSpec(elementSpec)) {
-                HudSceneSpecAddResult.Added -> Unit
-                is HudSceneSpecAddResult.IncompatibleState -> {
+            val elementId = spec.elementIds.getOrNull(elementIndex) ?: "element-${elementIndex + 1}"
+            when (val result = scene.addElement(elementId, elementSpec)) {
+                HudSceneMutationResult.Applied -> Unit
+                is HudSceneMutationResult.IncompatibleState -> {
                     return HudSceneLoadResult.Failed(
                         listOf(
                             HudSceneLoadError.IncompatibleElement(
@@ -90,7 +91,7 @@ object HudSceneLoader {
                         )
                     )
                 }
-                is HudSceneSpecAddResult.InvalidSpec -> {
+                is HudSceneMutationResult.InvalidSpec -> {
                     return HudSceneLoadResult.Failed(
                         listOf(
                             HudSceneLoadError.InvalidElement(
@@ -103,6 +104,10 @@ object HudSceneLoader {
                         )
                     )
                 }
+                is HudSceneMutationResult.DuplicateElementId,
+                is HudSceneMutationResult.ElementNotFound -> error(
+                    "Unexpected HUD scene mutation result while adding '$elementId': $result"
+                )
             }
         }
 

@@ -46,13 +46,13 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 추가·삭제·재정렬·spec 교체를 undo/redo command로 제공한다.
 - [x] command 실행·undo·redo 결과를 정규화한 `HudDocumentChange`로 발행하고 clean snapshot 기준 dirty 상태를 제공한다.
 - [x] anchor·scale 좌표 계산과 hit-test bounds를 `HudLayoutEngine`으로 분리한다.
-- [x] 검증 없는 Kotlin DSL용 `HudScene.addSpec`을 제거하고 호환성·유효성을 검사하는 단일 `addSpec` 진입점으로 통합한다.
-- [ ] 런타임 `HudScene`이 document 변경을 감지하고 변경된 요소만 재생성하도록 연결한다.
+- [x] 검증 없는 Kotlin DSL용 `HudScene.addSpec`을 제거하고 호환성·유효성을 검사하는 ID 기반 mutation API로 통합한다.
+- [x] 런타임 `HudScene`이 document 변경을 감지하고 변경된 요소만 재생성하도록 연결한다.
   - [x] command stack이 document 변경을 element ID와 변경 종류가 포함된 event로 노출한다.
-  - element ID와 runtime element의 대응을 유지한다.
-  - 추가·삭제·재정렬은 scene의 runtime element 목록에 반영한다.
-  - spec 교체 시 context는 유지하고 해당 runtime element만 재생성한다.
-  - 변경 후 선택 및 hit-test에 사용하는 bounds를 다시 계산한다.
+  - [x] element ID와 runtime element의 대응을 유지한다.
+  - [x] 추가·삭제·재정렬은 scene의 runtime element 목록에 반영한다.
+  - [x] spec 교체 시 context는 유지하고 해당 runtime element만 재생성한다.
+- [ ] preview 선택 및 hit-test에 사용할 element ID별 runtime bounds 조회를 제공한다.
 - [ ] compound element의 자식에도 영속 ID와 편집 가능한 bounds를 제공한다.
 
 ## 4. Annotation 기반 요소 메타데이터와 Preview 데이터
@@ -151,8 +151,8 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 ## 7. 이후 구현 우선순위
 
 1. [x] 공통 `HudSpecValidator`와 구조화된 validation 오류를 구현하고 JSON loader와 generic property 편집기에 적용한다.
-2. [ ] generic property 변경 성공 결과를 `ReplaceElementSpecCommand`와 `HudCommandStack`에 연결한다.
-3. [ ] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
+2. [x] generic property 변경 성공 결과를 `ReplaceElementSpecCommand`와 `HudCommandStack`에 연결한다.
+3. [x] `HudSceneDocument` 변경을 preview `HudScene`에 동기화하고 element ID 단위 runtime 재생성을 구현한다.
 4. [ ] repository, document, command stack과 preview를 묶는 편집 세션 모델을 구현한다.
 5. [ ] custom 저장·삭제 및 resource reload를 live HUD에 반영하는 lifecycle controller를 구현한다.
 6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
@@ -166,8 +166,8 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] client source output을 사용하는 JUnit 테스트 소스셋을 구성하고 `test`와 `build`에 연결한다.
 - [x] generic property 변경, registry/metadata 번역, built-in JSON, document command, layout 및 custom 저장·삭제의 기본 회귀 테스트를 제공한다.
 - [x] 공통 validator의 전체 spec 검사와 구조화된 오류 경로를 테스트한다.
-- [ ] property 편집부터 command 실행 및 undo/redo까지의 통합 흐름을 테스트한다.
-- [ ] document 변경에 따른 preview runtime element 재생성을 테스트한다.
+- [x] property 편집부터 command 실행 및 undo/redo까지의 통합 흐름을 테스트한다.
+- [x] document 변경에 따른 preview runtime element 재생성을 테스트한다.
 - [ ] resource 장면의 첫 변경, custom 저장·삭제 및 fallback을 편집 세션 수준에서 테스트한다.
 - [ ] 저장·삭제·resource reload 후 live HUD 갱신을 테스트한다.
 - [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.

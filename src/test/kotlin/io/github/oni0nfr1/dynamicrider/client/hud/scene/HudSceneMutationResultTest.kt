@@ -10,23 +10,23 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
-class HudSceneSpecAddResultTest {
+class HudSceneMutationResultTest {
     private val context = PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState())
 
     @Test
     fun `valid compatible spec is added`() {
         val scene = HudScene(context)
 
-        assertSame(HudSceneSpecAddResult.Added, scene.addSpec(GradientGaugeBar.Spec()))
+        assertSame(HudSceneMutationResult.Applied, scene.addElement("gauge", GradientGaugeBar.Spec()))
     }
 
     @Test
-    fun `invalid spec is rejected with validation errors`() {
+    fun `invalid compatible spec returns validation errors`() {
         val scene = HudScene(context)
 
         val result = assertInstanceOf(
-            HudSceneSpecAddResult.InvalidSpec::class.java,
-            scene.addSpec(GradientGaugeBar.Spec(width = 3_000)),
+            HudSceneMutationResult.InvalidSpec::class.java,
+            scene.addElement("gauge", GradientGaugeBar.Spec(width = 3_000)),
         )
 
         assertEquals("width", result.errors.single().path.toString())
@@ -36,6 +36,9 @@ class HudSceneSpecAddResultTest {
     fun `incompatible state is distinguished from invalid spec`() {
         val scene = HudScene(context)
 
-        assertInstanceOf(HudSceneSpecAddResult.IncompatibleState::class.java, scene.addSpec(V1Tachometer.Spec()))
+        assertInstanceOf(
+            HudSceneMutationResult.IncompatibleState::class.java,
+            scene.addElement("tachometer", V1Tachometer.Spec()),
+        )
     }
 }
