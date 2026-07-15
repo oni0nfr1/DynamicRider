@@ -1,6 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorActionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorPersistenceResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSession
@@ -38,6 +40,7 @@ class HudEditorScreen(
     private var elementScroll = 0
     private var paletteScroll = 0
     private var propertyScroll = 0
+    private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
 
     private var previewX = 8
     private var previewY = 38
@@ -215,6 +218,7 @@ class HudEditorScreen(
                             is HudEditorActionResult.Applied -> {
                                 activeTab = SideTab.PROPERTIES
                                 paletteOpen = false
+                                propertyErrors.clear()
                             }
                             else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
                         }
@@ -242,6 +246,7 @@ class HudEditorScreen(
                 Button.builder(label) {
                     session.selectElement(element.id)
                     activeTab = SideTab.PROPERTIES
+                    propertyErrors.clear()
                     rebuildWidgets()
                 }.bounds(sideX, contentY + index * 22, sideWidth, 20).build().also {
                     it.active = state.selectedElementId != element.id
@@ -269,7 +274,31 @@ class HudEditorScreen(
             })
     }
 
-    private fun buildPropertiesTab() = Unit
+    private fun buildPropertiesTab() {
+        val elementId = session.state.selectedElementId ?: return
+        val inspected = session.inspectElement(elementId) as? HudElementInspectionResult.Inspected ?: return
+        val properties = inspected.model.properties
+        val visibleRows = propertyVisibleRows()
+        propertyScroll = clampScroll(propertyScroll, properties.size, visibleRows)
+        val widgetX = sideX + sideWidth / 2
+        val widgetWidth = (sideWidth / 2 - 8).coerceAtLeast(40)
+        val firstRowY = previewY + 46
+        val factory = HudPropertyWidgetFactory(font)
+        properties.drop(propertyScroll).take(visibleRows).forEachIndexed { index, property ->
+            val y = firstRowY + index * PROPERTY_ROW_HEIGHT
+            factory.create(
+                property = property,
+                x = widgetX,
+                y = y,
+                width = widgetWidth,
+                onCommit = { value -> updateProperty(elementId, property, value) },
+                onInvalidInput = { message ->
+                    propertyErrors[elementId to property.path] = message
+                    status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
+                },
+            ).forEach(::addRenderableWidget)
+        }
+    }
 
     private fun renderEditorChrome(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
         guiGraphics.fill(0, 0, width, 32, 0xD0101010.toInt())
@@ -347,10 +376,12 @@ class HudEditorScreen(
         val maxRows = propertyVisibleRows()
         propertyScroll = clampScroll(propertyScroll, inspected.model.properties.size, maxRows)
         inspected.model.properties.drop(propertyScroll).take(maxRows).forEachIndexed { index, property ->
-            val y = contentY + 18 + index * 20
+            val y = contentY + 18 + index * PROPERTY_ROW_HEIGHT
             val color = if (property.supported) 0xFFDDDDDD.toInt() else 0xFF777777.toInt()
             guiGraphics.drawString(font, Component.translatable(property.nameKey), sideX + 6, y, color)
-            guiGraphics.drawString(font, property.value.toString(), sideX + sideWidth / 2, y, color)
+            propertyErrors[selectedId to property.path]?.let { message ->
+                guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
+            }
         }
     }
 
@@ -391,6 +422,30 @@ class HudEditorScreen(
             is HudEditorPersistenceResult.IoFailed -> Component.translatable("dynamicrider.hud.editor.restore_failed")
             is HudEditorPersistenceResult.ResolveFailed -> Component.translatable("dynamicrider.hud.editor.restore_failed")
             else -> Component.translatable("dynamicrider.hud.editor.action_failed")
+        }
+    }
+
+    private fun updateProperty(
+        elementId: String,
+        property: HudEditableProperty,
+        value: kotlinx.serialization.json.JsonElement,
+    ) {
+        val key = elementId to property.path
+        when (val result = session.updateProperty(elementId, property.path, value)) {
+            is HudEditorActionResult.Applied -> {
+                propertyErrors.remove(key)
+                status = null
+            }
+            HudEditorActionResult.Unchanged -> {
+                propertyErrors.remove(key)
+                status = null
+                rebuildWidgets()
+            }
+            is HudEditorActionResult.PropertyRejected -> {
+                propertyErrors[key] = result.failure.message
+                status = Component.translatable("dynamicrider.hud.editor.property.rejected")
+            }
+            else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
         }
     }
 
@@ -456,7 +511,7 @@ class HudEditorScreen(
         const val DIVIDER_HIT_WIDTH = 8
         const val TAB_HEIGHT = 24
         const val ROW_HEIGHT = 22
-        const val PROPERTY_ROW_HEIGHT = 20
+        const val PROPERTY_ROW_HEIGHT = 34
         const val DOUBLE_CLICK_MILLIS = 250L
     }
 }

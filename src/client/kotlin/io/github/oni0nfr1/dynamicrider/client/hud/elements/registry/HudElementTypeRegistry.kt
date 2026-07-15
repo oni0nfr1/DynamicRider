@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.registry
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.DynNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
@@ -19,6 +20,12 @@ import kotlinx.serialization.modules.subclass
 
 /** 명시적으로 지원하는 모든 HUD 요소 타입의 중앙 registry다. */
 object HudElementTypeRegistry {
+    val EDITOR_PROPERTY_STRESS_TEST = HudElementType(
+        EditorPropertyStressElement.Spec::class,
+        EditorPropertyStressElement.Spec.serializer(),
+        KartState::class.java,
+        EditorPropertyStressElement::Spec,
+    )
     val GRADIENT_GAUGE_BAR = HudElementType(
         GradientGaugeBar.Spec::class,
         GradientGaugeBar.Spec.serializer(),
@@ -123,6 +130,7 @@ object HudElementTypeRegistry {
     )
 
     val entries: List<HudElementType<*, *>> = listOf(
+        EDITOR_PROPERTY_STRESS_TEST,
         GRADIENT_GAUGE_BAR,
         PLAIN_NITRO_SLOT,
         NITRO_SLOT,
@@ -166,6 +174,7 @@ object HudElementTypeRegistry {
         entries.filter { it.accepts(stateType) }
 
     private fun PolymorphicModuleBuilder<HudElementSpec<*, *>>.registerAll() {
+        register(EDITOR_PROPERTY_STRESS_TEST)
         register(GRADIENT_GAUGE_BAR)
         register(PLAIN_NITRO_SLOT)
         register(NITRO_SLOT)

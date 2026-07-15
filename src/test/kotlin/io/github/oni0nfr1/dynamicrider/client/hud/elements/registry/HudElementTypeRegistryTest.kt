@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.registry
 
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -11,6 +12,19 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class HudElementTypeRegistryTest {
+    @Test
+    fun `editor stress element exposes enough properties for manual scrolling`() {
+        val type = HudElementTypeRegistry.EDITOR_PROPERTY_STRESS_TEST
+
+        assertEquals(EditorPropertyStressElement.Spec::class, type.specClass)
+        assertTrue(type.metadata.properties.size >= 28)
+        assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.BooleanToggle })
+        assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.StringInput })
+        assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.EnumSelector })
+        assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.Slider })
+        assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.ColorPicker })
+    }
+
     @Test
     fun `every entry has a unique id and spec class`() {
         val entries = HudElementTypeRegistry.entries
