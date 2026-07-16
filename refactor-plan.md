@@ -19,7 +19,7 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 
 - [x] 편집 모드와 실제 HUD 확인용 미리보기 모드를 수동 검증하고 현재 GUI 변경을 확정한다.
 - [x] `PreviewKartState` 값을 조절하고 preset을 적용할 수 있는 preview 상태 UI를 완성한다.
-- [ ] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
+- [x] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
 - [ ] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
 
 중첩 object/list, compound child 편집과 KSP registry 생성 및 프레임 상태 snapshot은 이번 릴리즈 범위에서 제외한다.
@@ -243,11 +243,11 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] property 편집부터 command 실행 및 undo/redo까지의 통합 흐름을 테스트한다.
 - [x] document 변경에 따른 preview runtime element 재생성을 테스트한다.
 - [x] repository가 유효한 custom Spec을 runtime 생성 없이 resolve하고 잘못된 custom을 보존하며 진단하는지 테스트한다.
-- [ ] inspector가 metadata와 현재 Spec 값을 같은 property path로 결합하고 hidden·unsupported·오류 상태를 구별하는지 테스트한다.
+- [x] inspector가 metadata와 현재 Spec 값을 같은 property path로 결합하고 hidden·unsupported·오류 상태를 구별하는지 테스트한다.
 - [x] palette 조회가 현재 `KartStateType`과 호환되는 요소만 제공하고 type ID 추가가 세션 내부에서 기본 Spec을 생성하는지 테스트한다.
 - [x] resource 작업 사본의 custom 저장, 삭제 확인 및 resource 기본값 복원을 편집 세션 수준에서 테스트한다.
-- [ ] 저장·삭제 후 repository와 편집 세션 상태가 갱신되고 현재 live HUD에는 자동 적용되지 않는지 테스트한다.
-- [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
+- [x] 저장·삭제 후 repository와 편집 세션 상태가 갱신되고 현재 live HUD에는 자동 적용되지 않는지 테스트한다.
+- [x] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
 - [x] preview 표시 좌표의 logical-screen 왕복, 표시 영역 전환 및 drag 역변환을 테스트한다.
 
 - 모든 resource JSON이 codec과 상태 타입 호환성 검사를 통과한다.

@@ -4,10 +4,14 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewNitroKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoader
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadResult
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneCodec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudScenePaths
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneResourceSource
@@ -190,8 +194,10 @@ class HudEditorSessionTest {
         val resources = FakeHudSceneResourceSource(
             mapOf(HudScenePaths.resourceHudSceneId(HudSceneMode.RIDE, KartStateTypes.JIU) to resourceSpec)
         )
-        val session = openSession(HudSceneRepository(root, resources))
+        val repository = HudSceneRepository(root, resources)
+        val session = openSession(repository)
         val previewScene = session.previewScene
+        val existingLiveScene = resolvedScene(repository)
         assertEquals(HudSceneSource.RESOURCE, session.state.source)
         session.updateProperty("slot", HudPropertyPath.of("iconSize"), JsonPrimitive(64))
 
@@ -202,6 +208,12 @@ class HudEditorSessionTest {
             (HudSceneCodec.decode(Files.readString(result.path)).elements.single() as PlainNitroSlot.Spec).iconSize,
         )
         assertSame(previewScene, session.previewScene)
+        assertEquals(32, (existingLiveScene.entries.single().spec as PlainNitroSlot.Spec).iconSize)
+        val newlyResolved = assertInstanceOf(
+            io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpecResolution.Resolved::class.java,
+            repository.resolveSpec(HudSceneMode.RIDE, KartStateTypes.JIU),
+        )
+        assertEquals(64, (newlyResolved.spec.elements.single() as PlainNitroSlot.Spec).iconSize)
         assertEquals(HudSceneSource.CUSTOM_CONFIG, session.state.source)
         assertFalse(session.state.dirty)
         assertTrue(session.state.canUndo)
@@ -222,6 +234,7 @@ class HudEditorSessionTest {
         val repository = HudSceneRepository(root, resources)
         val session = session(repository)
         val previewScene = session.previewScene
+        val existingLiveScene = resolvedScene(repository)
         session.updateProperty("slot", HudPropertyPath.of("iconSize"), JsonPrimitive(64))
 
         assertSame(HudEditorPersistenceResult.DiscardConfirmationRequired, session.deleteCustom())
@@ -239,6 +252,7 @@ class HudEditorSessionTest {
         assertEquals(48, (session.state.elements.single().spec as PlainNitroSlot.Spec).iconSize)
         assertEquals(session.state.elements.map { it.id }, previewScene.entries.map { it.id })
         assertSame(previewScene, session.previewScene)
+        assertEquals(32, (existingLiveScene.entries.single().spec as PlainNitroSlot.Spec).iconSize)
         assertFalse(session.state.dirty)
         assertFalse(session.state.canUndo)
         assertFalse(session.state.canRedo)
@@ -272,6 +286,21 @@ class HudEditorSessionTest {
         override val width: Int = 800
         override val height: Int = 600
     }
+
+    private fun resolvedScene(repository: HudSceneRepository) =
+        assertInstanceOf(
+            HudSceneLoadResult.Loaded::class.java,
+            assertInstanceOf(
+                io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSpecResolution.Resolved::class.java,
+                repository.resolveSpec(HudSceneMode.RIDE, KartStateTypes.JIU),
+            ).let { resolution ->
+                HudSceneLoader.load(
+                    resolution.spec,
+                    resolution.sourcePath,
+                    PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState()),
+                )
+            },
+        ).scene
 
     private class FakeHudSceneResourceSource(
         private val scenes: Map<ResourceLocation, HudSceneSpec>,

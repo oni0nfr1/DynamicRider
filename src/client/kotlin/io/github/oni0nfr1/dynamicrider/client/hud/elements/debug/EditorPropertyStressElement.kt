@@ -7,6 +7,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSp
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudColor
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudHidden
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
@@ -113,6 +114,7 @@ class EditorPropertyStressElement(
         @HudRange(min = 0.0, max = 100.0, step = 1.0)
         val value19: Int = 19,
         @HudRange(min = 0.0, max = 100.0, step = 1.0)
+        @HudHidden
         val value20: Int = 20,
     ) : HudElementSpec<EditorPropertyStressElement, KartState> {
         override fun requiredStateClass(): Class<out KartState> = KartState::class.java
