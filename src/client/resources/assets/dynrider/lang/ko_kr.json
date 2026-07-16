@@ -128,6 +128,8 @@
   "dynamicrider.hud.editor.tab.preview_state": "프리뷰",
   "dynamicrider.hud.editor.undo": "실행 취소",
   "dynamicrider.hud.editor.redo": "다시 실행",
+  "dynamicrider.hud.editor.preview_mode.enter": "미리보기",
+  "dynamicrider.hud.editor.preview_mode.hint": "Esc를 눌러 돌아가기",
   "dynamicrider.hud.editor.save": "저장",
   "dynamicrider.hud.editor.restore": "복원",
   "dynamicrider.hud.editor.saved": "커스텀 HUD 씬을 저장했습니다",

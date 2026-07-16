@@ -263,20 +263,22 @@ Editor 종료, Done 버튼, ESC 및 다른 장면으로 전환할 때 document�
 → 현재 session과 editor 유지
 ```
 
-Preview는 side panel의 남은 공간을 논리 viewport로 사용하지 않는다. 논리 viewport는 현재 게임 GUI 전체
-해상도와 같게 유지하고, `HudPreviewTransform`이 toolbar 아래 표시 영역에 맞는 uniform scale과 중앙 위치를
-계산한다.
+편집 모드는 기존처럼 side panel 옆 preview pane을 논리 viewport로 사용하고 1:1로 렌더링한다. 따라서 편집
+중에는 제한된 영역 안에서 요소를 직접 조작할 수 있다.
 
 ```text
-실제 GUI 논리 좌표
-→ Pose translate + uniform scale
-→ 화면비를 유지한 preview 렌더
-→ 남는 영역은 letterbox
+편집 모드
+→ preview pane 크기의 논리 viewport
+→ preview pane에 1:1 렌더
+
+미리보기 모드
+→ 현재 게임 GUI 전체 크기의 논리 viewport
+→ 전체 화면에 live HUD와 같은 배치로 렌더
 ```
 
-Side panel을 접으면 같은 논리 viewport를 더 큰 배율로 표시하고 화면 가장자리에 panel 복원 버튼을 남긴다.
-Panel 표시 여부는 요소의 anchor, bounds 및 Spec 좌표에 영향을 주지 않는다. 선택을 해제하면 overlay가 없어져
-축소된 live HUD와 같은 결과를 확인할 수 있다.
+미리보기 모드로 전환하면 toolbar, side panel과 선택 overlay를 숨기고 viewport를 현재 게임 GUI 전체 크기로
+전환한다. 화면 중앙의 반투명 안내에 따라 ESC를 누르면 원래 편집 모드로 돌아온다. viewport에 따라 anchor의
+실제 화면 위치는 다시 계산되지만 Spec 좌표와 현재 선택, dirty, command history 및 panel 상태는 보존한다.
 
 Scene과 runtime bounds는 논리 좌표에서 유지한다. 모든 mouse 입력은 공유 transform으로 화면 좌표에서 논리
 좌표로 한 번만 역변환한 뒤 hit-test와 이동·배율 drag에 사용한다. Scissor는 변환된 화면 영역으로 설정하고,
@@ -292,6 +294,9 @@ Scene과 runtime bounds는 논리 좌표에서 유지한다. 모든 mouse 입력
 
 ## 구현 순서
 
+이번 버전은 기본 GUI와 preview 상태 조절, 편집기 코어 회귀 테스트 및 신규 HUD 요소 1개까지를 릴리즈
+범위로 한다. 중첩 object/list와 compound child 편집은 다음 버전에서 진행한다.
+
 1. [x] Generic Spec 편집 결과를 검증된 `ReplaceElementSpecCommand`로 변환
 2. [x] `HudDocumentChange`, clean snapshot 기반 dirty와 command stack event 발행 구현
 3. [x] element ID 기반 `PreviewHudSceneSynchronizer` 구현
@@ -303,7 +308,7 @@ Scene과 runtime bounds는 논리 좌표에서 유지한다. 모든 mouse 입력
    - [x] metadata 기반 primitive·enum·color property 입력 widget 구현
    - [x] layout property 입력 widget 구현
    - [x] 속성 행 정렬, dirty 종료 확인과 editor 내부 장면 전환 구현
-   - [ ] side panel을 접을 수 있고 화면비를 보존하는 preview 구현
+   - [x] 편집 UI를 숨기고 전체 GUI 크기의 HUD를 표시하는 미리보기 모드 구현
    - [ ] preview 상태 조절 구현
 7. [x] 캔버스 선택·drag와 command 병합 구현
 8. [x] 저장·삭제·복원 UI 구현

@@ -15,6 +15,15 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 
 `assets`는 Fabric `ResourceManager`를 통해 읽으므로 리소스팩 우선순위를 따른다. 손상된 커스텀 파일은 삭제하거나 덮어쓰지 않고 오류를 알린 뒤 리소스 장면으로 fallback한다.
 
+## 이번 버전 릴리즈 범위
+
+- [ ] 편집 모드와 실제 HUD 확인용 미리보기 모드를 수동 검증하고 현재 GUI 변경을 확정한다.
+- [ ] `PreviewKartState` 값을 조절하고 preset을 적용할 수 있는 preview 상태 UI를 완성한다.
+- [ ] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
+- [ ] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
+
+중첩 object/list, compound child 편집과 KSP registry 생성 및 프레임 상태 snapshot은 이번 릴리즈 범위에서 제외한다.
+
 ## 1. JSON 장면 기반 통합
 
 - [x] 장면 포맷에 `formatVersion`을 추가한다.
@@ -158,7 +167,7 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
   - undo/redo, 저장 및 resource 복원 동작을 상단 도구 모음에 연결한다.
   - 요소 목록·palette·속성 목록은 독립적인 scroll 위치와 scrollbar를 제공한다.
   - side panel 구분선 drag로 너비를 조절하고 더블클릭으로 기본 너비를 복원하며 preview 최소 너비를 보장한다.
-  - 실제 해상도 테스트 후 preview 영역이 부족하면 side panel 숨기기 기능을 추가한다.
+  - preview 영역이 부족할 때 편집 UI를 숨기고 실제 HUD만 확인하는 미리보기 모드를 제공한다.
 - [x] boolean·string·number·range slider·enum·color 입력 widget과 property별 validation 오류 표시를 구현한다.
   - text 기반 입력은 확인 시점에만 적용하고 range slider는 drag release 시 한 번만 command를 생성한다.
   - 긴 property 목록과 widget scroll을 수동 검증할 수 있는 editor stress-test 요소를 registry에 제공한다.
@@ -182,11 +191,11 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
   - 상단에 현재 `HudSceneMode / KartStateType`과 장면 변경 버튼을 표시한다.
   - 장면 변경 UI는 mode 선택과 scroll 가능한 전체 엔진 목록을 제공한다.
   - dirty session에서 장면을 변경하면 종료와 같은 저장 확인 절차를 거친다.
-- [ ] side panel 접기와 실제 live HUD 화면비를 보존하는 preview 표시 transform을 구현한다.
-  - preview의 논리 viewport는 현재 게임 GUI 전체 해상도로 유지하고 side panel 크기로 변경하지 않는다.
-  - 상단 toolbar 아래의 사용 가능 영역에 uniform Pose scale과 중앙 정렬을 적용하며 남는 공간은 letterbox로 표시한다.
-  - side panel 표시 여부는 논리 viewport와 요소 layout을 바꾸지 않고 표시 배율만 바꾼다.
-  - side panel을 접은 상태에서도 화면 가장자리에 복원 버튼을 유지한다.
+- [x] 실제 live HUD 화면 구성을 확인하는 미리보기 모드를 구현한다.
+  - 편집 모드는 기존처럼 side panel 옆 preview pane을 논리 viewport로 사용해 1:1로 렌더링한다.
+  - 미리보기 모드는 toolbar, side panel과 편집 overlay를 숨기고 논리 viewport를 현재 게임 GUI 전체 해상도로 전환한다.
+  - 모드 전환 중 현재 선택·dirty·history·panel 상태를 보존한다.
+  - 미리보기 중앙에 반투명 ESC 복귀 안내를 표시하고 ESC로 편집 모드에 복귀할 수 있다.
   - 렌더링, scissor, overlay와 mouse 조작은 하나의 `HudPreviewTransform`을 공유한다.
   - hit-test와 이동·배율 drag는 화면 좌표를 논리 좌표로 역변환한 뒤 처리한다.
   - bounds와 anchor 위치는 논리 좌표에서 계산하고 handle 및 선 두께는 화면상 일정한 크기로 표시한다.
@@ -213,7 +222,7 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] inspector metadata 기반 primitive·enum·color property 입력 widget을 구현한다.
    - [x] layout property 입력 widget을 구현한다.
    - [x] 속성 행 정렬, dirty 종료 확인과 editor 내부 장면 전환을 구현한다.
-   - [ ] side panel을 접을 수 있고 화면비를 보존하는 preview를 구현한다.
+   - [x] 편집 UI를 숨기고 전체 GUI 크기의 HUD를 표시하는 미리보기 모드를 구현한다.
    - [ ] preview 상태 조절 UI를 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
@@ -234,7 +243,7 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] resource 작업 사본의 custom 저장, 삭제 확인 및 resource 기본값 복원을 편집 세션 수준에서 테스트한다.
 - [ ] 저장·삭제 후 repository와 편집 세션 상태가 갱신되고 현재 live HUD에는 자동 적용되지 않는지 테스트한다.
 - [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
-- [ ] preview 표시 좌표의 logical-screen 왕복, letterbox, side panel 전환 및 drag 역변환을 테스트한다.
+- [x] preview 표시 좌표의 logical-screen 왕복, 표시 영역 전환 및 drag 역변환을 테스트한다.
 
 - 모든 resource JSON이 codec과 상태 타입 호환성 검사를 통과한다.
 - 유효한 config가 resource보다 우선하고, config가 없으면 현재 리소스팩 장면을 사용한다.

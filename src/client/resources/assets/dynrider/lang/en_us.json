@@ -128,6 +128,8 @@
   "dynamicrider.hud.editor.tab.preview_state": "Preview",
   "dynamicrider.hud.editor.undo": "Undo",
   "dynamicrider.hud.editor.redo": "Redo",
+  "dynamicrider.hud.editor.preview_mode.enter": "Preview",
+  "dynamicrider.hud.editor.preview_mode.hint": "Press Esc to return",
   "dynamicrider.hud.editor.save": "Save",
   "dynamicrider.hud.editor.restore": "Restore",
   "dynamicrider.hud.editor.saved": "Custom HUD scene saved",

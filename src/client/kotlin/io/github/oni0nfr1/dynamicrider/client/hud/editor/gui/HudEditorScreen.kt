@@ -30,6 +30,7 @@ import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
 import kotlin.math.ceil
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -63,6 +64,7 @@ class HudEditorScreen(
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
     private var modal: EditorModal? = null
+    private var previewMode = false
     private var editorWidgets: List<AbstractWidget> = emptyList()
     private var modalWidgets: List<AbstractWidget> = emptyList()
     private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
@@ -73,6 +75,7 @@ class HudEditorScreen(
     private var previewHeight = 1
     private var sideX = 1
     private var sideWidth = 1
+    private var previewTransform = HudPreviewTransform.fit(1, 1, 0f, 0f, 1f, 1f)
 
     override fun init() {
         calculateLayout()
@@ -89,12 +92,14 @@ class HudEditorScreen(
                 }
             }
         }
-        buildToolbar()
-        buildTabs()
-        when (activeTab) {
-            SideTab.ELEMENTS -> buildElementsTab()
-            SideTab.PROPERTIES -> buildPropertiesTab()
-            SideTab.PREVIEW_STATE -> Unit
+        if (!previewMode) {
+            buildToolbar()
+            buildTabs()
+            when (activeTab) {
+                SideTab.ELEMENTS -> buildElementsTab()
+                SideTab.PROPERTIES -> buildPropertiesTab()
+                SideTab.PREVIEW_STATE -> Unit
+            }
         }
         editorWidgets = children().filterIsInstance<AbstractWidget>()
         when (val currentModal = modal) {
@@ -112,6 +117,11 @@ class HudEditorScreen(
 
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         guiGraphics.fill(0, 0, width, height, 0xF0080808.toInt())
+        if (previewMode) {
+            renderPreview(guiGraphics)
+            renderPreviewModeHint(guiGraphics)
+            return
+        }
         renderEditorChrome(guiGraphics, mouseX, mouseY)
         renderPreview(guiGraphics)
         renderSideContent(guiGraphics)
@@ -132,6 +142,7 @@ class HudEditorScreen(
     override fun renderBackground(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) = Unit
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (previewMode) return super.mouseClicked(mouseX, mouseY, button)
         if (modal != null) return super.mouseClicked(mouseX, mouseY, button)
         if (button == 0 && isOverDivider(mouseX, mouseY)) {
             val now = System.currentTimeMillis()
@@ -148,12 +159,13 @@ class HudEditorScreen(
             return true
         }
         if (button == 0 && isInsidePreview(mouseX, mouseY)) {
-            val localX = (mouseX - previewX).toFloat()
-            val localY = (mouseY - previewY).toFloat()
+            val logical = previewTransform.screenToLogical(mouseX, mouseY)
+            val localX = logical.x
+            val localY = logical.y
             val guides = previewGuides()
             val selectedGuide = session.state.selectedElementId
                 ?.let { selectedId -> guides.firstOrNull { it.elementId == selectedId } }
-            if (selectedGuide != null && isOverScaleHandle(selectedGuide, localX, localY)) {
+            if (selectedGuide != null && isOverScaleHandle(selectedGuide, mouseX, mouseY)) {
                 beginScaleDrag(selectedGuide)
                 return true
             }
@@ -183,6 +195,7 @@ class HudEditorScreen(
         dragX: Double,
         dragY: Double,
     ): Boolean {
+        if (previewMode) return super.mouseDragged(mouseX, mouseY, button, dragX, dragY)
         if (modal != null) return super.mouseDragged(mouseX, mouseY, button, dragX, dragY)
         if (resizingSidePanel && button == 0) {
             preferredSideWidth = width - SCREEN_PADDING - mouseX.toInt() - PANEL_INSET
@@ -203,6 +216,7 @@ class HudEditorScreen(
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (previewMode) return super.mouseReleased(mouseX, mouseY, button)
         if (modal != null) return super.mouseReleased(mouseX, mouseY, button)
         if (resizingSidePanel && button == 0) {
             resizingSidePanel = false
@@ -224,6 +238,7 @@ class HudEditorScreen(
         scrollX: Double,
         scrollY: Double,
     ): Boolean {
+        if (previewMode) return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
         val currentModal = modal
         if (currentModal is EditorModal.ScenePicker) {
             val direction = when {
@@ -273,6 +288,13 @@ class HudEditorScreen(
     }
 
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (previewMode) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                exitPreviewMode()
+                return true
+            }
+            return super.keyPressed(keyCode, scanCode, modifiers)
+        }
         if (modal != null) return super.keyPressed(keyCode, scanCode, modifiers)
         if (Screen.hasControlDown()) {
             when (keyCode) {
@@ -302,6 +324,10 @@ class HudEditorScreen(
     }
 
     override fun onClose() {
+        if (previewMode) {
+            exitPreviewMode()
+            return
+        }
         if (modal != null) {
             modal = null
             rebuildWidgets()
@@ -329,7 +355,20 @@ class HudEditorScreen(
         sideX = width - sideWidth - SCREEN_PADDING
         previewWidth = (sideX - previewX - PANEL_GAP).coerceAtLeast(1)
         previewHeight = (height - previewY - SCREEN_PADDING).coerceAtLeast(1)
-        previewViewport.resize(previewWidth, previewHeight)
+        previewTransform = if (previewMode) {
+            previewViewport.resize(width, height)
+            HudPreviewTransform.fit(width, height, 0f, 0f, width.toFloat(), height.toFloat())
+        } else {
+            previewViewport.resize(previewWidth, previewHeight)
+            HudPreviewTransform.fit(
+                previewWidth,
+                previewHeight,
+                previewX.toFloat(),
+                previewY.toFloat(),
+                previewWidth.toFloat(),
+                previewHeight.toFloat(),
+            )
+        }
     }
 
     private fun buildToolbar() {
@@ -340,6 +379,7 @@ class HudEditorScreen(
         addRenderableWidget(toolbarButton(72, "dynamicrider.hud.editor.redo") { session.redo() }.also {
             it.active = state.canRedo
         })
+        addRenderableWidget(toolbarButton(136, "dynamicrider.hud.editor.preview_mode.enter") { enterPreviewMode() })
         addRenderableWidget(
             Button.builder(Component.translatable("dynamicrider.hud.editor.scene.change")) { openScenePicker() }
                 .bounds(width / 2 + 36, 6, 84, 20)
@@ -541,13 +581,32 @@ class HudEditorScreen(
     }
 
     private fun renderPreview(guiGraphics: GuiGraphics) {
-        guiGraphics.enableScissor(previewX, previewY, previewX + previewWidth, previewY + previewHeight)
+        val transform = previewTransform
+        val scissorLeft = floor(transform.contentX).toInt()
+        val scissorTop = floor(transform.contentY).toInt()
+        val scissorRight = ceil(transform.contentX + transform.contentWidth).toInt()
+        val scissorBottom = ceil(transform.contentY + transform.contentHeight).toInt()
+        guiGraphics.enableScissor(scissorLeft, scissorTop, scissorRight, scissorBottom)
         guiGraphics.pose().pushPose()
-        guiGraphics.pose().translate(previewX.toFloat(), previewY.toFloat(), 0f)
+        guiGraphics.pose().translate(transform.contentX, transform.contentY, 0f)
+        guiGraphics.pose().scale(transform.scale, transform.scale, 1f)
         session.previewScene.draw(guiGraphics, Minecraft.getInstance().deltaTracker)
-        renderSelectionOverlay(guiGraphics)
         guiGraphics.pose().popPose()
+        if (!previewMode) renderSelectionOverlay(guiGraphics, transform)
         guiGraphics.disableScissor()
+    }
+
+    private fun renderPreviewModeHint(guiGraphics: GuiGraphics) {
+        guiGraphics.pose().pushPose()
+        guiGraphics.pose().scale(PREVIEW_HINT_SCALE, PREVIEW_HINT_SCALE, 1f)
+        guiGraphics.drawCenteredString(
+            font,
+            Component.translatable("dynamicrider.hud.editor.preview_mode.hint"),
+            (width / PREVIEW_HINT_SCALE / 2f).roundToInt(),
+            (height / PREVIEW_HINT_SCALE / 2f - font.lineHeight / 2f).roundToInt(),
+            PREVIEW_HINT_COLOR,
+        )
+        guiGraphics.pose().popPose()
     }
 
     private fun renderSideContent(guiGraphics: GuiGraphics) {
@@ -963,8 +1022,9 @@ class HudEditorScreen(
         val guide = previewGuides().firstOrNull { it.elementId == drag.elementId } ?: return
         val inspected = session.inspectElement(drag.elementId) as? HudElementInspectionResult.Inspected ?: return
         val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor } ?: return
-        val anchorX = (mouseX - previewX).toFloat() - drag.grabOffsetX
-        val anchorY = (mouseY - previewY).toFloat() - drag.grabOffsetY
+        val pointer = previewTransform.screenToLogical(mouseX, mouseY)
+        val anchorX = pointer.x - drag.grabOffsetX
+        val anchorY = pointer.y - drag.grabOffsetY
         val (x, y) = HudLayoutEngine.offsetForElementAnchor(
             guide.screenAnchorX,
             guide.screenAnchorY,
@@ -983,13 +1043,15 @@ class HudEditorScreen(
         }
     }
 
-    private fun renderSelectionOverlay(guiGraphics: GuiGraphics) {
+    private fun renderSelectionOverlay(guiGraphics: GuiGraphics, transform: HudPreviewTransform) {
         val selectedId = session.state.selectedElementId ?: return
         val guide = previewGuides().firstOrNull { it.elementId == selectedId } ?: return
-        val left = guide.bounds.left.roundToInt()
-        val top = guide.bounds.top.roundToInt()
-        val right = guide.bounds.right.roundToInt()
-        val bottom = guide.bounds.bottom.roundToInt()
+        val topLeft = transform.logicalToScreen(guide.bounds.left, guide.bounds.top)
+        val bottomRight = transform.logicalToScreen(guide.bounds.right, guide.bounds.bottom)
+        val left = topLeft.x.roundToInt()
+        val top = topLeft.y.roundToInt()
+        val right = bottomRight.x.roundToInt()
+        val bottom = bottomRight.y.roundToInt()
         guiGraphics.renderOutline(
             left,
             top,
@@ -998,19 +1060,22 @@ class HudEditorScreen(
             SELECTION_COLOR,
         )
 
-        val screenX = guide.screenAnchorX.roundToInt()
-        val screenY = guide.screenAnchorY.roundToInt()
-        val elementX = guide.elementAnchorX.roundToInt()
-        val elementY = guide.elementAnchorY.roundToInt()
+        val screenAnchor = transform.logicalToScreen(guide.screenAnchorX, guide.screenAnchorY)
+        val elementAnchor = transform.logicalToScreen(guide.elementAnchorX, guide.elementAnchorY)
+        val screenX = screenAnchor.x.roundToInt()
+        val screenY = screenAnchor.y.roundToInt()
+        val elementX = elementAnchor.x.roundToInt()
+        val elementY = elementAnchor.y.roundToInt()
         drawAnchorCross(guiGraphics, screenX, screenY, SCREEN_ANCHOR_COLOR, 4)
         drawAnchorLine(guiGraphics, screenX.toFloat(), screenY.toFloat(), elementX.toFloat(), elementY.toFloat())
         drawAnchorCross(guiGraphics, elementX, elementY, ELEMENT_ANCHOR_COLOR, 3)
         val (handleX, handleY) = guide.scaleHandle()
+        val handle = transform.logicalToScreen(handleX, handleY)
         guiGraphics.fill(
-            handleX.roundToInt() - SCALE_HANDLE_RADIUS,
-            handleY.roundToInt() - SCALE_HANDLE_RADIUS,
-            handleX.roundToInt() + SCALE_HANDLE_RADIUS + 1,
-            handleY.roundToInt() + SCALE_HANDLE_RADIUS + 1,
+            handle.x.roundToInt() - SCALE_HANDLE_RADIUS,
+            handle.y.roundToInt() - SCALE_HANDLE_RADIUS,
+            handle.x.roundToInt() + SCALE_HANDLE_RADIUS + 1,
+            handle.y.roundToInt() + SCALE_HANDLE_RADIUS + 1,
             SCALE_HANDLE_COLOR,
         )
     }
@@ -1062,8 +1127,9 @@ class HudEditorScreen(
     private fun scaleSelectedElement(mouseX: Double, mouseY: Double, drag: ScaleDrag) {
         val inspected = session.inspectElement(drag.elementId) as? HudElementInspectionResult.Inspected ?: return
         val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor } ?: return
-        val pointerX = (mouseX - previewX).toFloat() - drag.anchorX
-        val pointerY = (mouseY - previewY).toFloat() - drag.anchorY
+        val pointer = previewTransform.screenToLogical(mouseX, mouseY)
+        val pointerX = pointer.x - drag.anchorX
+        val pointerY = pointer.y - drag.anchorY
         val ratio = (pointerX * drag.handleVectorX + pointerY * drag.handleVectorY) / drag.handleLengthSquared
         val scale = (drag.initialScale * ratio)
             .coerceIn(MIN_UNIFORM_SCALE, MAX_UNIFORM_SCALE)
@@ -1080,17 +1146,34 @@ class HudEditorScreen(
         }
     }
 
-    private fun isOverScaleHandle(guide: HudPreviewElementGuide, x: Float, y: Float): Boolean {
+    private fun isOverScaleHandle(guide: HudPreviewElementGuide, x: Double, y: Double): Boolean {
         val (handleX, handleY) = guide.scaleHandle()
-        return abs(x - handleX) <= SCALE_HANDLE_HIT_RADIUS && abs(y - handleY) <= SCALE_HANDLE_HIT_RADIUS
+        val handle = previewTransform.logicalToScreen(handleX, handleY)
+        return abs(x - handle.x) <= SCALE_HANDLE_HIT_RADIUS && abs(y - handle.y) <= SCALE_HANDLE_HIT_RADIUS
     }
 
     private fun previewGuides(): List<HudPreviewElementGuide> =
         HudPreviewElementGuideCalculator.calculate(session.previewScene)
 
     private fun isInsidePreview(mouseX: Double, mouseY: Double): Boolean =
-        mouseX >= previewX && mouseX < previewX + previewWidth &&
-            mouseY >= previewY && mouseY < previewY + previewHeight
+        previewTransform.containsScreenPoint(mouseX, mouseY)
+
+    private fun enterPreviewMode() {
+        if (modal != null) return
+        previewMode = true
+        elementDrag = null
+        scaleDrag = null
+        resizingSidePanel = false
+        isDragging = false
+        clearFocus()
+        rebuildWidgets()
+    }
+
+    private fun exitPreviewMode() {
+        previewMode = false
+        clearFocus()
+        rebuildWidgets()
+    }
 
     private fun selectedProperties() = session.state.selectedElementId
         ?.let(session::inspectElement)
@@ -1218,6 +1301,8 @@ class HudEditorScreen(
         const val CONFIRM_MODAL_HEIGHT = 116
         const val SCENE_PICKER_MAX_HEIGHT = 330
         const val MODAL_Z = 1_000f
+        const val PREVIEW_HINT_SCALE = 2f
+        const val PREVIEW_HINT_COLOR = 0xA0FFFFFF.toInt()
         const val SELECTION_COLOR = 0xFFFFFFFF.toInt()
         const val SCREEN_ANCHOR_COLOR = 0xFF55DDFF.toInt()
         const val ELEMENT_ANCHOR_COLOR = 0xFFFFCC33.toInt()
