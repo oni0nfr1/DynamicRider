@@ -68,6 +68,10 @@ fun warnLog(msg: String) {
     ResourceStore.logger.warn("[DynamicRider] $msg")
 }
 
+fun warnLog(msg: String, cause: Throwable) {
+    ResourceStore.logger.warn("[DynamicRider] $msg", cause)
+}
+
 fun chatLog(msg: Component) {
     Minecraft.getInstance().player?.displayClientMessage(msg, false)
 }

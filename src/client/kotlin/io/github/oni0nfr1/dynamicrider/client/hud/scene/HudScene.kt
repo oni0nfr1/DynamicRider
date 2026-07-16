@@ -6,6 +6,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
+import io.github.oni0nfr1.dynamicrider.client.util.debugLog
+import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -48,6 +50,7 @@ class HudScene<S : KartState>(
     private val mutableEntries = mutableListOf<MutableEntry<S>>()
     private val onEnableCallbacks: MutableList<() -> Unit> = mutableListOf()
     private val onDisableCallbacks: MutableList<() -> Unit> = mutableListOf()
+    private val reportedRenderFailures = mutableSetOf<String>()
     private var active: Boolean = false
 
     /** 현재 ID, 순서, Spec 및 runtime 요소의 읽기 전용 snapshot이다. */
@@ -56,6 +59,9 @@ class HudScene<S : KartState>(
 
     val isActive: Boolean
         get() = active
+
+    internal val diagnosticName: String
+        get() = "${context.kartStateType.id}@${System.identityHashCode(this).toString(16)}"
 
     override val width: Int
         get() = viewport?.width ?: Minecraft.getInstance().window.guiScaledWidth
@@ -84,6 +90,7 @@ class HudScene<S : KartState>(
         val index = mutableEntries.indexOfFirst { it.id == id }
         if (index < 0) return HudSceneMutationResult.ElementNotFound(id)
         mutableEntries.removeAt(index)
+        reportedRenderFailures.remove(id)
         return HudSceneMutationResult.Applied
     }
 
@@ -107,12 +114,14 @@ class HudScene<S : KartState>(
         val element = if (active) elementFactory.create(typedSpec, context, this) else null
         mutableEntries[index].spec = typedSpec
         mutableEntries[index].element = element
+        reportedRenderFailures.remove(id)
         return HudSceneMutationResult.Applied
     }
 
     /** 모든 scene entry를 제거한다. */
     fun clearElements() {
         mutableEntries.clear()
+        reportedRenderFailures.clear()
     }
 
     fun onEnable(block: () -> Unit) {
@@ -124,22 +133,75 @@ class HudScene<S : KartState>(
     }
 
     fun draw(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        mutableEntries.forEach { it.element?.draw(guiGraphics, deltaTracker) }
+        mutableEntries.forEachIndexed { index, entry ->
+            try {
+                entry.element?.draw(guiGraphics, deltaTracker)
+                reportedRenderFailures.remove(entry.id)
+            } catch (cause: Throwable) {
+                if (reportedRenderFailures.add(entry.id)) {
+                    warnLog(
+                        "Failed to render HUD element: scene=$diagnosticName, index=$index, " +
+                            "id=${entry.id}, spec=${entry.spec::class.java.name}",
+                        cause,
+                    )
+                }
+                throw cause
+            }
+        }
     }
 
     internal fun enable() {
         if (active) return
-        onEnableCallbacks.forEach { it() }
-        val created = mutableEntries.map { elementFactory.create(it.spec, context, this) }
+        debugLog("Activating HUD scene: scene=$diagnosticName, elements=${mutableEntries.size}")
+        onEnableCallbacks.forEachIndexed { index, callback ->
+            try {
+                callback()
+            } catch (cause: Throwable) {
+                warnLog(
+                    "HUD scene enable callback failed: scene=$diagnosticName, callbackIndex=$index",
+                    cause,
+                )
+                throw cause
+            }
+        }
+        val created = mutableEntries.mapIndexed { index, entry ->
+            debugLog(
+                "Creating HUD element: scene=$diagnosticName, index=$index, " +
+                    "id=${entry.id}, spec=${entry.spec::class.java.name}"
+            )
+            try {
+                elementFactory.create(entry.spec, context, this)
+            } catch (cause: Throwable) {
+                warnLog(
+                    "Failed to create HUD element: scene=$diagnosticName, index=$index, " +
+                        "id=${entry.id}, spec=${entry.spec::class.java.name}",
+                    cause,
+                )
+                throw cause
+            }
+        }
         mutableEntries.zip(created).forEach { (entry, element) -> entry.element = element }
         active = true
+        debugLog("Activated HUD scene: scene=$diagnosticName, elements=${mutableEntries.size}")
     }
 
     internal fun disable() {
         if (!active) return
-        onDisableCallbacks.forEach { it() }
+        onDisableCallbacks.forEachIndexed { index, callback ->
+            try {
+                callback()
+            } catch (cause: Throwable) {
+                warnLog(
+                    "HUD scene disable callback failed: scene=$diagnosticName, callbackIndex=$index",
+                    cause,
+                )
+                throw cause
+            }
+        }
         mutableEntries.forEach { it.element = null }
+        reportedRenderFailures.clear()
         active = false
+        debugLog("Disabled HUD scene: scene=$diagnosticName")
     }
 
     private fun validateSpec(spec: HudElementSpec<*, *>): HudSceneMutationResult? {

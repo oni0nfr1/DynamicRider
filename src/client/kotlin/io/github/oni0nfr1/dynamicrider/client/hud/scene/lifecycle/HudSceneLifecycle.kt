@@ -34,9 +34,18 @@ object HudSceneLifecycle {
     ): HudScene<S> {
         return when (val resolution = repository.resolveSpec(mode, context.kartStateType)) {
             is HudSceneSpecResolution.Resolved -> {
+                debugLog(
+                    "Resolved HUD scene: mode=$mode, state=${context.kartStateType.id}, " +
+                        "source=${resolution.source}, path=${resolution.sourcePath}, " +
+                        "elements=${resolution.spec.elements.size}"
+                )
                 when (val result = HudSceneLoader.load(resolution.spec, resolution.sourcePath, context)) {
                     is HudSceneLoadResult.Loaded -> {
                         if (resolution.diagnostics.isNotEmpty()) reportLoadFailure(resolution.diagnostics)
+                        debugLog(
+                            "Prepared HUD scene for activation: mode=$mode, " +
+                                "state=${context.kartStateType.id}, elements=${result.scene.entries.size}"
+                        )
                         result.scene
                     }
                     is HudSceneLoadResult.Failed -> {

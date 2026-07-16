@@ -19,7 +19,9 @@ import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
+import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
+import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.korigadier.api.korigadier
 import io.github.oni0nfr1.skid.client.api.engine.KartEngine
@@ -60,9 +62,14 @@ class DynamicRiderClient : ClientModInitializer {
         private set
     var currentScene: HudScene<*>? = null
         set(value) {
+            debugLog(
+                "Replacing current HUD scene: previous=${field?.diagnosticName ?: "none"}, " +
+                    "next=${value?.diagnosticName ?: "none"}"
+            )
             field?.disable()
             field = value
             field?.enable()
+            debugLog("Current HUD scene ready: scene=${field?.diagnosticName ?: "none"}")
         }
 
     override fun onInitializeClient() {
@@ -141,11 +148,26 @@ class DynamicRiderClient : ClientModInitializer {
 
     fun onKartMount(kartEntity: KartSaddleEntity, rider: Player) {
         val client = Minecraft.getInstance()
-        if (client.player?.subject != rider) return
+        debugLog("Kart mount event received: entity=${kartEntity.id}")
+        if (client.player?.subject != rider) {
+            debugLog("Ignoring kart mount event for another rider: entity=${kartEntity.id}")
+            return
+        }
 
-        currentScene = kartEntity.kart
-            ?.let(LiveHudSceneContextFactory::create)
-            ?.let(HudSceneLifecycle::createRideScene)
+        val kart = kartEntity.kart
+        if (kart == null) {
+            warnLog("Could not create ride HUD scene because the mounted kart reference is unavailable")
+            currentScene = null
+            return
+        }
+        val context = LiveHudSceneContextFactory.create(kart)
+        if (context == null) {
+            warnLog("Could not create ride HUD scene context: entity=${kartEntity.id}")
+            currentScene = null
+            return
+        }
+        debugLog("Creating ride HUD scene: state=${context.kartStateType.id}, entity=${kartEntity.id}")
+        currentScene = HudSceneLifecycle.createRideScene(context)
     }
 
     fun onKartDismount(kartEntity: KartSaddleEntity, rider: Player) {
