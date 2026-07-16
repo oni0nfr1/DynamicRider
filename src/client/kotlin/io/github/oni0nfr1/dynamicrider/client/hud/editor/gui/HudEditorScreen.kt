@@ -2,6 +2,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.VertexFormat
+import io.github.oni0nfr1.dynamicrider.client.gui.widget.DropdownEntry
+import io.github.oni0nfr1.dynamicrider.client.gui.widget.DropdownWidget
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
@@ -68,9 +70,8 @@ class HudEditorScreen(
     private var propertyScroll = 0
     private var layoutScroll = 0
     private var previewStateScroll = 0
-    private var previewPresetScroll = 0
-    private var previewPresetOpen = false
     private var selectedPreviewPresetId: String? = null
+    private var previewPresetDropdown: DropdownWidget<String>? = null
     private var layoutEditorOpen = false
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
@@ -91,6 +92,7 @@ class HudEditorScreen(
 
     override fun init() {
         calculateLayout()
+        previewPresetDropdown = null
         if (stateSubscription == null) {
             stateSubscription = session.addStateListener(emitCurrent = false) {
                 Minecraft.getInstance().execute {
@@ -139,6 +141,7 @@ class HudEditorScreen(
         renderSideContent(guiGraphics)
         if (modal == null) {
             super.render(guiGraphics, mouseX, mouseY, partialTick)
+            previewPresetDropdown?.renderPopup(guiGraphics, mouseX, mouseY)
         } else {
             editorWidgets.forEach { it.render(guiGraphics, -1, -1, partialTick) }
             guiGraphics.flush()
@@ -156,6 +159,9 @@ class HudEditorScreen(
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if (previewMode) return super.mouseClicked(mouseX, mouseY, button)
         if (modal != null) return super.mouseClicked(mouseX, mouseY, button)
+        previewPresetDropdown?.takeIf { it.isExpanded }?.let {
+            if (it.mouseClicked(mouseX, mouseY, button)) return true
+        }
         if (button == 0 && isOverDivider(mouseX, mouseY)) {
             val now = System.currentTimeMillis()
             if (now - lastDividerClickMillis <= DOUBLE_CLICK_MILLIS) {
@@ -269,6 +275,9 @@ class HudEditorScreen(
             return true
         }
         if (currentModal != null) return true
+        previewPresetDropdown?.takeIf { it.isExpanded }?.let {
+            if (it.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) return true
+        }
         if (mouseX < sideX || mouseY < previewY + TAB_HEIGHT || mouseY > height) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
         }
@@ -294,17 +303,8 @@ class HudEditorScreen(
                 }
             }
             SideTab.PREVIEW_STATE -> {
-                if (previewPresetOpen) {
-                    val count = session.availablePreviewPresets().size
-                    previewPresetScroll = clampScroll(
-                        previewPresetScroll + direction,
-                        count,
-                        previewPresetVisibleRows(),
-                    )
-                } else {
-                    val count = session.previewStateFields().size
-                    previewStateScroll = clampScroll(previewStateScroll + direction, count, previewStateVisibleRows())
-                }
+                val count = session.previewStateFields().size
+                previewStateScroll = clampScroll(previewStateScroll + direction, count, previewStateVisibleRows())
             }
         }
         rebuildWidgets()
@@ -320,6 +320,9 @@ class HudEditorScreen(
             return super.keyPressed(keyCode, scanCode, modifiers)
         }
         if (modal != null) return super.keyPressed(keyCode, scanCode, modifiers)
+        previewPresetDropdown?.takeIf { it.isExpanded }?.let {
+            if (it.keyPressed(keyCode, scanCode, modifiers)) return true
+        }
         if (Screen.hasControlDown()) {
             when (keyCode) {
                 GLFW.GLFW_KEY_S -> {
@@ -426,7 +429,6 @@ class HudEditorScreen(
                     activeTab = tab
                     paletteOpen = false
                     layoutEditorOpen = false
-                    previewPresetOpen = false
                     rebuildWidgets()
                 }.bounds(sideX + index * tabWidth, previewY, tabWidth, 20).build().also {
                     it.active = activeTab != tab
@@ -558,18 +560,19 @@ class HudEditorScreen(
             val selected = presets.firstOrNull { it.id == selectedPreviewPresetId } ?: presets.first().also {
                 selectedPreviewPresetId = it.id
             }
-            addRenderableWidget(
-                Button.builder(
-                    Component.translatable(selected.displayNameKey).append(if (previewPresetOpen) " ▲" else " ▼")
-                ) {
-                    previewPresetOpen = !previewPresetOpen
-                    rebuildWidgets()
-                }.bounds(
-                    sideX,
-                    previewY + PREVIEW_PRESET_WIDGET_Y,
-                    sideWidth - PREVIEW_PRESET_APPLY_WIDTH - 4,
-                    PROPERTY_WIDGET_HEIGHT,
-                ).build()
+            previewPresetDropdown = addRenderableWidget(
+                DropdownWidget(
+                    x = sideX,
+                    y = previewY + PREVIEW_PRESET_WIDGET_Y,
+                    width = sideWidth - PREVIEW_PRESET_APPLY_WIDTH - 4,
+                    height = PROPERTY_WIDGET_HEIGHT,
+                    entries = presets.map { preset ->
+                        DropdownEntry(preset.id, Component.translatable(preset.displayNameKey))
+                    },
+                    selected = selected.id,
+                    maxVisibleRows = previewPresetVisibleRows(),
+                    onSelected = { selectedPreviewPresetId = it },
+                )
             )
             addRenderableWidget(
                 Button.builder(Component.translatable("dynamicrider.hud.editor.preview_state.apply")) {
@@ -592,28 +595,8 @@ class HudEditorScreen(
                 ).build()
             )
 
-            if (previewPresetOpen) {
-                val visibleRows = previewPresetVisibleRows()
-                previewPresetScroll = clampScroll(previewPresetScroll, presets.size, visibleRows)
-                presets.drop(previewPresetScroll).take(visibleRows).forEachIndexed { index, preset ->
-                    addRenderableWidget(
-                        Button.builder(Component.translatable(preset.displayNameKey)) {
-                            selectedPreviewPresetId = preset.id
-                            previewPresetOpen = false
-                            rebuildWidgets()
-                        }.bounds(
-                            sideX,
-                            previewY + PREVIEW_FIELD_START_Y + index * ROW_HEIGHT,
-                            sideWidth - PREVIEW_PRESET_APPLY_WIDTH - 4,
-                            PROPERTY_WIDGET_HEIGHT,
-                        ).build().also { it.active = preset.id != selectedPreviewPresetId }
-                    )
-                }
-                return
-            }
         }
 
-        if (previewPresetOpen) return
         val fields = session.previewStateFields()
         val visibleRows = previewStateVisibleRows()
         previewStateScroll = clampScroll(previewStateScroll, fields.size, visibleRows)
@@ -818,7 +801,6 @@ class HudEditorScreen(
             previewY + 30,
             0xFFDDDDDD.toInt(),
         )
-        if (previewPresetOpen) return
         val fields = session.previewStateFields()
         val visibleRows = previewStateVisibleRows()
         previewStateScroll = clampScroll(previewStateScroll, fields.size, visibleRows)
@@ -1463,11 +1445,7 @@ class HudEditorScreen(
         } else {
             selectedProperties()?.let { ScrollMetrics(propertyScroll, it.size, propertyVisibleRows()) }
         }
-        SideTab.PREVIEW_STATE -> if (previewPresetOpen) {
-            session.availablePreviewPresets().let {
-                ScrollMetrics(previewPresetScroll, it.size, previewPresetVisibleRows())
-            }
-        } else {
+        SideTab.PREVIEW_STATE -> {
             session.previewStateFields().let {
                 ScrollMetrics(previewStateScroll, it.size, previewStateVisibleRows())
             }

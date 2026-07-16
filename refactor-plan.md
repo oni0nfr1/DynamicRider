@@ -20,9 +20,11 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] 편집 모드와 실제 HUD 확인용 미리보기 모드를 수동 검증하고 현재 GUI 변경을 확정한다.
 - [x] `PreviewKartState` 값을 조절하고 preset을 적용할 수 있는 preview 상태 UI를 완성한다.
 - [x] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
+- [x] 신규 요소의 색상 변경에 사용할 texture hue shift shader와 GUI RenderType을 제공한다.
+- [ ] 단일 요소 Spec 내 sealed style property의 subtype 선택·편집·검증을 지원한다.
 - [ ] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
 
-중첩 object/list, compound child 편집과 KSP registry 생성 및 프레임 상태 snapshot은 이번 릴리즈 범위에서 제외한다.
+일반 중첩 object/list, 최상위 요소 Spec 다형성, compound child 편집과 KSP registry 생성 및 프레임 상태 snapshot은 이번 릴리즈 범위에서 제외한다.
 
 ## 1. JSON 장면 기반 통합
 
@@ -226,10 +228,16 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] preview 상태 조절 UI를 구현한다.
      - 현재 `PreviewKartState` capability에 맞는 카트 값과 공통 레이스 값만 노출한다.
      - 호환 preset은 scroll 가능한 dropdown으로 선택하고 명시적인 적용 버튼으로 반영한다.
-       - 이번 버전은 side panel 내부에서 목록을 펼치는 방식으로 구현하고, 재사용 가능한 `AbstractWidget` 기반 dropdown은 후속 UI 공통화 작업으로 분리한다.
+       - [x] HUD 외 GUI에서도 재사용할 수 있는 `AbstractWidget` 기반 `DropdownWidget`을 공용 widget 패키지에 제공하고 preset 선택에 적용한다.
      - 호환 preset은 기본 preview 값으로 초기화한 뒤 적용해 이전 수동 값이 섞이지 않게 한다.
      - preview 상태 변경은 장면 Spec, dirty와 undo/redo history를 변경하지 않는다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
+8. [ ] 신규 부스터 슬롯의 선행 작업으로 sealed interface style Spec의 다형성 편집을 지원한다.
+   - `PolymorphicKind.SEALED`에서 등록된 하위 타입과 현재 type discriminator를 inspector metadata로 노출한다.
+   - GUI에서 하위 타입을 선택하고, 선택된 타입의 프로퍼티를 재귀적으로 편집한다.
+   - subtype 교체와 중첩 프로퍼티 변경을 기존 immutable JSON round-trip과 command/undo/redo 흐름으로 처리한다.
+   - `HudSpecValidator`가 실제 하위 타입 descriptor를 따라가 범위·유한값 등의 중첩 validation을 수행하게 한다.
+   - 이번 범위는 구체 요소 Spec의 sealed style property에 한정하고, 최상위 `HudElementSpec` 다형성과 일반 list/compound 편집은 후속 작업으로 남긴다.
 
 프레임 단위 상태 snapshot, KSP registry 생성 및 runtime element의 세부 property patch는
 정확성 또는 성능 문제가 확인되기 전까지 후순위로 둔다.
