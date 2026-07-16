@@ -37,3 +37,20 @@ fun buildHudPositionColorPipeline(
     if (blend != null) builder.withBlend(blend) else builder.withoutBlend()
     return builder.build()
 }
+
+fun buildHudHueShiftPipeline(pipelineId: ResourceLocation): RenderPipeline {
+    val shaderId = ResourceLocation.fromNamespaceAndPath("dynrider", "core/hue_shift")
+    return RenderPipeline.builder()
+        .withLocation(pipelineId)
+        .withVertexShader(shaderId)
+        .withFragmentShader(shaderId)
+        .withSampler("Sampler0")
+        .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+        .withUniform("ModelViewMat", UniformType.MATRIX4X4)
+        .withUniform("ProjMat", UniformType.MATRIX4X4)
+        .withUniform("ColorModulator", UniformType.VEC4)
+        .withBlend(BlendFunction.TRANSLUCENT)
+        .withCull(false)
+        .withColorWrite(true, true)
+        .build()
+}

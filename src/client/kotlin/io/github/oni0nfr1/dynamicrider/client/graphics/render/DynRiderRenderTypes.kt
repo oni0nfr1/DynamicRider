@@ -8,6 +8,8 @@ import net.minecraft.client.renderer.RenderStateShard
 import net.minecraft.client.renderer.RenderType
 import com.mojang.blaze3d.vertex.VertexFormat
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.TriState
+import java.util.concurrent.ConcurrentHashMap
 
 object DynRiderRenderTypes {
     private val STATE: RenderType.CompositeState =
@@ -42,6 +44,12 @@ object DynRiderRenderTypes {
          )
     }
 
+    private val HUE_SHIFT_PIPELINE: RenderPipeline by lazy {
+        buildHudHueShiftPipeline(ResourceLocation.fromNamespaceAndPath("dynrider", "hud_hue_shift"))
+    }
+
+    private val hueShiftTypes = ConcurrentHashMap<ResourceLocation, RenderType>()
+
     val ARC_CORE: RenderType by lazy {
         RenderType.create(
             "dynamicrider:arc_core",
@@ -72,6 +80,22 @@ object DynRiderRenderTypes {
             true,
             HALO_PIPELINE,
             STATE
+        )
+    }
+
+    /** [texture]를 hue shift shader로 그리는 GUI용 RenderType을 반환한다. */
+    fun hueShiftedTextured(texture: ResourceLocation): RenderType = hueShiftTypes.computeIfAbsent(texture) {
+        val state = RenderType.CompositeState.builder()
+            .setTextureState(RenderStateShard.TextureStateShard(texture, TriState.FALSE, false))
+            .setOutputState(RenderStateShard.MAIN_TARGET)
+            .createCompositeState(RenderType.OutlineProperty.NONE)
+        RenderType.create(
+            "dynrider:hue_shifted_textured",
+            1536,
+            false,
+            true,
+            HUE_SHIFT_PIPELINE,
+            state,
         )
     }
 }
