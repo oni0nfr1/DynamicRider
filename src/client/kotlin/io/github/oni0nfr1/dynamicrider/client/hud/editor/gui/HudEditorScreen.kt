@@ -19,8 +19,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
@@ -45,7 +47,6 @@ class HudEditorScreen(
 
     private var activeTab = SideTab.ELEMENTS
     private var paletteOpen = false
-    private var confirmRestore = false
     private var status: Component? = null
     private var stateSubscription: AutoCloseable? = null
     private var closing = false
@@ -60,6 +61,8 @@ class HudEditorScreen(
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
     private var modal: EditorModal? = null
+    private var editorWidgets: List<AbstractWidget> = emptyList()
+    private var modalWidgets: List<AbstractWidget> = emptyList()
     private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
 
     private var previewX = 8
@@ -73,24 +76,29 @@ class HudEditorScreen(
         calculateLayout()
         if (stateSubscription == null) {
             stateSubscription = session.addStateListener(emitCurrent = false) {
-                confirmRestore = false
                 Minecraft.getInstance().execute {
                     if (Minecraft.getInstance().screen === this) rebuildWidgets()
                 }
             }
         }
+        buildToolbar()
+        buildTabs()
+        when (activeTab) {
+            SideTab.ELEMENTS -> buildElementsTab()
+            SideTab.PROPERTIES -> buildPropertiesTab()
+            SideTab.PREVIEW_STATE -> Unit
+        }
+        editorWidgets = children().filterIsInstance<AbstractWidget>()
         when (val currentModal = modal) {
-            null -> {
-                buildToolbar()
-                buildTabs()
-                when (activeTab) {
-                    SideTab.ELEMENTS -> buildElementsTab()
-                    SideTab.PROPERTIES -> buildPropertiesTab()
-                    SideTab.PREVIEW_STATE -> Unit
-                }
-            }
+            null -> Unit
             is EditorModal.ScenePicker -> buildScenePicker(currentModal)
             is EditorModal.ConfirmDeparture -> buildDepartureConfirmation(currentModal.action)
+            EditorModal.ConfirmRestore -> buildRestoreConfirmation()
+        }
+        modalWidgets = if (modal == null) {
+            emptyList()
+        } else {
+            children().filterIsInstance<AbstractWidget>().filterNot(editorWidgets::contains)
         }
     }
 
@@ -99,8 +107,17 @@ class HudEditorScreen(
         renderEditorChrome(guiGraphics, mouseX, mouseY)
         renderPreview(guiGraphics)
         renderSideContent(guiGraphics)
-        renderModal(guiGraphics)
-        super.render(guiGraphics, mouseX, mouseY, partialTick)
+        if (modal == null) {
+            super.render(guiGraphics, mouseX, mouseY, partialTick)
+        } else {
+            editorWidgets.forEach { it.render(guiGraphics, -1, -1, partialTick) }
+            guiGraphics.flush()
+            guiGraphics.pose().pushPose()
+            guiGraphics.pose().translate(0f, 0f, MODAL_Z)
+            renderModal(guiGraphics)
+            modalWidgets.forEach { it.render(guiGraphics, mouseX, mouseY, partialTick) }
+            guiGraphics.pose().popPose()
+        }
     }
 
     /** Editor는 자체 배경을 그리므로 vanilla menu blur와 배경 texture를 적용하지 않는다. */
@@ -292,7 +309,11 @@ class HudEditorScreen(
                 .build()
         )
         addRenderableWidget(toolbarButton(width - 206, "dynamicrider.hud.editor.save") { save() })
-        addRenderableWidget(toolbarButton(width - 142, "dynamicrider.hud.editor.restore") { restore() })
+        addRenderableWidget(
+            toolbarButton(width - 142, "dynamicrider.hud.editor.restore") { openRestoreConfirmation() }.also {
+                it.active = state.source != HudSceneSource.RESOURCE || state.dirty
+            }
+        )
         addRenderableWidget(toolbarButton(width - 70, "gui.done") { requestDeparture(DepartureAction.Exit) })
     }
 
@@ -585,6 +606,7 @@ class HudEditorScreen(
     }
 
     private fun buildScenePicker(picker: EditorModal.ScenePicker) {
+        disableEditorWidgetsForModal()
         val left = modalLeft()
         val top = modalTop(scenePickerHeight())
         val contentWidth = MODAL_WIDTH - 24
@@ -628,6 +650,7 @@ class HudEditorScreen(
     }
 
     private fun buildDepartureConfirmation(action: DepartureAction) {
+        disableEditorWidgetsForModal()
         val left = modalLeft()
         val top = modalTop(CONFIRM_MODAL_HEIGHT)
         val contentWidth = MODAL_WIDTH - 24
@@ -654,12 +677,33 @@ class HudEditorScreen(
         )
     }
 
+    private fun buildRestoreConfirmation() {
+        disableEditorWidgetsForModal()
+        val left = modalLeft()
+        val top = modalTop(CONFIRM_MODAL_HEIGHT)
+        val contentWidth = MODAL_WIDTH - 24
+        val buttonWidth = (contentWidth - 4) / 2
+        val buttonY = top + CONFIRM_MODAL_HEIGHT - 30
+        addRenderableWidget(
+            Button.builder(Component.translatable("dynamicrider.hud.editor.restore.confirm")) {
+                performRestore()
+            }.bounds(left + 12, buttonY, buttonWidth, 20).build()
+        )
+        addRenderableWidget(
+            Button.builder(Component.translatable("gui.cancel")) {
+                modal = null
+                rebuildWidgets()
+            }.bounds(left + 16 + buttonWidth, buttonY, buttonWidth, 20).build()
+        )
+    }
+
     private fun renderModal(guiGraphics: GuiGraphics) {
         val currentModal = modal ?: return
         guiGraphics.fill(0, 0, width, height, 0xA0000000.toInt())
         val modalHeight = when (currentModal) {
             is EditorModal.ScenePicker -> scenePickerHeight()
             is EditorModal.ConfirmDeparture -> CONFIRM_MODAL_HEIGHT
+            EditorModal.ConfirmRestore -> CONFIRM_MODAL_HEIGHT
         }
         val left = modalLeft()
         val top = modalTop(modalHeight)
@@ -699,6 +743,23 @@ class HudEditorScreen(
                     0xFFDDDDDD.toInt(),
                 )
             }
+            EditorModal.ConfirmRestore -> {
+                guiGraphics.drawCenteredString(
+                    font,
+                    Component.translatable("dynamicrider.hud.editor.restore.warning.title"),
+                    width / 2,
+                    top + 14,
+                    0xFFFFFFFF.toInt(),
+                )
+                guiGraphics.drawWordWrap(
+                    font,
+                    Component.translatable("dynamicrider.hud.editor.restore.warning.message"),
+                    left + 16,
+                    top + 36,
+                    MODAL_WIDTH - 32,
+                    0xFFDDDDDD.toInt(),
+                )
+            }
         }
     }
 
@@ -711,6 +772,11 @@ class HudEditorScreen(
             state.kartStateType,
             selectedIndex.coerceAtMost((KartStateTypes.entries.size - visibleRows).coerceAtLeast(0)),
         )
+        rebuildWidgets()
+    }
+
+    private fun openRestoreConfirmation() {
+        modal = EditorModal.ConfirmRestore
         rebuildWidgets()
     }
 
@@ -767,6 +833,10 @@ class HudEditorScreen(
     private fun toolbarButton(x: Int, key: String, action: () -> Unit): Button =
         Button.builder(Component.translatable(key)) { action() }.bounds(x, 6, 60, 20).build()
 
+    private fun disableEditorWidgetsForModal() {
+        editorWidgets.forEach { it.active = false }
+    }
+
     private fun removeSelected() {
         session.state.selectedElementId?.let(session::removeElement)
     }
@@ -782,7 +852,6 @@ class HudEditorScreen(
         when (session.save()) {
             is HudEditorPersistenceResult.Saved -> {
                 status = Component.translatable("dynamicrider.hud.editor.saved")
-                confirmRestore = false
                 return true
             }
             is HudEditorPersistenceResult.IoFailed -> {
@@ -792,25 +861,19 @@ class HudEditorScreen(
                 status = Component.translatable("dynamicrider.hud.editor.action_failed")
             }
         }
-        confirmRestore = false
         return false
     }
 
-    private fun restore() {
-        val result = session.deleteCustom(discardUnsavedChanges = confirmRestore)
+    private fun performRestore() {
+        val result = session.deleteCustom(discardUnsavedChanges = true)
         status = when (result) {
-            HudEditorPersistenceResult.DiscardConfirmationRequired -> {
-                confirmRestore = true
-                Component.translatable("dynamicrider.hud.editor.restore_confirm")
-            }
-            is HudEditorPersistenceResult.Restored -> {
-                confirmRestore = false
-                Component.translatable("dynamicrider.hud.editor.restored")
-            }
+            is HudEditorPersistenceResult.Restored -> Component.translatable("dynamicrider.hud.editor.restored")
             is HudEditorPersistenceResult.IoFailed -> Component.translatable("dynamicrider.hud.editor.restore_failed")
             is HudEditorPersistenceResult.ResolveFailed -> Component.translatable("dynamicrider.hud.editor.restore_failed")
             else -> Component.translatable("dynamicrider.hud.editor.action_failed")
         }
+        modal = null
+        rebuildWidgets()
     }
 
     private fun updateProperty(
@@ -1032,6 +1095,8 @@ class HudEditorScreen(
         ) : EditorModal
 
         data class ConfirmDeparture(val action: DepartureAction) : EditorModal
+
+        data object ConfirmRestore : EditorModal
     }
 
     private sealed interface DepartureAction {
@@ -1094,6 +1159,7 @@ class HudEditorScreen(
         const val MODAL_WIDTH = 320
         const val CONFIRM_MODAL_HEIGHT = 116
         const val SCENE_PICKER_MAX_HEIGHT = 330
+        const val MODAL_Z = 1_000f
         const val SELECTION_COLOR = 0xFFFFFFFF.toInt()
         const val SCREEN_ANCHOR_COLOR = 0xFF55DDFF.toInt()
         const val ELEMENT_ANCHOR_COLOR = 0xFFFFCC33.toInt()
