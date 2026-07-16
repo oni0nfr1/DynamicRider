@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumberType
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumericRange
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
@@ -95,16 +96,16 @@ class HudPropertyWidgetFactory(
                 onCancelInput,
             )
         } else {
-            listOf(
-                HudRangeSlider(
-                    x = x,
-                    y = y,
-                    width = width,
-                    initialValue = property.value.jsonPrimitive.content.toDouble(),
-                    numberType = editor.numberType,
-                    range = editor.range,
-                    onCommit = { onCommit(it) },
-                )
+            rangedNumericInput(
+                property = property,
+                numberType = editor.numberType,
+                range = editor.range,
+                x = x,
+                y = y,
+                width = width,
+                onCommit = onCommit,
+                onInvalidInput = onInvalidInput,
+                onCancelInput = onCancelInput,
             )
         }
         is HudPropertyEditorType.ColorPicker -> textInput(
@@ -133,21 +134,78 @@ class HudPropertyWidgetFactory(
         onCommit: (JsonElement) -> Boolean,
         onInvalidInput: (String) -> Unit,
         onCancelInput: () -> Unit,
+    ): List<AbstractWidget> = listOf(
+        numericEditBox(
+            property = property,
+            numberType = numberType,
+            x = x,
+            y = y,
+            width = width,
+            onCommit = onCommit,
+            onInvalidInput = onInvalidInput,
+            onCancelInput = onCancelInput,
+        ),
+    )
+
+    private fun rangedNumericInput(
+        property: HudEditableProperty,
+        numberType: HudNumberType,
+        range: HudNumericRange,
+        x: Int,
+        y: Int,
+        width: Int,
+        onCommit: (JsonElement) -> Boolean,
+        onInvalidInput: (String) -> Unit,
+        onCancelInput: () -> Unit,
     ): List<AbstractWidget> {
-        val parser: (String) -> JsonElement = { value ->
-            nullableValue(property, value) {
-                when (numberType) {
-                    HudNumberType.BYTE -> JsonPrimitive(it.toByte())
-                    HudNumberType.SHORT -> JsonPrimitive(it.toShort())
-                    HudNumberType.INT -> JsonPrimitive(it.toInt())
-                    HudNumberType.LONG -> JsonPrimitive(it.toLong())
-                    HudNumberType.FLOAT -> JsonPrimitive(it.toFloat())
-                    HudNumberType.DOUBLE -> JsonPrimitive(it.toDouble())
-                }
-            }
+        val inputWidth = (width / 3).coerceIn(42, 64)
+        val sliderWidth = width - inputWidth - WIDGET_GAP
+        if (sliderWidth < MIN_SLIDER_WIDTH) {
+            return numericInput(
+                property,
+                numberType,
+                x,
+                y,
+                width,
+                onCommit,
+                onInvalidInput,
+                onCancelInput,
+            )
         }
+
         return listOf(
-            HudCommitEditBox(
+            HudRangeSlider(
+                x = x,
+                y = y,
+                width = sliderWidth,
+                initialValue = property.value.jsonPrimitive.content.toDouble(),
+                numberType = numberType,
+                range = range,
+                onCommit = { onCommit(it) },
+            ),
+            numericEditBox(
+                property = property,
+                numberType = numberType,
+                x = x + sliderWidth + WIDGET_GAP,
+                y = y,
+                width = inputWidth,
+                onCommit = onCommit,
+                onInvalidInput = onInvalidInput,
+                onCancelInput = onCancelInput,
+            ),
+        )
+    }
+
+    private fun numericEditBox(
+        property: HudEditableProperty,
+        numberType: HudNumberType,
+        x: Int,
+        y: Int,
+        width: Int,
+        onCommit: (JsonElement) -> Boolean,
+        onInvalidInput: (String) -> Unit,
+        onCancelInput: () -> Unit,
+    ): HudCommitEditBox = HudCommitEditBox(
                 font = font,
                 x = x,
                 y = y,
@@ -156,7 +214,9 @@ class HudPropertyWidgetFactory(
                 message = Component.translatable(property.nameKey),
                 initialValue = displayValue(property.value),
                 onCommit = { value ->
-                    runCatching { parser(value) }.fold(
+                    runCatching {
+                        nullableValue(property, value) { parseNumber(it, numberType) }
+                    }.fold(
                         onSuccess = {
                             onCommit(it)
                         },
@@ -167,9 +227,17 @@ class HudPropertyWidgetFactory(
                     )
                 },
                 onCancel = onCancelInput,
-            ).also { it.setMaxLength(128) }
-        )
-    }
+        ).also { it.setMaxLength(128) }
+
+    private fun parseNumber(value: String, numberType: HudNumberType): JsonPrimitive =
+        when (numberType) {
+            HudNumberType.BYTE -> JsonPrimitive(value.toByte())
+            HudNumberType.SHORT -> JsonPrimitive(value.toShort())
+            HudNumberType.INT -> JsonPrimitive(value.toInt())
+            HudNumberType.LONG -> JsonPrimitive(value.toLong())
+            HudNumberType.FLOAT -> JsonPrimitive(value.toFloat())
+            HudNumberType.DOUBLE -> JsonPrimitive(value.toDouble())
+        }
 
     private fun textInput(
         property: HudEditableProperty,
@@ -239,6 +307,8 @@ class HudPropertyWidgetFactory(
 
     private companion object {
         const val WIDGET_HEIGHT = 20
+        const val WIDGET_GAP = 2
+        const val MIN_SLIDER_WIDTH = 30
         const val NULL_LITERAL = "null"
     }
 }

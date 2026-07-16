@@ -648,22 +648,49 @@ class HudEditorScreen(
                 is PreviewStateField.Editor.Number -> if (
                     editor.range != null && editor.range.step != null && !editor.nullable
                 ) {
-                    addRenderableWidget(
-                        HudRangeSlider(
-                            x = widgetX,
-                            y = y,
-                            width = widgetWidth,
-                            initialValue = field.value.jsonPrimitive.content.toDouble(),
-                            numberType = editor.numberType,
-                            range = editor.range,
-                            onCommit = { value -> updatePreviewState(field, value) },
-                        )
-                    )
+                    addPreviewRangeInput(field, editor, widgetX, y, widgetWidth)
                 } else {
                     addRenderableWidget(previewNumberInput(field, editor, widgetX, y, widgetWidth))
                 }
             }
         }
+    }
+
+    private fun addPreviewRangeInput(
+        field: PreviewStateField,
+        editor: PreviewStateField.Editor.Number,
+        x: Int,
+        y: Int,
+        width: Int,
+    ) {
+        val range = checkNotNull(editor.range)
+        val inputWidth = (width / 3).coerceIn(RANGE_INPUT_MIN_WIDTH, RANGE_INPUT_MAX_WIDTH)
+        val sliderWidth = width - inputWidth - RANGE_WIDGET_GAP
+        if (sliderWidth < MIN_RANGE_SLIDER_WIDTH) {
+            addRenderableWidget(previewNumberInput(field, editor, x, y, width))
+            return
+        }
+
+        addRenderableWidget(
+            HudRangeSlider(
+                x = x,
+                y = y,
+                width = sliderWidth,
+                initialValue = field.value.jsonPrimitive.content.toDouble(),
+                numberType = editor.numberType,
+                range = range,
+                onCommit = { value -> updatePreviewState(field, value) },
+            )
+        )
+        addRenderableWidget(
+            previewNumberInput(
+                field = field,
+                editor = editor,
+                x = x + sliderWidth + RANGE_WIDGET_GAP,
+                y = y,
+                width = inputWidth,
+            )
+        )
     }
 
     private fun previewNumberInput(
@@ -1630,6 +1657,10 @@ class HudEditorScreen(
         const val ROW_HEIGHT = 22
         const val PROPERTY_ROW_HEIGHT = 34
         const val PROPERTY_WIDGET_HEIGHT = 20
+        const val RANGE_WIDGET_GAP = 2
+        const val RANGE_INPUT_MIN_WIDTH = 42
+        const val RANGE_INPUT_MAX_WIDTH = 64
+        const val MIN_RANGE_SLIDER_WIDTH = 30
         const val PREVIEW_PRESET_WIDGET_Y = 42
         const val PREVIEW_PRESET_APPLY_WIDTH = 52
         const val PREVIEW_FIELD_START_Y = 70
