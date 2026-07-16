@@ -17,8 +17,8 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 
 ## 이번 버전 릴리즈 범위
 
-- [ ] 편집 모드와 실제 HUD 확인용 미리보기 모드를 수동 검증하고 현재 GUI 변경을 확정한다.
-- [ ] `PreviewKartState` 값을 조절하고 preset을 적용할 수 있는 preview 상태 UI를 완성한다.
+- [x] 편집 모드와 실제 HUD 확인용 미리보기 모드를 수동 검증하고 현재 GUI 변경을 확정한다.
+- [x] `PreviewKartState` 값을 조절하고 preset을 적용할 수 있는 preview 상태 UI를 완성한다.
 - [ ] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
 - [ ] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
 
@@ -215,7 +215,7 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] registry metadata와 현재 Spec 값을 결합하는 element inspector 및 호환 요소 palette 조회 API를 session에 추가한다.
    - [x] repository의 spec resolve 결과로 session을 여는 공개 `open()`을 연결하고 저수준 session 조립 함수는 비공개로 둔다.
 5. [x] 편집 세션에 custom 저장·삭제 및 resource 기본값 복원 흐름을 구현한다.
-6. [ ] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
+6. [x] 기본 인게임 GUI를 요소 선택부터 저장·복원까지 순차적으로 구현한다.
    - [x] 편집 mode·상태 타입 선택 화면과 탭식 editor 화면 골격을 구현한다.
    - [x] 요소 목록·palette·구조 변경과 undo/redo·저장·복원 UI를 session에 연결한다.
    - [x] 탭별 side panel scroll과 drag 기반 panel 너비 조절을 구현한다.
@@ -223,7 +223,12 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] layout property 입력 widget을 구현한다.
    - [x] 속성 행 정렬, dirty 종료 확인과 editor 내부 장면 전환을 구현한다.
    - [x] 편집 UI를 숨기고 전체 GUI 크기의 HUD를 표시하는 미리보기 모드를 구현한다.
-   - [ ] preview 상태 조절 UI를 구현한다.
+   - [x] preview 상태 조절 UI를 구현한다.
+     - 현재 `PreviewKartState` capability에 맞는 카트 값과 공통 레이스 값만 노출한다.
+     - 호환 preset은 scroll 가능한 dropdown으로 선택하고 명시적인 적용 버튼으로 반영한다.
+       - 이번 버전은 side panel 내부에서 목록을 펼치는 방식으로 구현하고, 재사용 가능한 `AbstractWidget` 기반 dropdown은 후속 UI 공통화 작업으로 분리한다.
+     - 호환 preset은 기본 preview 값으로 초기화한 뒤 적용해 이전 수동 값이 섞이지 않게 한다.
+     - preview 상태 변경은 장면 Spec, dirty와 undo/redo history를 변경하지 않는다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
 프레임 단위 상태 snapshot, KSP registry 생성 및 runtime element의 세부 property patch는

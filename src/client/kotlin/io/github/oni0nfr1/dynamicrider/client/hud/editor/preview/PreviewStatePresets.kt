@@ -9,7 +9,6 @@ import java.util.UUID
 object PreviewStatePresets {
     val IDLE = PreviewStatePreset(
         id = "idle",
-        displayName = "Idle",
         requirement = PreviewPresetRequirement.SPEED,
         kart = PreviewKartValues(speed = 0.0),
         race = PreviewRaceValues(
@@ -22,14 +21,12 @@ object PreviewStatePresets {
 
     val RACING = PreviewStatePreset(
         id = "racing",
-        displayName = "Racing",
         requirement = PreviewPresetRequirement.SPEED,
         kart = PreviewKartValues(speed = 169.9),
     )
 
     val DRIFTING = PreviewStatePreset(
         id = "drifting",
-        displayName = "Drifting",
         requirement = PreviewPresetRequirement.NITRO_DRAFT,
         kart = PreviewKartValues(
             speed = 128.0,
@@ -43,7 +40,6 @@ object PreviewStatePresets {
 
     val BOOSTING = PreviewStatePreset(
         id = "boosting",
-        displayName = "Boosting",
         requirement = PreviewPresetRequirement.NITRO,
         kart = PreviewKartValues(
             speed = 245.0,
@@ -57,7 +53,6 @@ object PreviewStatePresets {
 
     val TEAM_BOOST = PreviewStatePreset(
         id = "team_boost",
-        displayName = "Team Boost",
         requirement = PreviewPresetRequirement.NITRO,
         kart = PreviewKartValues(
             speed = 230.0,
@@ -72,7 +67,6 @@ object PreviewStatePresets {
 
     val FINAL_LAP = PreviewStatePreset(
         id = "final_lap",
-        displayName = "Final Lap",
         race = PreviewRaceValues(
             elapsedTimeMillis = 112_000L,
             currentLap = 3,
@@ -83,13 +77,11 @@ object PreviewStatePresets {
 
     val RANKING = PreviewStatePreset(
         id = "ranking",
-        displayName = "Ranking",
         ranking = rankingState(),
     )
 
     val V1_EXCEED = PreviewStatePreset(
         id = "v1_exceed",
-        displayName = "V1 Exceed",
         requirement = PreviewPresetRequirement.V1,
         kart = PreviewKartValues(
             speed = 220.0,
@@ -101,7 +93,6 @@ object PreviewStatePresets {
 
     val CHARGE_GAUGE = PreviewStatePreset(
         id = "charge_gauge",
-        displayName = "Charge Gauge",
         requirement = PreviewPresetRequirement.CHARGE,
         kart = PreviewKartValues(
             speed = 205.0,

@@ -62,7 +62,7 @@ data class PreviewRaceValues(
 /** 편집기에서 대표 HUD 상태를 재현하기 위한 불변 값 묶음이다. */
 data class PreviewStatePreset(
     val id: String,
-    val displayName: String,
+    val displayNameKey: String = "dynamicrider.hud.editor.preview_preset.$id",
     val requirement: PreviewPresetRequirement = PreviewPresetRequirement.ANY,
     val kart: PreviewKartValues = PreviewKartValues(),
     val race: PreviewRaceValues = PreviewRaceValues(),

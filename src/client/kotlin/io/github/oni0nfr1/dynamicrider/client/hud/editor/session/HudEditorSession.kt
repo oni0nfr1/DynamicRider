@@ -12,6 +12,12 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementIns
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementPaletteEntry
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneSynchronizer
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateField
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateFieldEditor
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStatePreset
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStatePresetApplier
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStatePresets
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateUpdateResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditCommandResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditService
@@ -119,6 +125,41 @@ class HudEditorSession<S : KartState> internal constructor(
                 icon = metadata.icon,
             )
         }
+
+    /** 현재 preview 카트 capability에 맞는 built-in 상태 preset을 반환한다. */
+    fun availablePreviewPresets(): List<PreviewStatePreset> =
+        PreviewStatePresets.compatibleWith(previewContext.kartState)
+
+    /** 현재 preview context에서 직접 조절할 수 있는 상태 필드 snapshot을 반환한다. */
+    fun previewStateFields(): List<PreviewStateField> = PreviewStateFieldEditor.fields(previewContext)
+
+    /** Built-in preview [presetId]를 현재 context에 적용하며 document와 command history는 변경하지 않는다. */
+    fun applyPreviewPreset(presetId: String): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        val preset = PreviewStatePresets.byId(presetId)
+            ?: return HudEditorActionResult.PreviewPresetNotFound(presetId)
+        if (!preset.isCompatibleWith(previewContext.kartState)) {
+            return HudEditorActionResult.PreviewStateRejected(presetId)
+        }
+        PreviewStatePresetApplier.apply(previewContext, preset)
+        publishState()
+        return HudEditorActionResult.Applied()
+    }
+
+    /** Preview [fieldId]를 변경하며 영속 Spec, dirty 및 undo/redo 기록에는 영향을 주지 않는다. */
+    fun updatePreviewState(fieldId: String, value: JsonElement): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        return when (PreviewStateFieldEditor.update(previewContext, fieldId, value)) {
+            PreviewStateUpdateResult.Updated -> {
+                publishState()
+                HudEditorActionResult.Applied()
+            }
+            PreviewStateUpdateResult.Unchanged -> HudEditorActionResult.Unchanged
+            is PreviewStateUpdateResult.FieldNotFound,
+            is PreviewStateUpdateResult.InvalidValue,
+            -> HudEditorActionResult.PreviewStateRejected(fieldId)
+        }
+    }
 
     /** Registry의 [typeId]에 대응하는 기본 Spec을 생성해 [index]에 추가하고 선택한다. */
     fun addElement(

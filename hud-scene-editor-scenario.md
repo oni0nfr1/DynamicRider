@@ -302,14 +302,14 @@ Scene과 runtime bounds는 논리 좌표에서 유지한다. 모든 mouse 입력
 3. [x] element ID 기반 `PreviewHudSceneSynchronizer` 구현
 4. [x] `HudEditorSession`과 GUI용 상태 및 결과 모델 구현
 5. [x] 편집 세션의 custom 저장·삭제 및 resource 기본값 복원 구현
-6. [ ] 요소 목록, 팔레트와 속성 패널 구현
+6. [x] 요소 목록, 팔레트와 속성 패널 구현
    - [x] 중앙 preview와 요소·속성·프리뷰 상태 탭을 가진 단일 side panel 화면 및 요소 구조 편집 구현
    - [x] 탭별 목록 scroll과 drag 기반 side panel 너비 조절 구현
    - [x] metadata 기반 primitive·enum·color property 입력 widget 구현
    - [x] layout property 입력 widget 구현
    - [x] 속성 행 정렬, dirty 종료 확인과 editor 내부 장면 전환 구현
    - [x] 편집 UI를 숨기고 전체 GUI 크기의 HUD를 표시하는 미리보기 모드 구현
-   - [ ] preview 상태 조절 구현
+   - [x] capability 기반 카트·레이스 값과 호환 preset을 제공하는 preview 상태 조절 구현
 7. [x] 캔버스 선택·drag와 command 병합 구현
 8. [x] 저장·삭제·복원 UI 구현
 9. [ ] 기본 GUI 완성 후 중첩 object/list 및 compound child 편집 구현

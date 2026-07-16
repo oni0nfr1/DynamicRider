@@ -3,6 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.session
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewNitroKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
@@ -125,6 +126,31 @@ class HudEditorSessionTest {
         assertEquals(HudEditorActionResult.ElementNotFound("missing"), missing)
         assertEquals(listOf("slot"), session.state.elements.map { it.id })
         assertEquals(listOf("slot"), session.previewScene.entries.map { it.id })
+        assertFalse(session.state.dirty)
+        assertFalse(session.state.canUndo)
+    }
+
+    @Test
+    fun `preview state edits and presets do not affect document history`() {
+        val session = session()
+        val previewState = assertInstanceOf(PreviewNitroKartState::class.java, session.previewContext.kartState)
+
+        assertTrue(session.previewStateFields().any { it.id == "speed" })
+        assertTrue(session.availablePreviewPresets().any { it.id == "boosting" })
+        assertInstanceOf(
+            HudEditorActionResult.Applied::class.java,
+            session.updatePreviewState("speed", JsonPrimitive(222.0)),
+        )
+        assertEquals(222.0, previewState.speed)
+        assertFalse(session.state.dirty)
+        assertFalse(session.state.canUndo)
+
+        assertInstanceOf(
+            HudEditorActionResult.Applied::class.java,
+            session.applyPreviewPreset("boosting"),
+        )
+        assertEquals(245.0, previewState.speed)
+        assertTrue(previewState.isBoosting)
         assertFalse(session.state.dirty)
         assertFalse(session.state.canUndo)
     }

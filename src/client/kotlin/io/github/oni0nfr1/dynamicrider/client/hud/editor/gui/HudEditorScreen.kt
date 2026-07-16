@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexFormat
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateField
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorActionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorPersistenceResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSession
@@ -12,6 +13,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSessio
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSessionOpenResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorState
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumberType
 import io.github.oni0nfr1.dynamicrider.client.hud.layout.HudLayoutEngine
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.DynRiderRenderTypes
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.batch
@@ -24,10 +26,15 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.components.Button
+import net.minecraft.client.gui.components.CycleButton
 import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 import org.lwjgl.glfw.GLFW
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.math.ceil
 import kotlin.math.abs
 import kotlin.math.floor
@@ -60,6 +67,10 @@ class HudEditorScreen(
     private var paletteScroll = 0
     private var propertyScroll = 0
     private var layoutScroll = 0
+    private var previewStateScroll = 0
+    private var previewPresetScroll = 0
+    private var previewPresetOpen = false
+    private var selectedPreviewPresetId: String? = null
     private var layoutEditorOpen = false
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
@@ -68,6 +79,7 @@ class HudEditorScreen(
     private var editorWidgets: List<AbstractWidget> = emptyList()
     private var modalWidgets: List<AbstractWidget> = emptyList()
     private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
+    private val previewStateErrors = mutableMapOf<String, String>()
 
     private var previewX = 8
     private var previewY = 38
@@ -98,7 +110,7 @@ class HudEditorScreen(
             when (activeTab) {
                 SideTab.ELEMENTS -> buildElementsTab()
                 SideTab.PROPERTIES -> buildPropertiesTab()
-                SideTab.PREVIEW_STATE -> Unit
+                SideTab.PREVIEW_STATE -> buildPreviewStateTab()
             }
         }
         editorWidgets = children().filterIsInstance<AbstractWidget>()
@@ -281,7 +293,19 @@ class HudEditorScreen(
                     propertyScroll = clampScroll(propertyScroll + direction, count, propertyVisibleRows())
                 }
             }
-            SideTab.PREVIEW_STATE -> return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
+            SideTab.PREVIEW_STATE -> {
+                if (previewPresetOpen) {
+                    val count = session.availablePreviewPresets().size
+                    previewPresetScroll = clampScroll(
+                        previewPresetScroll + direction,
+                        count,
+                        previewPresetVisibleRows(),
+                    )
+                } else {
+                    val count = session.previewStateFields().size
+                    previewStateScroll = clampScroll(previewStateScroll + direction, count, previewStateVisibleRows())
+                }
+            }
         }
         rebuildWidgets()
         return true
@@ -402,6 +426,7 @@ class HudEditorScreen(
                     activeTab = tab
                     paletteOpen = false
                     layoutEditorOpen = false
+                    previewPresetOpen = false
                     rebuildWidgets()
                 }.bounds(sideX + index * tabWidth, previewY, tabWidth, 20).build().also {
                     it.active = activeTab != tab
@@ -527,6 +552,163 @@ class HudEditorScreen(
         }
     }
 
+    private fun buildPreviewStateTab() {
+        val presets = session.availablePreviewPresets()
+        if (presets.isNotEmpty()) {
+            val selected = presets.firstOrNull { it.id == selectedPreviewPresetId } ?: presets.first().also {
+                selectedPreviewPresetId = it.id
+            }
+            addRenderableWidget(
+                Button.builder(
+                    Component.translatable(selected.displayNameKey).append(if (previewPresetOpen) " ▲" else " ▼")
+                ) {
+                    previewPresetOpen = !previewPresetOpen
+                    rebuildWidgets()
+                }.bounds(
+                    sideX,
+                    previewY + PREVIEW_PRESET_WIDGET_Y,
+                    sideWidth - PREVIEW_PRESET_APPLY_WIDTH - 4,
+                    PROPERTY_WIDGET_HEIGHT,
+                ).build()
+            )
+            addRenderableWidget(
+                Button.builder(Component.translatable("dynamicrider.hud.editor.preview_state.apply")) {
+                    selectedPreviewPresetId?.let { presetId ->
+                        when (session.applyPreviewPreset(presetId)) {
+                            is HudEditorActionResult.Applied,
+                            HudEditorActionResult.Unchanged,
+                            -> {
+                                previewStateErrors.clear()
+                                status = null
+                            }
+                            else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
+                        }
+                    }
+                }.bounds(
+                    sideX + sideWidth - PREVIEW_PRESET_APPLY_WIDTH,
+                    previewY + PREVIEW_PRESET_WIDGET_Y,
+                    PREVIEW_PRESET_APPLY_WIDTH,
+                    PROPERTY_WIDGET_HEIGHT,
+                ).build()
+            )
+
+            if (previewPresetOpen) {
+                val visibleRows = previewPresetVisibleRows()
+                previewPresetScroll = clampScroll(previewPresetScroll, presets.size, visibleRows)
+                presets.drop(previewPresetScroll).take(visibleRows).forEachIndexed { index, preset ->
+                    addRenderableWidget(
+                        Button.builder(Component.translatable(preset.displayNameKey)) {
+                            selectedPreviewPresetId = preset.id
+                            previewPresetOpen = false
+                            rebuildWidgets()
+                        }.bounds(
+                            sideX,
+                            previewY + PREVIEW_FIELD_START_Y + index * ROW_HEIGHT,
+                            sideWidth - PREVIEW_PRESET_APPLY_WIDTH - 4,
+                            PROPERTY_WIDGET_HEIGHT,
+                        ).build().also { it.active = preset.id != selectedPreviewPresetId }
+                    )
+                }
+                return
+            }
+        }
+
+        if (previewPresetOpen) return
+        val fields = session.previewStateFields()
+        val visibleRows = previewStateVisibleRows()
+        previewStateScroll = clampScroll(previewStateScroll, fields.size, visibleRows)
+        val widgetX = sideX + sideWidth / 2
+        val widgetWidth = (sideWidth / 2 - 8).coerceAtLeast(40)
+        fields.drop(previewStateScroll).take(visibleRows).forEachIndexed { index, field ->
+            val y = previewY + PREVIEW_FIELD_START_Y + index * PROPERTY_ROW_HEIGHT
+            when (val editor = field.editor) {
+                PreviewStateField.Editor.Toggle -> addRenderableWidget(
+                    CycleButton.onOffBuilder(field.value.jsonPrimitive.content.toBoolean())
+                        .displayOnlyValue()
+                        .create(widgetX, y, widgetWidth, PROPERTY_WIDGET_HEIGHT, Component.translatable(field.nameKey)) { _, value ->
+                            updatePreviewState(field, JsonPrimitive(value))
+                        }
+                )
+                is PreviewStateField.Editor.Number -> if (
+                    editor.range != null && editor.range.step != null && !editor.nullable
+                ) {
+                    addRenderableWidget(
+                        HudRangeSlider(
+                            x = widgetX,
+                            y = y,
+                            width = widgetWidth,
+                            initialValue = field.value.jsonPrimitive.content.toDouble(),
+                            numberType = editor.numberType,
+                            range = editor.range,
+                            onCommit = { value -> updatePreviewState(field, value) },
+                        )
+                    )
+                } else {
+                    addRenderableWidget(previewNumberInput(field, editor, widgetX, y, widgetWidth))
+                }
+            }
+        }
+    }
+
+    private fun previewNumberInput(
+        field: PreviewStateField,
+        editor: PreviewStateField.Editor.Number,
+        x: Int,
+        y: Int,
+        width: Int,
+    ): HudCommitEditBox = HudCommitEditBox(
+        font = font,
+        x = x,
+        y = y,
+        width = width,
+        height = PROPERTY_WIDGET_HEIGHT,
+        message = Component.translatable(field.nameKey),
+        initialValue = if (field.value === JsonNull) "null" else field.value.jsonPrimitive.content,
+        onCommit = { input ->
+            runCatching {
+                if (editor.nullable && input.equals("null", ignoreCase = true)) {
+                    JsonNull
+                } else {
+                    when (editor.numberType) {
+                        HudNumberType.BYTE -> JsonPrimitive(input.toByte())
+                        HudNumberType.SHORT -> JsonPrimitive(input.toShort())
+                        HudNumberType.INT -> JsonPrimitive(input.toInt())
+                        HudNumberType.LONG -> JsonPrimitive(input.toLong())
+                        HudNumberType.FLOAT -> JsonPrimitive(input.toFloat())
+                        HudNumberType.DOUBLE -> JsonPrimitive(input.toDouble())
+                    }
+                }
+            }.fold(
+                onSuccess = { updatePreviewState(field, it) },
+                onFailure = {
+                    previewStateErrors[field.id] = it.message ?: "Invalid value"
+                    status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
+                    false
+                },
+            )
+        },
+        onCancel = {
+            previewStateErrors.remove(field.id)
+            if (previewStateErrors.isEmpty()) status = null
+        },
+    ).also { it.setMaxLength(128) }
+
+    private fun updatePreviewState(field: PreviewStateField, value: JsonElement): Boolean =
+        when (session.updatePreviewState(field.id, value)) {
+            is HudEditorActionResult.Applied,
+            HudEditorActionResult.Unchanged,
+            -> {
+                previewStateErrors.remove(field.id)
+                if (previewStateErrors.isEmpty()) status = null
+                true
+            }
+            else -> {
+                previewStateErrors[field.id] = "Invalid value"
+                status = Component.translatable("dynamicrider.hud.editor.property.rejected")
+                false
+            }
+        }
+
     private fun buildLayoutEditor(elementId: String, layout: HudEditableProperty) {
         val fields = HudLayoutEditorModel.fields(layout)
         val visibleRows = layoutVisibleRows()
@@ -623,16 +805,31 @@ class HudEditorScreen(
                 )
             }
             SideTab.PROPERTIES -> renderProperties(guiGraphics, contentY)
-            SideTab.PREVIEW_STATE -> guiGraphics.drawWordWrap(
-                font,
-                Component.translatable("dynamicrider.hud.editor.preview_state.pending"),
-                sideX + 6,
-                contentY,
-                sideWidth - 12,
-                0xFFBBBBBB.toInt(),
-            )
+            SideTab.PREVIEW_STATE -> renderPreviewState(guiGraphics)
         }
         currentScrollMetrics()?.let { renderScrollBar(guiGraphics, it) }
+    }
+
+    private fun renderPreviewState(guiGraphics: GuiGraphics) {
+        guiGraphics.drawString(
+            font,
+            Component.translatable("dynamicrider.hud.editor.preview_state.preset"),
+            sideX + 6,
+            previewY + 30,
+            0xFFDDDDDD.toInt(),
+        )
+        if (previewPresetOpen) return
+        val fields = session.previewStateFields()
+        val visibleRows = previewStateVisibleRows()
+        previewStateScroll = clampScroll(previewStateScroll, fields.size, visibleRows)
+        fields.drop(previewStateScroll).take(visibleRows).forEachIndexed { index, field ->
+            val y = previewY + PREVIEW_FIELD_START_Y + index * PROPERTY_ROW_HEIGHT
+            val color = if (previewStateErrors.containsKey(field.id)) 0xFFFF6666.toInt() else 0xFFDDDDDD.toInt()
+            guiGraphics.drawString(font, Component.translatable(field.nameKey), sideX + 6, centeredLabelY(y), color)
+            previewStateErrors[field.id]?.let { message ->
+                guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
+            }
+        }
     }
 
     private fun renderProperties(guiGraphics: GuiGraphics, contentY: Int) {
@@ -1191,6 +1388,12 @@ class HudEditorScreen(
 
     private fun layoutVisibleRows(): Int = ((height - (previewY + 52) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
 
+    private fun previewStateVisibleRows(): Int =
+        ((height - (previewY + PREVIEW_FIELD_START_Y) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
+
+    private fun previewPresetVisibleRows(): Int =
+        ((height - (previewY + PREVIEW_FIELD_START_Y) - 8) / ROW_HEIGHT).coerceAtLeast(1)
+
     private fun centeredLabelY(rowY: Int): Int = rowY + (PROPERTY_WIDGET_HEIGHT - font.lineHeight) / 2
 
     private fun scenePickerHeight(): Int = min(SCENE_PICKER_MAX_HEIGHT, height - 32).coerceAtLeast(160)
@@ -1260,7 +1463,15 @@ class HudEditorScreen(
         } else {
             selectedProperties()?.let { ScrollMetrics(propertyScroll, it.size, propertyVisibleRows()) }
         }
-        SideTab.PREVIEW_STATE -> null
+        SideTab.PREVIEW_STATE -> if (previewPresetOpen) {
+            session.availablePreviewPresets().let {
+                ScrollMetrics(previewPresetScroll, it.size, previewPresetVisibleRows())
+            }
+        } else {
+            session.previewStateFields().let {
+                ScrollMetrics(previewStateScroll, it.size, previewStateVisibleRows())
+            }
+        }
     }?.takeIf { it.visibleRows > 0 && it.itemCount > it.visibleRows }
 
     private fun renderScrollBar(guiGraphics: GuiGraphics, metrics: ScrollMetrics) {
@@ -1296,6 +1507,9 @@ class HudEditorScreen(
         const val ROW_HEIGHT = 22
         const val PROPERTY_ROW_HEIGHT = 34
         const val PROPERTY_WIDGET_HEIGHT = 20
+        const val PREVIEW_PRESET_WIDGET_Y = 42
+        const val PREVIEW_PRESET_APPLY_WIDTH = 52
+        const val PREVIEW_FIELD_START_Y = 70
         const val DOUBLE_CLICK_MILLIS = 250L
         const val MODAL_WIDTH = 320
         const val CONFIRM_MODAL_HEIGHT = 116

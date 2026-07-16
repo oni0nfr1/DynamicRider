@@ -20,7 +20,8 @@ object PreviewStatePresetApplier {
         return context
     }
 
-    private fun apply(
+    /** 현재 context를 기본값으로 초기화한 뒤 호환되는 [preset]을 적용한다. */
+    fun apply(
         context: PreviewHudSceneContext<out KartState>,
         preset: PreviewStatePreset,
     ) {
@@ -29,9 +30,51 @@ object PreviewStatePresetApplier {
             "Preview preset '${preset.id}' is incompatible with kart state type '${context.kartStateType.id}'"
         }
 
+        reset(context)
         applyKartValues(state, preset)
         context.raceState.applyValues(preset.race)
         context.previewRankingState.value = preset.ranking
+    }
+
+    private fun reset(context: PreviewHudSceneContext<out KartState>) {
+        val baseline = PreviewHudSceneContextFactory.create(context.kartStateType)
+        copyKartValues(baseline.kartState, context.kartState)
+        context.raceState.applyValues(
+            PreviewRaceValues(
+                racing = baseline.raceState.racing,
+                elapsedTimeMillis = baseline.raceState.elapsedTimeMillis,
+                currentLap = baseline.raceState.currentLap,
+                maxLap = baseline.raceState.maxLap,
+                bestLapTimeMillis = baseline.raceState.bestLapTimeMillis,
+            )
+        )
+        context.previewRankingState.value = baseline.previewRankingState.value
+    }
+
+    private fun copyKartValues(source: KartState, target: KartState) {
+        if (source is PreviewSpeedKartState && target is PreviewSpeedKartState) {
+            target.speed = source.speed
+        }
+        if (source is PreviewNitroKartState && target is PreviewNitroKartState) {
+            target.isDrifting = source.isDrifting
+            target.isBoosting = source.isBoosting
+            target.maxBoost = source.maxBoost
+            target.nitro = source.nitro
+            target.nitroGauge = source.nitroGauge
+            target.teamNitro = source.teamNitro
+            target.teamBoostGaugeAvailable = source.teamBoostGaugeAvailable
+            target.teamBoostGauge = source.teamBoostGauge
+        }
+        if (source is PreviewDraftKartState && target is PreviewDraftKartState) {
+            target.draftActive = source.draftActive
+            target.draftCharging = source.draftCharging
+        }
+        if (source is PreviewV1KartState && target is PreviewV1KartState) {
+            target.exceedGauge = source.exceedGauge
+        }
+        if (source is PreviewChargeKartState && target is PreviewChargeKartState) {
+            target.chargerGauge = source.chargerGauge
+        }
     }
 
     private fun applyKartValues(

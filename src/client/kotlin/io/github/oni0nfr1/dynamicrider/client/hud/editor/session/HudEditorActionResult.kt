@@ -22,6 +22,14 @@ sealed interface HudEditorActionResult {
         val typeId: String,
     ) : HudEditorActionResult
 
+    data class PreviewPresetNotFound(
+        val presetId: String,
+    ) : HudEditorActionResult
+
+    data class PreviewStateRejected(
+        val fieldId: String,
+    ) : HudEditorActionResult
+
     data class IncompatibleState(
         val requiredStateClass: Class<out KartState>,
         val sceneStateClass: Class<out KartState>,
