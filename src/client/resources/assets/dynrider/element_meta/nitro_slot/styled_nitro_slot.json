@@ -1,0 +1,13 @@
+{
+  "atlas": "dynrider:element/nitro_slot/atlas",
+  "nitroAtlas": "dynrider:element/nitro_slot/nitro",
+  "teamNitroAtlas": "dynrider:element/nitro_slot/team_nitro",
+  "backgroundColumn": 0,
+  "frameColumn": 1,
+  "iconColumn": 2,
+  "defaultStyleRow": 0,
+  "jiuStyleRow": 1,
+  "xStyleRow": 2,
+  "v1StyleRow": 3,
+  "chargeStyleRow": 4
+}

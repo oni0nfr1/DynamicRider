@@ -5,6 +5,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.DynNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.StyledNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable.PlainRankingTable
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.JiuStyleSpdMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
@@ -43,6 +44,12 @@ object HudElementTypeRegistry {
         DynNitroSlot.Spec.serializer(),
         NitroKartState::class.java,
         DynNitroSlot::Spec,
+    )
+    val STYLED_NITRO_SLOT = HudElementType(
+        StyledNitroSlot.Spec::class,
+        StyledNitroSlot.Spec.serializer(),
+        NitroKartState::class.java,
+        StyledNitroSlot::Spec,
     )
     val PLAIN_RANKING_TABLE = HudElementType(
         PlainRankingTable.Spec::class,
@@ -134,6 +141,7 @@ object HudElementTypeRegistry {
         GRADIENT_GAUGE_BAR,
         PLAIN_NITRO_SLOT,
         NITRO_SLOT,
+        STYLED_NITRO_SLOT,
         PLAIN_RANKING_TABLE,
         JIU_TACHOMETER_SIMPLE,
         RIDE_TIMER,
@@ -178,6 +186,7 @@ object HudElementTypeRegistry {
         register(GRADIENT_GAUGE_BAR)
         register(PLAIN_NITRO_SLOT)
         register(NITRO_SLOT)
+        register(STYLED_NITRO_SLOT)
         register(PLAIN_RANKING_TABLE)
         register(JIU_TACHOMETER_SIMPLE)
         register(RIDE_TIMER)

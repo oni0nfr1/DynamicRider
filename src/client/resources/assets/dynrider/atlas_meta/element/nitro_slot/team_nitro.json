@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/nitro_slot/team_nitro.png",
+  "width": 80,
+  "height": 80,
+  "cellWidth": 80,
+  "cellHeight": 80
+}

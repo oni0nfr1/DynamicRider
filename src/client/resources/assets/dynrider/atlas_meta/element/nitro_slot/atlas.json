@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/nitro_slot/styled_atlas.png",
+  "width": 276,
+  "height": 460,
+  "cellWidth": 92,
+  "cellHeight": 92
+}

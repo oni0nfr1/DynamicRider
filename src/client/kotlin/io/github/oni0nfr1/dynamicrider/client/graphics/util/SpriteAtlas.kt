@@ -1,5 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.graphics.util
 
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.blitHueShifted
 import kotlinx.serialization.Serializable
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
@@ -172,6 +173,31 @@ open class SpriteAtlas(
                 scaleX = scale,
                 scaleY = scale,
                 color = color,
+            )
+        }
+
+        /** 셀 전체를 [hueDegrees]만큼 hue shift해서 원래 크기로 그린다. */
+        fun drawHueShifted(
+            guiGraphics: GuiGraphics,
+            x: Int,
+            y: Int,
+            hueDegrees: Float,
+            opacity: Int = 255,
+        ) {
+            guiGraphics.blitHueShifted(
+                texture = texture,
+                x = x,
+                y = y,
+                u = u.toFloat(),
+                v = v.toFloat(),
+                width = width,
+                height = height,
+                uWidth = width,
+                vHeight = height,
+                textureWidth = atlasWidth,
+                textureHeight = atlasHeight,
+                hueDegrees = hueDegrees,
+                opacity = opacity,
             )
         }
     }
