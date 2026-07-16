@@ -25,8 +25,9 @@ class HudPropertyWidgetFactory(
         x: Int,
         y: Int,
         width: Int,
-        onCommit: (JsonElement) -> Unit,
+        onCommit: (JsonElement) -> Boolean,
         onInvalidInput: (String) -> Unit,
+        onCancelInput: () -> Unit = {},
         onOpenLayout: () -> Unit = {},
     ): List<AbstractWidget> = when (val editor = property.editor) {
         HudPropertyEditorType.BooleanToggle -> if (property.nullable) {
@@ -53,7 +54,7 @@ class HudPropertyWidgetFactory(
             y = y,
             width = width,
             parser = { value -> nullableValue(property, value) { JsonPrimitive(it) } },
-            onCommit = onCommit,
+            onCommit = { onCommit(it) },
             onInvalidInput = onInvalidInput,
         )
         HudPropertyEditorType.AnchorSelector -> selector(
@@ -62,7 +63,7 @@ class HudPropertyWidgetFactory(
             x = x,
             y = y,
             width = width,
-            onCommit = onCommit,
+            onCommit = { onCommit(it) },
         )
         is HudPropertyEditorType.EnumSelector -> selector(
             property = property,
@@ -70,7 +71,7 @@ class HudPropertyWidgetFactory(
             x = x,
             y = y,
             width = width,
-            onCommit = onCommit,
+            onCommit = { onCommit(it) },
         )
         is HudPropertyEditorType.NumberInput -> numericInput(
             property,
@@ -80,6 +81,7 @@ class HudPropertyWidgetFactory(
             width,
             onCommit,
             onInvalidInput,
+            onCancelInput,
         )
         is HudPropertyEditorType.Slider -> if (property.nullable && property.value === JsonNull) {
             numericInput(
@@ -90,6 +92,7 @@ class HudPropertyWidgetFactory(
                 width,
                 onCommit,
                 onInvalidInput,
+                onCancelInput,
             )
         } else {
             listOf(
@@ -100,7 +103,7 @@ class HudPropertyWidgetFactory(
                     initialValue = property.value.jsonPrimitive.content.toDouble(),
                     numberType = editor.numberType,
                     range = editor.range,
-                    onCommit = onCommit,
+                    onCommit = { onCommit(it) },
                 )
             )
         }
@@ -110,7 +113,7 @@ class HudPropertyWidgetFactory(
             y = y,
             width = width,
             parser = { value -> nullableValue(property, value) { JsonPrimitive(it) } },
-            onCommit = onCommit,
+            onCommit = { onCommit(it) },
             onInvalidInput = onInvalidInput,
         )
         HudPropertyEditorType.LayoutEditor -> listOf(
@@ -127,14 +130,11 @@ class HudPropertyWidgetFactory(
         x: Int,
         y: Int,
         width: Int,
-        onCommit: (JsonElement) -> Unit,
+        onCommit: (JsonElement) -> Boolean,
         onInvalidInput: (String) -> Unit,
-    ): List<AbstractWidget> = textInput(
-        property = property,
-        x = x,
-        y = y,
-        width = width,
-        parser = { value ->
+        onCancelInput: () -> Unit,
+    ): List<AbstractWidget> {
+        val parser: (String) -> JsonElement = { value ->
             nullableValue(property, value) {
                 when (numberType) {
                     HudNumberType.BYTE -> JsonPrimitive(it.toByte())
@@ -145,10 +145,31 @@ class HudPropertyWidgetFactory(
                     HudNumberType.DOUBLE -> JsonPrimitive(it.toDouble())
                 }
             }
-        },
-        onCommit = onCommit,
-        onInvalidInput = onInvalidInput,
-    )
+        }
+        return listOf(
+            HudCommitEditBox(
+                font = font,
+                x = x,
+                y = y,
+                width = width,
+                height = WIDGET_HEIGHT,
+                message = Component.translatable(property.nameKey),
+                initialValue = displayValue(property.value),
+                onCommit = { value ->
+                    runCatching { parser(value) }.fold(
+                        onSuccess = {
+                            onCommit(it)
+                        },
+                        onFailure = {
+                            onInvalidInput(it.message ?: "Invalid value")
+                            false
+                        },
+                    )
+                },
+                onCancel = onCancelInput,
+            ).also { it.setMaxLength(128) }
+        )
+    }
 
     private fun textInput(
         property: HudEditableProperty,

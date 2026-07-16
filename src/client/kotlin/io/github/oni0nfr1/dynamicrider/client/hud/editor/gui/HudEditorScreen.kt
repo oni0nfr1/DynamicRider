@@ -24,8 +24,10 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.AbstractWidget
 import net.minecraft.client.gui.components.Button
+import net.minecraft.client.gui.components.EditBox
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
+import org.lwjgl.glfw.GLFW
 import kotlin.math.ceil
 import kotlin.math.abs
 import kotlin.math.min
@@ -77,7 +79,13 @@ class HudEditorScreen(
         if (stateSubscription == null) {
             stateSubscription = session.addStateListener(emitCurrent = false) {
                 Minecraft.getInstance().execute {
-                    if (Minecraft.getInstance().screen === this) rebuildWidgets()
+                    if (Minecraft.getInstance().screen === this) {
+                        if (propertyErrors.isNotEmpty()) {
+                            propertyErrors.clear()
+                            status = null
+                        }
+                        rebuildWidgets()
+                    }
                 }
             }
         }
@@ -264,6 +272,35 @@ class HudEditorScreen(
         return true
     }
 
+    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (modal != null) return super.keyPressed(keyCode, scanCode, modifiers)
+        if (Screen.hasControlDown()) {
+            when (keyCode) {
+                GLFW.GLFW_KEY_S -> {
+                    val input = focused as? HudCommitEditBox
+                    if (input == null || input.commitPending()) {
+                        clearFocus()
+                        save()
+                    }
+                    return true
+                }
+                GLFW.GLFW_KEY_Z -> {
+                    if (Screen.hasShiftDown()) session.redo() else session.undo()
+                    return true
+                }
+                GLFW.GLFW_KEY_Y -> {
+                    session.redo()
+                    return true
+                }
+            }
+        }
+        if (keyCode == GLFW.GLFW_KEY_DELETE && focused !is EditBox) {
+            removeSelected()
+            return true
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
     override fun onClose() {
         if (modal != null) {
             modal = null
@@ -440,6 +477,7 @@ class HudEditorScreen(
                     propertyErrors[elementId to property.path] = message
                     status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
                 },
+                onCancelInput = { clearPropertyError(elementId, property.path) },
                 onOpenLayout = {
                     layoutEditorOpen = true
                     layoutScroll = 0
@@ -478,6 +516,7 @@ class HudEditorScreen(
                     propertyErrors[elementId to field.path] = message
                     status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
                 },
+                onCancelInput = { clearPropertyError(elementId, field.path) },
             ).forEach(::addRenderableWidget)
         }
     }
@@ -567,7 +606,11 @@ class HudEditorScreen(
         propertyScroll = clampScroll(propertyScroll, inspected.model.properties.size, maxRows)
         inspected.model.properties.drop(propertyScroll).take(maxRows).forEachIndexed { index, property ->
             val y = contentY + 18 + index * PROPERTY_ROW_HEIGHT
-            val color = if (property.supported) 0xFFDDDDDD.toInt() else 0xFF777777.toInt()
+            val color = when {
+                propertyErrors.containsKey(selectedId to property.path) -> 0xFFFF6666.toInt()
+                property.supported -> 0xFFDDDDDD.toInt()
+                else -> 0xFF777777.toInt()
+            }
             guiGraphics.drawString(font, Component.translatable(property.nameKey), sideX + 6, centeredLabelY(y), color)
             propertyErrors[selectedId to property.path]?.let { message ->
                 guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
@@ -597,7 +640,11 @@ class HudEditorScreen(
                 Component.translatable(field.nameKey),
                 sideX + 6,
                 centeredLabelY(y),
-                0xFFDDDDDD.toInt(),
+                if (propertyErrors.containsKey(elementId to field.path)) {
+                    0xFFFF6666.toInt()
+                } else {
+                    0xFFDDDDDD.toInt()
+                },
             )
             propertyErrors[elementId to field.path]?.let { message ->
                 guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
@@ -881,24 +928,35 @@ class HudEditorScreen(
         property: HudEditableProperty,
         value: kotlinx.serialization.json.JsonElement,
         errorPath: HudPropertyPath = property.path,
-    ) {
+    ): Boolean {
         val key = elementId to errorPath
-        when (val result = session.updateProperty(elementId, property.path, value)) {
+        return when (val result = session.updateProperty(elementId, property.path, value)) {
             is HudEditorActionResult.Applied -> {
                 propertyErrors.remove(key)
                 status = null
+                true
             }
             HudEditorActionResult.Unchanged -> {
                 propertyErrors.remove(key)
                 status = null
                 rebuildWidgets()
+                true
             }
             is HudEditorActionResult.PropertyRejected -> {
                 propertyErrors[key] = result.failure.message
                 status = Component.translatable("dynamicrider.hud.editor.property.rejected")
+                false
             }
-            else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
+            else -> {
+                status = Component.translatable("dynamicrider.hud.editor.action_failed")
+                false
+            }
         }
+    }
+
+    private fun clearPropertyError(elementId: String, path: HudPropertyPath) {
+        propertyErrors.remove(elementId to path)
+        if (propertyErrors.isEmpty()) status = null
     }
 
     private fun dragSelectedElement(mouseX: Double, mouseY: Double, drag: ElementDrag) {
