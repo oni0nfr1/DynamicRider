@@ -8,12 +8,17 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPat
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorActionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorPersistenceResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSession
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSessionFactory
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSessionOpenResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorState
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.layout.HudLayoutEngine
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.DynRiderRenderTypes
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.batch
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
+import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
@@ -28,6 +33,7 @@ import kotlin.math.sqrt
 /** 중앙 HUD preview와 탭식 단일 side panel을 제공하는 첫 editor 화면이다. */
 class HudEditorScreen(
     private val parentScreen: Screen,
+    private val sessionFactory: HudEditorSessionFactory,
     private val session: HudEditorSession<out KartState>,
     private val previewViewport: HudEditorPreviewViewport,
 ) : Screen(Component.translatable("dynamicrider.hud.editor.title")) {
@@ -53,6 +59,7 @@ class HudEditorScreen(
     private var layoutEditorOpen = false
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
+    private var modal: EditorModal? = null
     private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
 
     private var previewX = 8
@@ -72,12 +79,18 @@ class HudEditorScreen(
                 }
             }
         }
-        buildToolbar()
-        buildTabs()
-        when (activeTab) {
-            SideTab.ELEMENTS -> buildElementsTab()
-            SideTab.PROPERTIES -> buildPropertiesTab()
-            SideTab.PREVIEW_STATE -> Unit
+        when (val currentModal = modal) {
+            null -> {
+                buildToolbar()
+                buildTabs()
+                when (activeTab) {
+                    SideTab.ELEMENTS -> buildElementsTab()
+                    SideTab.PROPERTIES -> buildPropertiesTab()
+                    SideTab.PREVIEW_STATE -> Unit
+                }
+            }
+            is EditorModal.ScenePicker -> buildScenePicker(currentModal)
+            is EditorModal.ConfirmDeparture -> buildDepartureConfirmation(currentModal.action)
         }
     }
 
@@ -86,6 +99,7 @@ class HudEditorScreen(
         renderEditorChrome(guiGraphics, mouseX, mouseY)
         renderPreview(guiGraphics)
         renderSideContent(guiGraphics)
+        renderModal(guiGraphics)
         super.render(guiGraphics, mouseX, mouseY, partialTick)
     }
 
@@ -93,6 +107,7 @@ class HudEditorScreen(
     override fun renderBackground(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) = Unit
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (modal != null) return super.mouseClicked(mouseX, mouseY, button)
         if (button == 0 && isOverDivider(mouseX, mouseY)) {
             val now = System.currentTimeMillis()
             if (now - lastDividerClickMillis <= DOUBLE_CLICK_MILLIS) {
@@ -143,6 +158,7 @@ class HudEditorScreen(
         dragX: Double,
         dragY: Double,
     ): Boolean {
+        if (modal != null) return super.mouseDragged(mouseX, mouseY, button, dragX, dragY)
         if (resizingSidePanel && button == 0) {
             preferredSideWidth = width - SCREEN_PADDING - mouseX.toInt() - PANEL_INSET
             rebuildWidgets()
@@ -162,6 +178,7 @@ class HudEditorScreen(
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        if (modal != null) return super.mouseReleased(mouseX, mouseY, button)
         if (resizingSidePanel && button == 0) {
             resizingSidePanel = false
             isDragging = false
@@ -182,6 +199,24 @@ class HudEditorScreen(
         scrollX: Double,
         scrollY: Double,
     ): Boolean {
+        val currentModal = modal
+        if (currentModal is EditorModal.ScenePicker) {
+            val direction = when {
+                scrollY > 0.0 -> -1
+                scrollY < 0.0 -> 1
+                else -> 0
+            }
+            if (direction != 0) {
+                currentModal.scroll = clampScroll(
+                    currentModal.scroll + direction,
+                    KartStateTypes.entries.size,
+                    scenePickerVisibleRows(),
+                )
+                rebuildWidgets()
+            }
+            return true
+        }
+        if (currentModal != null) return true
         if (mouseX < sideX || mouseY < previewY + TAB_HEIGHT || mouseY > height) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY)
         }
@@ -213,9 +248,12 @@ class HudEditorScreen(
     }
 
     override fun onClose() {
-        if (closing) return
-        closing = true
-        Minecraft.getInstance().setScreen(parentScreen)
+        if (modal != null) {
+            modal = null
+            rebuildWidgets()
+            return
+        }
+        requestDeparture(DepartureAction.Exit)
     }
 
     override fun removed() {
@@ -248,9 +286,14 @@ class HudEditorScreen(
         addRenderableWidget(toolbarButton(72, "dynamicrider.hud.editor.redo") { session.redo() }.also {
             it.active = state.canRedo
         })
+        addRenderableWidget(
+            Button.builder(Component.translatable("dynamicrider.hud.editor.scene.change")) { openScenePicker() }
+                .bounds(width / 2 + 36, 6, 84, 20)
+                .build()
+        )
         addRenderableWidget(toolbarButton(width - 206, "dynamicrider.hud.editor.save") { save() })
         addRenderableWidget(toolbarButton(width - 142, "dynamicrider.hud.editor.restore") { restore() })
-        addRenderableWidget(toolbarButton(width - 70, "gui.done") { onClose() })
+        addRenderableWidget(toolbarButton(width - 70, "gui.done") { requestDeparture(DepartureAction.Exit) })
     }
 
     private fun buildTabs() {
@@ -433,7 +476,7 @@ class HudEditorScreen(
         val state = session.state
         val marker = if (state.dirty) " *" else ""
         val sceneLabel = "${state.mode.name} / ${state.kartStateType.id.uppercase()}$marker"
-        guiGraphics.drawCenteredString(font, sceneLabel, width / 2, 12, 0xFFFFFF)
+        guiGraphics.drawCenteredString(font, sceneLabel, width / 2 - 48, 12, 0xFFFFFF)
         status?.let { guiGraphics.drawString(font, it, previewX + 4, height - 18, 0xFFFF7777.toInt()) }
     }
 
@@ -504,7 +547,7 @@ class HudEditorScreen(
         inspected.model.properties.drop(propertyScroll).take(maxRows).forEachIndexed { index, property ->
             val y = contentY + 18 + index * PROPERTY_ROW_HEIGHT
             val color = if (property.supported) 0xFFDDDDDD.toInt() else 0xFF777777.toInt()
-            guiGraphics.drawString(font, Component.translatable(property.nameKey), sideX + 6, y, color)
+            guiGraphics.drawString(font, Component.translatable(property.nameKey), sideX + 6, centeredLabelY(y), color)
             propertyErrors[selectedId to property.path]?.let { message ->
                 guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
             }
@@ -528,9 +571,195 @@ class HudEditorScreen(
         layoutScroll = clampScroll(layoutScroll, fields.size, visibleRows)
         fields.drop(layoutScroll).take(visibleRows).forEachIndexed { index, field ->
             val y = previewY + 52 + index * PROPERTY_ROW_HEIGHT
-            guiGraphics.drawString(font, Component.translatable(field.nameKey), sideX + 6, y, 0xFFDDDDDD.toInt())
+            guiGraphics.drawString(
+                font,
+                Component.translatable(field.nameKey),
+                sideX + 6,
+                centeredLabelY(y),
+                0xFFDDDDDD.toInt(),
+            )
             propertyErrors[elementId to field.path]?.let { message ->
                 guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
+            }
+        }
+    }
+
+    private fun buildScenePicker(picker: EditorModal.ScenePicker) {
+        val left = modalLeft()
+        val top = modalTop(scenePickerHeight())
+        val contentWidth = MODAL_WIDTH - 24
+        val modeWidth = (contentWidth - 4) / 2
+        HudSceneMode.entries.forEachIndexed { index, mode ->
+            addRenderableWidget(
+                Button.builder(Component.literal(mode.name)) {
+                    picker.mode = mode
+                    rebuildWidgets()
+                }.bounds(left + 12 + index * (modeWidth + 4), top + 34, modeWidth, 20)
+                    .build()
+                    .also { it.active = picker.mode != mode }
+            )
+        }
+
+        val visibleRows = scenePickerVisibleRows()
+        picker.scroll = clampScroll(picker.scroll, KartStateTypes.entries.size, visibleRows)
+        KartStateTypes.entries.drop(picker.scroll).take(visibleRows).forEachIndexed { index, stateType ->
+            addRenderableWidget(
+                Button.builder(Component.literal(stateType.id.uppercase())) {
+                    picker.stateType = stateType
+                    rebuildWidgets()
+                }.bounds(left + 12, top + 64 + index * ROW_HEIGHT, contentWidth, 20)
+                    .build()
+                    .also { it.active = picker.stateType != stateType }
+            )
+        }
+
+        val buttonY = top + scenePickerHeight() - 30
+        addRenderableWidget(
+            Button.builder(Component.translatable("dynamicrider.hud.editor.scene.open")) {
+                requestDeparture(DepartureAction.SwitchScene(picker.mode, picker.stateType))
+            }.bounds(left + 12, buttonY, (contentWidth - 4) / 2, 20).build()
+        )
+        addRenderableWidget(
+            Button.builder(Component.translatable("gui.cancel")) {
+                modal = null
+                rebuildWidgets()
+            }.bounds(left + 16 + (contentWidth - 4) / 2, buttonY, (contentWidth - 4) / 2, 20).build()
+        )
+    }
+
+    private fun buildDepartureConfirmation(action: DepartureAction) {
+        val left = modalLeft()
+        val top = modalTop(CONFIRM_MODAL_HEIGHT)
+        val contentWidth = MODAL_WIDTH - 24
+        val buttonWidth = (contentWidth - 8) / 3
+        val buttonY = top + CONFIRM_MODAL_HEIGHT - 30
+        addRenderableWidget(
+            Button.builder(Component.translatable("dynamicrider.hud.editor.unsaved.save")) {
+                if (save()) performDeparture(action) else {
+                    modal = null
+                    rebuildWidgets()
+                }
+            }.bounds(left + 12, buttonY, buttonWidth, 20).build()
+        )
+        addRenderableWidget(
+            Button.builder(Component.translatable("dynamicrider.hud.editor.unsaved.discard")) {
+                performDeparture(action)
+            }.bounds(left + 16 + buttonWidth, buttonY, buttonWidth, 20).build()
+        )
+        addRenderableWidget(
+            Button.builder(Component.translatable("gui.cancel")) {
+                modal = null
+                rebuildWidgets()
+            }.bounds(left + 20 + buttonWidth * 2, buttonY, buttonWidth, 20).build()
+        )
+    }
+
+    private fun renderModal(guiGraphics: GuiGraphics) {
+        val currentModal = modal ?: return
+        guiGraphics.fill(0, 0, width, height, 0xA0000000.toInt())
+        val modalHeight = when (currentModal) {
+            is EditorModal.ScenePicker -> scenePickerHeight()
+            is EditorModal.ConfirmDeparture -> CONFIRM_MODAL_HEIGHT
+        }
+        val left = modalLeft()
+        val top = modalTop(modalHeight)
+        guiGraphics.fill(left, top, left + MODAL_WIDTH, top + modalHeight, 0xFF202020.toInt())
+        guiGraphics.renderOutline(left, top, MODAL_WIDTH, modalHeight, 0xFF808080.toInt())
+        when (currentModal) {
+            is EditorModal.ScenePicker -> {
+                guiGraphics.drawCenteredString(
+                    font,
+                    Component.translatable("dynamicrider.hud.editor.scene.title"),
+                    width / 2,
+                    top + 12,
+                    0xFFFFFFFF.toInt(),
+                )
+                guiGraphics.drawString(
+                    font,
+                    Component.translatable("dynamicrider.hud.editor.state_type"),
+                    left + 12,
+                    top + 55,
+                    0xFFBBBBBB.toInt(),
+                )
+            }
+            is EditorModal.ConfirmDeparture -> {
+                guiGraphics.drawCenteredString(
+                    font,
+                    Component.translatable("dynamicrider.hud.editor.unsaved.title"),
+                    width / 2,
+                    top + 14,
+                    0xFFFFFFFF.toInt(),
+                )
+                guiGraphics.drawWordWrap(
+                    font,
+                    Component.translatable("dynamicrider.hud.editor.unsaved.message"),
+                    left + 16,
+                    top + 36,
+                    MODAL_WIDTH - 32,
+                    0xFFDDDDDD.toInt(),
+                )
+            }
+        }
+    }
+
+    private fun openScenePicker() {
+        val state = session.state
+        val visibleRows = scenePickerVisibleRows()
+        val selectedIndex = KartStateTypes.entries.indexOf(state.kartStateType).coerceAtLeast(0)
+        modal = EditorModal.ScenePicker(
+            state.mode,
+            state.kartStateType,
+            selectedIndex.coerceAtMost((KartStateTypes.entries.size - visibleRows).coerceAtLeast(0)),
+        )
+        rebuildWidgets()
+    }
+
+    private fun requestDeparture(action: DepartureAction) {
+        if (closing) return
+        if (action is DepartureAction.SwitchScene &&
+            action.mode == session.mode && action.stateType == session.previewContext.kartStateType
+        ) {
+            modal = null
+            rebuildWidgets()
+            return
+        }
+        if (session.state.dirty) {
+            modal = EditorModal.ConfirmDeparture(action)
+            rebuildWidgets()
+        } else {
+            performDeparture(action)
+        }
+    }
+
+    private fun performDeparture(action: DepartureAction) {
+        when (action) {
+            DepartureAction.Exit -> {
+                closing = true
+                Minecraft.getInstance().setScreen(parentScreen)
+            }
+            is DepartureAction.SwitchScene -> switchScene(action.mode, action.stateType)
+        }
+    }
+
+    private fun switchScene(mode: HudSceneMode, stateType: KartStateType<out KartState>) {
+        val viewport = HudEditorPreviewViewport()
+        when (val result = sessionFactory.open(mode, stateType, viewport)) {
+            is HudEditorSessionOpenResult.Opened -> {
+                HudEditorSceneSelection.remember(mode, stateType)
+                closing = true
+                Minecraft.getInstance().setScreen(
+                    HudEditorScreen(parentScreen, sessionFactory, result.session, viewport)
+                )
+            }
+            is HudEditorSessionOpenResult.ResolveFailed -> {
+                status = Component.translatable("dynamicrider.hud.editor.open_failed", result.errors.size)
+                modal = null
+                rebuildWidgets()
+            }
+            is HudEditorSessionOpenResult.PreviewCreationFailed -> {
+                status = Component.translatable("dynamicrider.hud.editor.preview_failed")
+                modal = null
+                rebuildWidgets()
             }
         }
     }
@@ -549,13 +778,22 @@ class HudEditorScreen(
         if (index >= 0) session.moveElement(id, index + offset)
     }
 
-    private fun save() {
-        status = when (session.save()) {
-            is HudEditorPersistenceResult.Saved -> Component.translatable("dynamicrider.hud.editor.saved")
-            is HudEditorPersistenceResult.IoFailed -> Component.translatable("dynamicrider.hud.editor.save_failed")
-            else -> Component.translatable("dynamicrider.hud.editor.action_failed")
+    private fun save(): Boolean {
+        when (session.save()) {
+            is HudEditorPersistenceResult.Saved -> {
+                status = Component.translatable("dynamicrider.hud.editor.saved")
+                confirmRestore = false
+                return true
+            }
+            is HudEditorPersistenceResult.IoFailed -> {
+                status = Component.translatable("dynamicrider.hud.editor.save_failed")
+            }
+            else -> {
+                status = Component.translatable("dynamicrider.hud.editor.action_failed")
+            }
         }
         confirmRestore = false
+        return false
     }
 
     private fun restore() {
@@ -749,6 +987,16 @@ class HudEditorScreen(
 
     private fun layoutVisibleRows(): Int = ((height - (previewY + 52) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
 
+    private fun centeredLabelY(rowY: Int): Int = rowY + (PROPERTY_WIDGET_HEIGHT - font.lineHeight) / 2
+
+    private fun scenePickerHeight(): Int = min(SCENE_PICKER_MAX_HEIGHT, height - 32).coerceAtLeast(160)
+
+    private fun scenePickerVisibleRows(): Int = ((scenePickerHeight() - 104) / ROW_HEIGHT).coerceAtLeast(1)
+
+    private fun modalLeft(): Int = (width - MODAL_WIDTH) / 2
+
+    private fun modalTop(modalHeight: Int): Int = (height - modalHeight) / 2
+
     private fun clampScroll(offset: Int, itemCount: Int, visibleRows: Int): Int =
         offset.coerceIn(0, (itemCount - visibleRows).coerceAtLeast(0))
 
@@ -775,6 +1023,25 @@ class HudEditorScreen(
         val initialScale: Float,
         var commandStarted: Boolean = false,
     )
+
+    private sealed interface EditorModal {
+        data class ScenePicker(
+            var mode: HudSceneMode,
+            var stateType: KartStateType<out KartState>,
+            var scroll: Int = 0,
+        ) : EditorModal
+
+        data class ConfirmDeparture(val action: DepartureAction) : EditorModal
+    }
+
+    private sealed interface DepartureAction {
+        data object Exit : DepartureAction
+
+        data class SwitchScene(
+            val mode: HudSceneMode,
+            val stateType: KartStateType<out KartState>,
+        ) : DepartureAction
+    }
 
     private fun currentScrollMetrics(): ScrollMetrics? = when (activeTab) {
         SideTab.ELEMENTS -> if (paletteOpen) {
@@ -822,7 +1089,11 @@ class HudEditorScreen(
         const val TAB_HEIGHT = 24
         const val ROW_HEIGHT = 22
         const val PROPERTY_ROW_HEIGHT = 34
+        const val PROPERTY_WIDGET_HEIGHT = 20
         const val DOUBLE_CLICK_MILLIS = 250L
+        const val MODAL_WIDTH = 320
+        const val CONFIRM_MODAL_HEIGHT = 116
+        const val SCENE_PICKER_MAX_HEIGHT = 330
         const val SELECTION_COLOR = 0xFFFFFFFF.toInt()
         const val SCREEN_ANCHOR_COLOR = 0xFF55DDFF.toInt()
         const val ELEMENT_ANCHOR_COLOR = 0xFFFFCC33.toInt()

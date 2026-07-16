@@ -54,10 +54,11 @@ GUI는 세션에 다음 의도를 전달한다.
 
 GUI는 Spec, document collection, command stack 및 config 파일을 직접 수정하지 않는다.
 
-## 1. 장면 열기
+## 1. 장면 열기와 전환
 
 ```text
-GUI에서 mode와 KartStateType 선택
+설정 화면에서 editor 직접 열기
+→ 마지막으로 편집한 mode와 KartStateType 또는 RIDE / JIU 기본값 선택
 → HudEditorSessionFactory.open()
 → HudSceneRepository.resolveSpec()
 → 선택된 HudSceneSpec으로 HudSceneDocument 생성
@@ -68,6 +69,10 @@ GUI에서 mode와 KartStateType 선택
 
 손상된 custom config가 있으면 해당 파일은 보존한다. Repository가 resource 장면으로 fallback하면
 세션은 `CUSTOM_FALLBACK` 출처와 진단을 GUI에 함께 제공한다.
+
+별도 launcher 화면은 사용하지 않는다. Editor 상단에는 현재 `HudSceneMode / KartStateType`과
+`장면 변경` 버튼을 표시한다. 버튼을 누르면 mode와 scroll 가능한 엔진 목록을 가진 임시 선택 UI를 열고,
+확인한 경우에만 현재 session을 닫고 선택한 장면의 새 session을 연다. 선택을 취소하면 기존 session을 유지한다.
 
 편집 세션에는 runtime `HudScene`이 아니라 `HudSceneSpec`, 출처와 진단을 반환하는 repository 조회 API가
 필요하다. 기존 runtime resolve도 같은 spec 조회 결과를 사용해 장면을 생성하도록 공통화한다.
@@ -237,6 +242,46 @@ resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작
 현재 live HUD는 자동으로 재생성하지 않으며, 필요하면 별도의 명시적 apply 기능을 추가한다.
 세션은 resource 변경 사실을 GUI에 알리고 reload 또는 현재 작업 유지 선택을 받는다.
 
+## 11. 편집기 표시와 종료 UX
+
+속성 및 layout 편집 행의 왼쪽 label은 입력 widget의 세로 중앙에 맞춘다. Validation 오류는 별도 줄에
+표시하되 오류 표시 여부에 따라 label과 입력 widget의 기준선이 움직이지 않게 한다.
+
+Editor 종료, Done 버튼, ESC 및 다른 장면으로 전환할 때 document가 dirty이면 다음 선택을 제공한다.
+
+```text
+저장 후 나가기 또는 전환
+→ session.save()
+→ 성공하면 기존 session 닫기
+→ 실패하면 현재 editor 유지 및 오류 표시
+
+저장하지 않고 나가기 또는 전환
+→ 변경 폐기 확인
+→ 기존 session 닫기
+
+취소
+→ 현재 session과 editor 유지
+```
+
+Preview는 side panel의 남은 공간을 논리 viewport로 사용하지 않는다. 논리 viewport는 현재 게임 GUI 전체
+해상도와 같게 유지하고, `HudPreviewTransform`이 toolbar 아래 표시 영역에 맞는 uniform scale과 중앙 위치를
+계산한다.
+
+```text
+실제 GUI 논리 좌표
+→ Pose translate + uniform scale
+→ 화면비를 유지한 preview 렌더
+→ 남는 영역은 letterbox
+```
+
+Side panel을 접으면 같은 논리 viewport를 더 큰 배율로 표시하고 화면 가장자리에 panel 복원 버튼을 남긴다.
+Panel 표시 여부는 요소의 anchor, bounds 및 Spec 좌표에 영향을 주지 않는다. 선택을 해제하면 overlay가 없어져
+축소된 live HUD와 같은 결과를 확인할 수 있다.
+
+Scene과 runtime bounds는 논리 좌표에서 유지한다. 모든 mouse 입력은 공유 transform으로 화면 좌표에서 논리
+좌표로 한 번만 역변환한 뒤 hit-test와 이동·배율 drag에 사용한다. Scissor는 변환된 화면 영역으로 설정하고,
+선택 outline과 anchor 위치는 화면 좌표로 옮기되 handle 크기와 선 두께는 화면상 일정하게 유지한다.
+
 ## 오류 처리 원칙
 
 - validation 실패는 property 경로와 함께 GUI에 반환한다.
@@ -257,6 +302,8 @@ resource 장면을 편집 중이고 document가 dirty하면 외부 reload로 작
    - [x] 탭별 목록 scroll과 drag 기반 side panel 너비 조절 구현
    - [x] metadata 기반 primitive·enum·color property 입력 widget 구현
    - [x] layout property 입력 widget 구현
+   - [x] 속성 행 정렬, dirty 종료 확인과 editor 내부 장면 전환 구현
+   - [ ] side panel을 접을 수 있고 화면비를 보존하는 preview 구현
    - [ ] preview 상태 조절 구현
 7. [x] 캔버스 선택·drag와 command 병합 구현
 8. [x] 저장·삭제·복원 UI 구현

@@ -59,7 +59,7 @@ class DynRiderConfigMain(
             }
 
         val editorButton = Button.builder(Component.translatable("dynamicrider.hud.editor.open")) {
-            Minecraft.getInstance().setScreen(HudEditorEntrypoint.createLauncher(this))
+            Minecraft.getInstance().setScreen(HudEditorEntrypoint.createEditor(this))
         }.bounds(centerX - 110, firstRowY + rowGap * 2, 220, 20).build()
 
         val saveButton = Button.builder(Component.translatable("dynamicrider.config.save")) {

@@ -171,6 +171,25 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [x] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 세션 API로 제공한다.
 - [x] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
 - [x] 저장 또는 삭제 후 현재 live HUD를 자동 갱신하지 않고 이후 생성되는 HUD부터 최신 설정을 사용한다.
+- [x] 속성 및 layout 편집 행의 왼쪽 label을 입력 widget의 세로 중앙에 정렬한다.
+  - validation 오류가 나타나도 label과 입력 widget의 기준선은 움직이지 않게 한다.
+- [x] dirty 상태에서 editor 종료 또는 장면 전환 시 저장 확인 절차를 제공한다.
+  - `저장 후 나가기/전환`, `저장하지 않고 나가기/전환`, `취소`를 구별한다.
+  - 저장 실패 시 editor와 현재 session을 유지하고 오류를 표시한다.
+  - Done 버튼과 ESC 종료에 같은 정책을 적용한다.
+- [x] 별도 launcher 화면을 제거하고 설정 화면에서 editor를 직접 연다.
+  - 마지막으로 편집한 mode와 `KartStateType`을 editor UI 설정으로 기억하고, 기록이 없으면 `RIDE / JIU`를 사용한다.
+  - 상단에 현재 `HudSceneMode / KartStateType`과 장면 변경 버튼을 표시한다.
+  - 장면 변경 UI는 mode 선택과 scroll 가능한 전체 엔진 목록을 제공한다.
+  - dirty session에서 장면을 변경하면 종료와 같은 저장 확인 절차를 거친다.
+- [ ] side panel 접기와 실제 live HUD 화면비를 보존하는 preview 표시 transform을 구현한다.
+  - preview의 논리 viewport는 현재 게임 GUI 전체 해상도로 유지하고 side panel 크기로 변경하지 않는다.
+  - 상단 toolbar 아래의 사용 가능 영역에 uniform Pose scale과 중앙 정렬을 적용하며 남는 공간은 letterbox로 표시한다.
+  - side panel 표시 여부는 논리 viewport와 요소 layout을 바꾸지 않고 표시 배율만 바꾼다.
+  - side panel을 접은 상태에서도 화면 가장자리에 복원 버튼을 유지한다.
+  - 렌더링, scissor, overlay와 mouse 조작은 하나의 `HudPreviewTransform`을 공유한다.
+  - hit-test와 이동·배율 drag는 화면 좌표를 논리 좌표로 역변환한 뒤 처리한다.
+  - bounds와 anchor 위치는 논리 좌표에서 계산하고 handle 및 선 두께는 화면상 일정한 크기로 표시한다.
 - [ ] 기본 편집기 완성 후 중첩 object와 list property의 재귀 metadata 및 편집 UI를 추가한다.
 
 초기 GUI 구현 순서는 요소 목록과 선택, 요소 팔레트, primitive·enum·color 속성 패널,
@@ -193,6 +212,8 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
    - [x] 탭별 side panel scroll과 drag 기반 panel 너비 조절을 구현한다.
    - [x] inspector metadata 기반 primitive·enum·color property 입력 widget을 구현한다.
    - [x] layout property 입력 widget을 구현한다.
+   - [x] 속성 행 정렬, dirty 종료 확인과 editor 내부 장면 전환을 구현한다.
+   - [ ] side panel을 접을 수 있고 화면비를 보존하는 preview를 구현한다.
    - [ ] preview 상태 조절 UI를 구현한다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
 
@@ -213,6 +234,7 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
 - [x] resource 작업 사본의 custom 저장, 삭제 확인 및 resource 기본값 복원을 편집 세션 수준에서 테스트한다.
 - [ ] 저장·삭제 후 repository와 편집 세션 상태가 갱신되고 현재 live HUD에는 자동 적용되지 않는지 테스트한다.
 - [ ] 모든 preview factory와 preset이 대응하는 `KartStateType`에서 동작하는지 테스트한다.
+- [ ] preview 표시 좌표의 logical-screen 왕복, letterbox, side panel 전환 및 drag 역변환을 테스트한다.
 
 - 모든 resource JSON이 codec과 상태 타입 호환성 검사를 통과한다.
 - 유효한 config가 resource보다 우선하고, config가 없으면 현재 리소스팩 장면을 사용한다.
