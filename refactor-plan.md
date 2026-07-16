@@ -22,7 +22,7 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
 - [x] 신규 요소의 색상 변경에 사용할 texture hue shift shader와 GUI RenderType을 제공한다.
 - [x] 단일 요소 Spec 내 sealed style property의 subtype 선택·편집·검증을 지원한다.
-- [ ] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
+- [x] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
 
 일반 중첩 object/list, 최상위 요소 Spec 다형성, compound child 편집과 KSP registry 생성 및 프레임 상태 snapshot은 이번 릴리즈 범위에서 제외한다.
 

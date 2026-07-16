@@ -19,6 +19,8 @@ class HudElementType<S : KartState, SPEC : HudElementSpec<*, S>>(
     val serializer: KSerializer<SPEC>,
     val requiredStateClass: Class<S>,
     private val defaultSpecFactory: () -> SPEC,
+    /** `false`면 codec과 검증에는 등록하되 editor palette에는 노출하지 않는다. */
+    val visibleInEditor: Boolean = true,
 ) {
     val id: String = serializer.descriptor.serialName
     val metadata: HudElementMetadata = HudMetadataReader.read(serializer)

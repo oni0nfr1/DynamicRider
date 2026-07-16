@@ -26,6 +26,7 @@ object HudElementTypeRegistry {
         EditorPropertyStressElement.Spec.serializer(),
         KartState::class.java,
         EditorPropertyStressElement::Spec,
+        visibleInEditor = false,
     )
     val GRADIENT_GAUGE_BAR = HudElementType(
         GradientGaugeBar.Spec::class,

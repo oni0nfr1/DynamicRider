@@ -87,6 +87,7 @@ class HudEditorSessionTest {
         val palette = session.availableElementTypes()
         assertTrue(palette.any { it.typeId == HudElementTypeRegistry.PLAIN_NITRO_SLOT.id })
         assertTrue(palette.none { it.typeId == HudElementTypeRegistry.V1_TACHOMETER.id })
+        assertTrue(palette.none { it.typeId == HudElementTypeRegistry.EDITOR_PROPERTY_STRESS_TEST.id })
 
         val added = session.addElement(HudElementTypeRegistry.PLAIN_NITRO_SLOT.id)
 

@@ -22,6 +22,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPat
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditCommandResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditService
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementType
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudScene
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
@@ -115,16 +116,18 @@ class HudEditorSession<S : KartState> internal constructor(
 
     /** 현재 카트 상태 타입과 호환되는 요소 팔레트의 읽기 전용 snapshot을 반환한다. */
     fun availableElementTypes(): List<HudElementPaletteEntry> =
-        HudElementTypeRegistry.compatibleWith(previewContext.kartStateType).map { type ->
-            val metadata = type.metadata
-            HudElementPaletteEntry(
-                typeId = type.id,
-                nameKey = metadata.nameKey,
-                category = metadata.category,
-                categoryNameKey = metadata.categoryNameKey,
-                icon = metadata.icon,
-            )
-        }
+        HudElementTypeRegistry.compatibleWith(previewContext.kartStateType)
+            .filter(HudElementType<*, *>::visibleInEditor)
+            .map { type ->
+                val metadata = type.metadata
+                HudElementPaletteEntry(
+                    typeId = type.id,
+                    nameKey = metadata.nameKey,
+                    category = metadata.category,
+                    categoryNameKey = metadata.categoryNameKey,
+                    icon = metadata.icon,
+                )
+            }
 
     /** 현재 preview 카트 capability에 맞는 built-in 상태 preset을 반환한다. */
     fun availablePreviewPresets(): List<PreviewStatePreset> =
