@@ -6,6 +6,8 @@ import io.github.oni0nfr1.dynamicrider.client.gui.widget.DropdownEntry
 import io.github.oni0nfr1.dynamicrider.client.gui.widget.DropdownWidget
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.propertyAt
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateField
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorActionResult
@@ -73,6 +75,9 @@ class HudEditorScreen(
     private var selectedPreviewPresetId: String? = null
     private var previewPresetDropdown: DropdownWidget<String>? = null
     private var layoutEditorOpen = false
+    private var sealedEditorPath: HudPropertyPath? = null
+    private var sealedEditorScroll = 0
+    private var sealedVariantDropdown: DropdownWidget<String>? = null
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
     private var modal: EditorModal? = null
@@ -93,6 +98,7 @@ class HudEditorScreen(
     override fun init() {
         calculateLayout()
         previewPresetDropdown = null
+        sealedVariantDropdown = null
         if (stateSubscription == null) {
             stateSubscription = session.addStateListener(emitCurrent = false) {
                 Minecraft.getInstance().execute {
@@ -142,6 +148,7 @@ class HudEditorScreen(
         if (modal == null) {
             super.render(guiGraphics, mouseX, mouseY, partialTick)
             previewPresetDropdown?.renderPopup(guiGraphics, mouseX, mouseY)
+            sealedVariantDropdown?.renderPopup(guiGraphics, mouseX, mouseY)
         } else {
             editorWidgets.forEach { it.render(guiGraphics, -1, -1, partialTick) }
             guiGraphics.flush()
@@ -159,7 +166,7 @@ class HudEditorScreen(
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         if (previewMode) return super.mouseClicked(mouseX, mouseY, button)
         if (modal != null) return super.mouseClicked(mouseX, mouseY, button)
-        previewPresetDropdown?.takeIf { it.isExpanded }?.let {
+        listOfNotNull(previewPresetDropdown, sealedVariantDropdown).firstOrNull { it.isExpanded }?.let {
             if (it.mouseClicked(mouseX, mouseY, button)) return true
         }
         if (button == 0 && isOverDivider(mouseX, mouseY)) {
@@ -275,7 +282,7 @@ class HudEditorScreen(
             return true
         }
         if (currentModal != null) return true
-        previewPresetDropdown?.takeIf { it.isExpanded }?.let {
+        listOfNotNull(previewPresetDropdown, sealedVariantDropdown).firstOrNull { it.isExpanded }?.let {
             if (it.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) return true
         }
         if (mouseX < sideX || mouseY < previewY + TAB_HEIGHT || mouseY > height) {
@@ -297,6 +304,9 @@ class HudEditorScreen(
                 if (layoutEditorOpen) {
                     val count = selectedLayoutFields()?.size ?: 0
                     layoutScroll = clampScroll(layoutScroll + direction, count, layoutVisibleRows())
+                } else if (sealedEditorPath != null) {
+                    val count = selectedSealedProperties()?.size ?: 0
+                    sealedEditorScroll = clampScroll(sealedEditorScroll + direction, count, sealedVisibleRows())
                 } else {
                     val count = selectedProperties()?.size ?: 0
                     propertyScroll = clampScroll(propertyScroll + direction, count, propertyVisibleRows())
@@ -320,7 +330,7 @@ class HudEditorScreen(
             return super.keyPressed(keyCode, scanCode, modifiers)
         }
         if (modal != null) return super.keyPressed(keyCode, scanCode, modifiers)
-        previewPresetDropdown?.takeIf { it.isExpanded }?.let {
+        listOfNotNull(previewPresetDropdown, sealedVariantDropdown).firstOrNull { it.isExpanded }?.let {
             if (it.keyPressed(keyCode, scanCode, modifiers)) return true
         }
         if (Screen.hasControlDown()) {
@@ -429,6 +439,7 @@ class HudEditorScreen(
                     activeTab = tab
                     paletteOpen = false
                     layoutEditorOpen = false
+                    sealedEditorPath = null
                     rebuildWidgets()
                 }.bounds(sideX + index * tabWidth, previewY, tabWidth, 20).build().also {
                     it.active = activeTab != tab
@@ -526,6 +537,14 @@ class HudEditorScreen(
             buildLayoutEditor(elementId, layout)
             return
         }
+        sealedEditorPath?.let { path ->
+            val property = inspected.model.propertyAt(path)
+            if (property?.schema is HudEditablePropertySchema.Sealed) {
+                buildSealedEditor(elementId, property)
+                return
+            }
+            sealedEditorPath = null
+        }
         val visibleRows = propertyVisibleRows()
         propertyScroll = clampScroll(propertyScroll, properties.size, visibleRows)
         val widgetX = sideX + sideWidth / 2
@@ -534,6 +553,19 @@ class HudEditorScreen(
         val factory = HudPropertyWidgetFactory(font)
         properties.drop(propertyScroll).take(visibleRows).forEachIndexed { index, property ->
             val y = firstRowY + index * PROPERTY_ROW_HEIGHT
+            val sealed = property.schema as? HudEditablePropertySchema.Sealed
+            if (sealed != null) {
+                addRenderableWidget(
+                    Button.builder(Component.translatable(
+                        sealed.variants.single { it.serialName == sealed.selectedVariant }.nameKey
+                    )) {
+                        sealedEditorPath = property.path
+                        sealedEditorScroll = 0
+                        rebuildWidgets()
+                    }.bounds(widgetX, y, widgetWidth, PROPERTY_WIDGET_HEIGHT).build()
+                )
+                return@forEachIndexed
+            }
             factory.create(
                 property = property,
                 x = widgetX,
@@ -547,6 +579,7 @@ class HudEditorScreen(
                 onCancelInput = { clearPropertyError(elementId, property.path) },
                 onOpenLayout = {
                     layoutEditorOpen = true
+                    sealedEditorPath = null
                     layoutScroll = 0
                     rebuildWidgets()
                 },
@@ -726,6 +759,78 @@ class HudEditorScreen(
         }
     }
 
+    private fun buildSealedEditor(elementId: String, property: HudEditableProperty) {
+        val schema = property.schema as? HudEditablePropertySchema.Sealed ?: return
+        addRenderableWidget(
+            Button.builder(Component.translatable("gui.back")) {
+                sealedEditorPath = null
+                rebuildWidgets()
+            }.bounds(sideX, previewY + 26, 52, PROPERTY_WIDGET_HEIGHT).build()
+        )
+        sealedVariantDropdown = addRenderableWidget(
+            DropdownWidget(
+                x = sideX + 58,
+                y = previewY + 26,
+                width = (sideWidth - 58).coerceAtLeast(40),
+                height = PROPERTY_WIDGET_HEIGHT,
+                entries = schema.variants.map { DropdownEntry(it.serialName, Component.translatable(it.nameKey)) },
+                selected = schema.selectedVariant,
+                maxVisibleRows = sealedVisibleRows().coerceAtLeast(1),
+                onSelected = { variant ->
+                    when (val result = session.changePropertyVariant(elementId, property.path, variant)) {
+                        is HudEditorActionResult.Applied,
+                        HudEditorActionResult.Unchanged,
+                        -> {
+                            propertyErrors.remove(elementId to property.path)
+                            status = null
+                        }
+                        is HudEditorActionResult.PropertyRejected -> {
+                            propertyErrors[elementId to property.path] = result.failure.message
+                            status = Component.translatable("dynamicrider.hud.editor.property.rejected")
+                        }
+                        else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
+                    }
+                    rebuildWidgets()
+                },
+            )
+        )
+
+        val visibleRows = sealedVisibleRows()
+        sealedEditorScroll = clampScroll(sealedEditorScroll, schema.properties.size, visibleRows)
+        val widgetX = sideX + sideWidth / 2
+        val widgetWidth = (sideWidth / 2 - 8).coerceAtLeast(40)
+        val firstRowY = previewY + 52
+        val factory = HudPropertyWidgetFactory(font)
+        schema.properties.drop(sealedEditorScroll).take(visibleRows).forEachIndexed { index, child ->
+            val y = firstRowY + index * PROPERTY_ROW_HEIGHT
+            val nested = child.schema as? HudEditablePropertySchema.Sealed
+            if (nested != null) {
+                addRenderableWidget(
+                    Button.builder(Component.translatable(
+                        nested.variants.single { it.serialName == nested.selectedVariant }.nameKey
+                    )) {
+                        sealedEditorPath = child.path
+                        sealedEditorScroll = 0
+                        rebuildWidgets()
+                    }.bounds(widgetX, y, widgetWidth, PROPERTY_WIDGET_HEIGHT).build()
+                )
+            } else {
+                factory.create(
+                    property = child,
+                    x = widgetX,
+                    y = y,
+                    width = widgetWidth,
+                    onCommit = { value -> updateProperty(elementId, child, value) },
+                    onInvalidInput = { message ->
+                        propertyErrors[elementId to child.path] = message
+                        status = Component.translatable("dynamicrider.hud.editor.property.invalid_input")
+                    },
+                    onCancelInput = { clearPropertyError(elementId, child.path) },
+                ).forEach(::addRenderableWidget)
+            }
+        }
+    }
+
     private fun renderEditorChrome(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
         guiGraphics.fill(0, 0, width, 32, 0xD0101010.toInt())
         guiGraphics.fill(previewX, previewY, previewX + previewWidth, previewY + previewHeight, 0xC0181818.toInt())
@@ -839,6 +944,13 @@ class HudEditorScreen(
                 return
             }
         }
+        sealedEditorPath?.let { path ->
+            val property = inspected.model.propertyAt(path)
+            if (property?.schema is HudEditablePropertySchema.Sealed) {
+                renderSealedEditor(guiGraphics, selectedId, property)
+                return
+            }
+        }
         guiGraphics.drawString(font, Component.translatable(inspected.model.nameKey), sideX + 6, contentY, 0xFFFFFFFF.toInt())
         val maxRows = propertyVisibleRows()
         propertyScroll = clampScroll(propertyScroll, inspected.model.properties.size, maxRows)
@@ -885,6 +997,28 @@ class HudEditorScreen(
                 },
             )
             propertyErrors[elementId to field.path]?.let { message ->
+                guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
+            }
+        }
+    }
+
+    private fun renderSealedEditor(
+        guiGraphics: GuiGraphics,
+        elementId: String,
+        property: HudEditableProperty,
+    ) {
+        val schema = property.schema as? HudEditablePropertySchema.Sealed ?: return
+        val visibleRows = sealedVisibleRows()
+        sealedEditorScroll = clampScroll(sealedEditorScroll, schema.properties.size, visibleRows)
+        schema.properties.drop(sealedEditorScroll).take(visibleRows).forEachIndexed { index, child ->
+            val y = previewY + 52 + index * PROPERTY_ROW_HEIGHT
+            val color = if (propertyErrors.containsKey(elementId to child.path)) {
+                0xFFFF6666.toInt()
+            } else {
+                0xFFDDDDDD.toInt()
+            }
+            guiGraphics.drawString(font, Component.translatable(child.nameKey), sideX + 6, centeredLabelY(y), color)
+            propertyErrors[elementId to child.path]?.let { message ->
                 guiGraphics.drawString(font, message, sideX + 6, y + 21, 0xFFFF6666.toInt())
             }
         }
@@ -1362,6 +1496,13 @@ class HudEditorScreen(
         ?.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor }
         ?.let(HudLayoutEditorModel::fields)
 
+    private fun selectedSealedProperties(): List<HudEditableProperty>? {
+        val path = sealedEditorPath ?: return null
+        val selectedId = session.state.selectedElementId ?: return null
+        val model = (session.inspectElement(selectedId) as? HudElementInspectionResult.Inspected)?.model ?: return null
+        return (model.propertyAt(path)?.schema as? HudEditablePropertySchema.Sealed)?.properties
+    }
+
     private fun elementVisibleRows(): Int = ((height - (previewY + 26) - 58) / ROW_HEIGHT).coerceAtLeast(0)
 
     private fun paletteVisibleRows(): Int = ((height - (previewY + 26) - 34) / ROW_HEIGHT).coerceAtLeast(0)
@@ -1369,6 +1510,8 @@ class HudEditorScreen(
     private fun propertyVisibleRows(): Int = ((height - (previewY + 28) - 24) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
 
     private fun layoutVisibleRows(): Int = ((height - (previewY + 52) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
+
+    private fun sealedVisibleRows(): Int = ((height - (previewY + 52) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
 
     private fun previewStateVisibleRows(): Int =
         ((height - (previewY + PREVIEW_FIELD_START_Y) - 8) / PROPERTY_ROW_HEIGHT).coerceAtLeast(0)
@@ -1442,6 +1585,8 @@ class HudEditorScreen(
         }
         SideTab.PROPERTIES -> if (layoutEditorOpen) {
             selectedLayoutFields()?.let { ScrollMetrics(layoutScroll, it.size, layoutVisibleRows()) }
+        } else if (sealedEditorPath != null) {
+            selectedSealedProperties()?.let { ScrollMetrics(sealedEditorScroll, it.size, sealedVisibleRows()) }
         } else {
             selectedProperties()?.let { ScrollMetrics(propertyScroll, it.size, propertyVisibleRows()) }
         }

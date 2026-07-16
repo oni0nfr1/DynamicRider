@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.validation
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuSpdMeter
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuTachometer
@@ -46,6 +47,21 @@ class HudSpecValidatorTest {
 
         assertEquals(listOf("speedometer.layout.scaleX"), result.errors.map { it.path.toString() })
         assertEquals(HudSpecValidationErrorCode.NON_FINITE_NUMBER, result.errors.single().code)
+    }
+
+    @Test
+    fun `selected sealed subtype is validated recursively`() {
+        val spec = EditorPropertyStressElement.Spec(
+            style = EditorPropertyStressElement.StressStyle.Outline(thickness = 8)
+        )
+
+        val result = assertInstanceOf(
+            HudSpecValidationResult.Invalid::class.java,
+            HudSpecValidator.validate(spec),
+        )
+
+        assertEquals("style.thickness", result.errors.single().path.toString())
+        assertEquals(HudSpecValidationErrorCode.OUT_OF_RANGE, result.errors.single().code)
     }
 
     @Test

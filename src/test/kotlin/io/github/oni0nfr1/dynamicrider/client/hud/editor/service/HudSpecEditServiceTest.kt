@@ -4,6 +4,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.command.HudCommandStack
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -86,9 +88,32 @@ class HudSpecEditServiceTest {
         assertFalse(document.dirty)
     }
 
-    private fun document(spec: GradientGaugeBar.Spec): HudSceneDocument = HudSceneDocument.from(
+    @Test
+    fun `sealed variant change creates an undoable whole spec replacement`() {
+        val original = EditorPropertyStressElement.Spec()
+        val document = document(original, "stress")
+        val service = HudSpecEditService(document)
+
+        val result = service.createVariantChangeCommand(
+            "stress",
+            HudPropertyPath.parse("style"),
+            "checker",
+        )
+
+        val created = assertInstanceOf(HudSpecEditCommandResult.Created::class.java, result)
+        val commands = HudCommandStack(document)
+        commands.execute(created.command)
+        assertEquals(
+            EditorPropertyStressElement.StressStyle.Checker(),
+            (document.elementById("stress")?.spec as EditorPropertyStressElement.Spec).style,
+        )
+        assertTrue(commands.undo())
+        assertEquals(original, document.elementById("stress")?.spec)
+    }
+
+    private fun document(spec: HudElementSpec<*, *>, id: String = "gauge"): HudSceneDocument = HudSceneDocument.from(
         HudSceneSpec(
-            elementIds = listOf("gauge"),
+            elementIds = listOf(id),
             elements = listOf(spec),
         )
     )

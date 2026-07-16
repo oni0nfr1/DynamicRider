@@ -5,6 +5,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
 import java.util.Locale
@@ -30,14 +31,14 @@ object HudMetadataReader {
             categoryNameKey = "$CATEGORY_KEY_PREFIX.$category",
             icon = elementInfo?.icon?.takeIf(String::isNotBlank),
             properties = List(descriptor.elementsCount) { index ->
-                readProperty(descriptor, elementId, index)
+                readProperty(descriptor, "$ELEMENT_KEY_PREFIX.$elementId.property", index)
             },
         )
     }
 
     private fun readProperty(
         owner: SerialDescriptor,
-        elementId: String,
+        propertyKeyPrefix: String,
         index: Int,
     ): HudPropertyMetadata {
         val serialName = owner.getElementName(index)
@@ -59,25 +60,59 @@ object HudMetadataReader {
             index = index,
             serialName = serialName,
             nameKey = property?.nameKey?.takeIf(String::isNotBlank)
-                ?: "$ELEMENT_KEY_PREFIX.$elementId.property.${serialName.toTranslationId()}.name",
+                ?: "$propertyKeyPrefix.${serialName.toTranslationId()}.name",
             descriptionKey = property?.descriptionKey?.takeIf(String::isNotBlank),
-            editor = editorType(serialName, descriptor, range, color, layout),
+            schema = propertySchema(
+                propertyName = serialName,
+                descriptor = descriptor,
+                range = range,
+                color = color,
+                layout = layout,
+                nestedKeyPrefix = "$propertyKeyPrefix.${serialName.toTranslationId()}",
+            ),
             optional = owner.isElementOptional(index),
             nullable = descriptor.isNullable,
             hidden = annotations.any { it is HudHidden },
         )
     }
 
-    private fun editorType(
+    private fun propertySchema(
         propertyName: String,
         descriptor: SerialDescriptor,
         range: HudRange?,
         color: HudColor?,
         layout: Boolean,
-    ): HudPropertyEditorType {
-        if (layout) return HudPropertyEditorType.LayoutEditor
-        if (color != null) return HudPropertyEditorType.ColorPicker(color.alpha)
-        if (descriptor.serialName == anchorSerialName) return HudPropertyEditorType.AnchorSelector
+        nestedKeyPrefix: String,
+    ): HudPropertySchema {
+        if (layout) return HudPropertySchema.Leaf(HudPropertyEditorType.LayoutEditor)
+        if (color != null) return HudPropertySchema.Leaf(HudPropertyEditorType.ColorPicker(color.alpha))
+        if (descriptor.serialName == anchorSerialName) {
+            return HudPropertySchema.Leaf(HudPropertyEditorType.AnchorSelector)
+        }
+
+        if (descriptor.kind == PolymorphicKind.SEALED) {
+            val variants = descriptor.hudSealedVariants().map { variant ->
+                val variantId = variant.serialName.toTranslationId()
+                val info = variant.descriptor.annotations.filterIsInstance<HudVariantInfo>().singleOrNull()
+                HudPropertyVariantMetadata(
+                    serialName = variant.serialName,
+                    nameKey = info?.nameKey?.takeIf(String::isNotBlank)
+                        ?: "$nestedKeyPrefix.variant.$variantId.name",
+                    properties = List(variant.descriptor.elementsCount) { index ->
+                        readProperty(
+                            variant.descriptor,
+                            "$nestedKeyPrefix.variant.$variantId.property",
+                            index,
+                        )
+                    },
+                )
+            }
+            return HudPropertySchema.Sealed(
+                serialName = descriptor.serialName,
+                discriminator = HUD_CLASS_DISCRIMINATOR,
+                variants = variants,
+            )
+        }
 
         val numberType = descriptor.kind.toNumberType()
         if (range != null) {
@@ -90,25 +125,26 @@ object HudMetadataReader {
             require(range.step.isFinite() && range.step >= 0.0) {
                 "Property '$propertyName' has an invalid @HudRange step"
             }
-            return HudPropertyEditorType.Slider(
+            return HudPropertySchema.Leaf(HudPropertyEditorType.Slider(
                 numberType = numberType,
                 range = HudNumericRange(
                     min = range.min,
                     max = range.max,
                     step = range.step.takeIf { it > 0.0 },
                 ),
-            )
+            ))
         }
 
-        return when (descriptor.kind) {
+        val editor = when (descriptor.kind) {
             PrimitiveKind.BOOLEAN -> HudPropertyEditorType.BooleanToggle
             PrimitiveKind.STRING, PrimitiveKind.CHAR -> HudPropertyEditorType.StringInput
             SerialKind.ENUM -> HudPropertyEditorType.EnumSelector(
                 List(descriptor.elementsCount, descriptor::getElementName),
             )
             else -> numberType?.let(HudPropertyEditorType::NumberInput)
-                ?: HudPropertyEditorType.Unsupported(descriptor.serialName)
         }
+        return editor?.let(HudPropertySchema::Leaf)
+            ?: HudPropertySchema.Unsupported(descriptor.serialName)
     }
 
     private fun SerialKind.toNumberType(): HudNumberType? = when (this) {

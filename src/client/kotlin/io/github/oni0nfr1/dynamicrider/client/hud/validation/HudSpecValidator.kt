@@ -3,6 +3,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.validation
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HUD_CLASS_DISCRIMINATOR
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.hudSealedVariants
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateType
@@ -10,6 +12,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.json.Json
@@ -24,6 +27,7 @@ import kotlinx.serialization.json.doubleOrNull
 @OptIn(ExperimentalSerializationApi::class)
 object HudSpecValidator {
     private val json = Json {
+        classDiscriminator = HUD_CLASS_DISCRIMINATOR
         encodeDefaults = true
         allowSpecialFloatingPointValues = true
     }
@@ -106,8 +110,21 @@ object HudSpecValidator {
             StructureKind.CLASS, StructureKind.OBJECT -> validateObject(descriptor, value, path, errors)
             StructureKind.LIST -> validateList(descriptor, value, path, errors)
             StructureKind.MAP -> validateMap(descriptor, value, path, errors)
+            PolymorphicKind.SEALED -> validateSealed(descriptor, value, path, errors)
             else -> Unit
         }
+    }
+
+    private fun validateSealed(
+        descriptor: SerialDescriptor,
+        value: JsonElement,
+        path: HudSpecPath,
+        errors: MutableList<HudSpecValidationError>,
+    ) {
+        val objectValue = value as? JsonObject ?: return
+        val type = (objectValue[HUD_CLASS_DISCRIMINATOR] as? JsonPrimitive)?.content ?: return
+        val variant = descriptor.hudSealedVariants().firstOrNull { it.serialName == type } ?: return
+        validateObject(variant.descriptor, objectValue, path, errors)
     }
 
     private fun validateObject(

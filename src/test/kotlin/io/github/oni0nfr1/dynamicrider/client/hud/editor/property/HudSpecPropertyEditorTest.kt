@@ -4,6 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropert
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropertyUpdateResult.Reason
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropertyUpdateResult.Success
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuTachometer
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -83,5 +84,62 @@ class HudSpecPropertyEditorTest {
 
         assertEquals(Reason.UNSUPPORTED_PROPERTY, assertInstanceOf(Failure::class.java, listResult).reason)
         assertEquals(Reason.UNSUPPORTED_PROPERTY, assertInstanceOf(Failure::class.java, nestedSpecResult).reason)
+    }
+
+    @Test
+    fun `sealed subtype leaf can be updated through its complete path`() {
+        val original = EditorPropertyStressElement.Spec()
+
+        val result = HudSpecPropertyEditor.update(
+            original,
+            HudPropertyPath.parse("style.color"),
+            JsonPrimitive("#FFAABBCC"),
+        )
+
+        val updated = assertInstanceOf(Success::class.java, result).spec as EditorPropertyStressElement.Spec
+        assertEquals(0xFFAABBCC.toInt(), (updated.style as EditorPropertyStressElement.StressStyle.Solid).color)
+        assertEquals(EditorPropertyStressElement.StressStyle.Solid(), original.style)
+    }
+
+    @Test
+    fun `sealed subtype can be replaced from defaults and rejects unknown variants`() {
+        val original = EditorPropertyStressElement.Spec()
+        val path = HudPropertyPath.parse("style")
+
+        val changed = HudSpecPropertyEditor.changeVariant(original, path, "outline")
+        val updated = assertInstanceOf(Success::class.java, changed).spec as EditorPropertyStressElement.Spec
+        assertEquals(EditorPropertyStressElement.StressStyle.Outline(), updated.style)
+
+        val rejected = HudSpecPropertyEditor.changeVariant(original, path, "missing")
+        assertEquals(Reason.INVALID_VALUE, assertInstanceOf(Failure::class.java, rejected).reason)
+    }
+
+    @Test
+    fun `selecting the current sealed subtype preserves its configured values`() {
+        val original = EditorPropertyStressElement.Spec(
+            style = EditorPropertyStressElement.StressStyle.Outline(thickness = 3)
+        )
+
+        val result = HudSpecPropertyEditor.changeVariant(
+            original,
+            HudPropertyPath.parse("style"),
+            "outline",
+        )
+
+        assertEquals(original, assertInstanceOf(Success::class.java, result).spec)
+    }
+
+    @Test
+    fun `sealed subtype leaf uses the common validator`() {
+        val original = EditorPropertyStressElement.Spec(
+            style = EditorPropertyStressElement.StressStyle.Outline()
+        )
+        val path = HudPropertyPath.parse("style.thickness")
+
+        val result = HudSpecPropertyEditor.update(original, path, JsonPrimitive(10))
+
+        val failure = assertInstanceOf(Failure::class.java, result)
+        assertEquals(path, failure.path)
+        assertEquals(Reason.INVALID_VALUE, failure.reason)
     }
 }

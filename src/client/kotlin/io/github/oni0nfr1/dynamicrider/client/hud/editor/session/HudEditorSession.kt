@@ -223,6 +223,24 @@ class HudEditorSession<S : KartState> internal constructor(
         }
     }
 
+    /** sealed property를 지정 subtype으로 교체하고 새 Spec을 undo/redo history에 적용한다. */
+    fun changePropertyVariant(
+        elementId: String,
+        path: HudPropertyPath,
+        variantSerialName: String,
+    ): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        return when (val result = editService.createVariantChangeCommand(elementId, path, variantSerialName)) {
+            is HudSpecEditCommandResult.Created -> {
+                commandStack.execute(result.command)
+                HudEditorActionResult.Applied(elementId)
+            }
+            is HudSpecEditCommandResult.Unchanged -> HudEditorActionResult.Unchanged
+            is HudSpecEditCommandResult.ElementNotFound -> HudEditorActionResult.ElementNotFound(result.elementId)
+            is HudSpecEditCommandResult.PropertyRejected -> HudEditorActionResult.PropertyRejected(result.failure)
+        }
+    }
+
     /** 마지막 편집 command를 되돌린다. */
     fun undo(): HudEditorActionResult {
         if (closed) return HudEditorActionResult.Closed

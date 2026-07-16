@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene.loader
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
@@ -24,6 +25,24 @@ class HudSceneCodecTest {
         val decoded = HudSceneCodec.decode(HudSceneCodec.encode(original))
 
         assertEquals(original, decoded)
+    }
+
+    @Test
+    fun `scene round trip preserves nested sealed subtype discriminator and values`() {
+        val original = HudSceneSpec(
+            elementIds = listOf("stress"),
+            elements = listOf(
+                EditorPropertyStressElement.Spec(
+                    style = EditorPropertyStressElement.StressStyle.Outline(thickness = 3)
+                )
+            ),
+        )
+
+        val encoded = HudSceneCodec.encode(original)
+        val decoded = HudSceneCodec.decode(encoded)
+
+        assertEquals(original, decoded)
+        org.junit.jupiter.api.Assertions.assertTrue(encoded.contains("\"type\": \"outline\""))
     }
 
     @Test

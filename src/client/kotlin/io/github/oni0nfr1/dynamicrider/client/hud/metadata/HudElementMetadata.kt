@@ -16,10 +16,49 @@ data class HudPropertyMetadata(
     val serialName: String,
     val nameKey: String,
     val descriptionKey: String?,
-    val editor: HudPropertyEditorType,
+    val schema: HudPropertySchema,
     val optional: Boolean,
     val nullable: Boolean,
     val hidden: Boolean,
+) {
+    val editor: HudPropertyEditorType
+        get() = when (schema) {
+            is HudPropertySchema.Leaf -> schema.editor
+            is HudPropertySchema.Sealed -> HudPropertyEditorType.Unsupported(schema.serialName)
+            is HudPropertySchema.Unsupported -> HudPropertyEditorType.Unsupported(schema.serialName)
+        }
+}
+
+/** 직렬화 property의 leaf 편집기 또는 재귀 container 구조다. */
+sealed interface HudPropertySchema {
+    data class Leaf(
+        val editor: HudPropertyEditorType,
+    ) : HudPropertySchema
+
+    data class Sealed(
+        val serialName: String,
+        val discriminator: String,
+        val variants: List<HudPropertyVariantMetadata>,
+    ) : HudPropertySchema {
+        init {
+            require(discriminator.isNotBlank()) { "Sealed property discriminator must not be blank" }
+            require(variants.isNotEmpty()) { "Sealed property '$serialName' must have variants" }
+            require(variants.map(HudPropertyVariantMetadata::serialName).distinct().size == variants.size) {
+                "Sealed property '$serialName' has duplicate variant serial names"
+            }
+        }
+    }
+
+    data class Unsupported(
+        val serialName: String,
+    ) : HudPropertySchema
+}
+
+/** sealed property가 선택할 수 있는 단일 subtype과 그 내부 property metadata다. */
+data class HudPropertyVariantMetadata(
+    val serialName: String,
+    val nameKey: String,
+    val properties: List<HudPropertyMetadata>,
 )
 
 /** 숫자 입력에서 보존해야 하는 primitive 타입이다. */

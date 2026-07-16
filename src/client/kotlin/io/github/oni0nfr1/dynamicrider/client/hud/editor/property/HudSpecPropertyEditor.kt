@@ -8,6 +8,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTy
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyMetadata
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertySchema
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HUD_CLASS_DISCRIMINATOR
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
 import kotlinx.serialization.KSerializer
@@ -21,6 +23,7 @@ import kotlinx.serialization.json.JsonPrimitive
 /** serializer round-trip으로 immutable HUD element spec의 단일 property를 변경한다. */
 object HudSpecPropertyEditor {
     private val json = Json {
+        classDiscriminator = HUD_CLASS_DISCRIMINATOR
         ignoreUnknownKeys = true
         encodeDefaults = true
         allowSpecialFloatingPointValues = true
@@ -29,9 +32,8 @@ object HudSpecPropertyEditor {
     /**
      * [spec]의 [path]에 [value]를 넣은 새 spec을 생성한다.
      *
-     * top-level primitive, enum 및 `@HudLayout` property만 지원한다. 다른 중첩 object와
-     * list는 기본 편집기가 완성된 뒤 별도의 재귀 편집 모델에서 처리한다. 원본 [spec]은
-     * 변경하지 않으며 실패에는 입력 [path]가 보존된다.
+     * top-level leaf와 현재 sealed subtype의 중첩 leaf를 지원한다. 원본 [spec]은 변경하지
+     * 않으며 실패에는 입력 [path]가 보존된다.
      */
     fun update(
         spec: HudElementSpec<*, *>,
@@ -44,35 +46,63 @@ object HudSpecPropertyEditor {
                 Reason.UNREGISTERED_SPEC,
                 "HUD element spec '${spec::class.qualifiedName}' is not registered",
             )
-        val property = type.metadata.properties.firstOrNull { it.serialName == path.segments.first() }
-            ?: return Failure(
-                path,
-                Reason.UNKNOWN_PROPERTY,
-                "Unknown HUD property '${path.segments.first()}'",
-            )
+        val serializer = serializer(type)
+        val encoded = encode(serializer, spec) ?: return Failure(
+            path,
+            Reason.INVALID_VALUE,
+            "HUD element spec must serialize as an object",
+        )
+        val property = resolveProperty(type.metadata.properties, encoded, path.segments)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
 
         unsupportedReason(property, path)?.let { return it }
-        validatePath(property, path)?.let { return it }
         validateInput(property, path, value)?.let { return it }
 
-        return update(type, spec, property, path, value)
+        val updated = replace(encoded, path.segments, value)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        return decodeAndValidate(serializer, updated, path)
     }
 
-    private fun update(
-        type: HudElementType<*, *>,
+    /** [path]의 sealed property를 [variantSerialName] subtype의 기본값으로 교체한다. */
+    fun changeVariant(
         spec: HudElementSpec<*, *>,
-        property: HudPropertyMetadata,
         path: HudPropertyPath,
-        value: JsonElement,
+        variantSerialName: String,
     ): HudSpecPropertyUpdateResult {
-        @Suppress("UNCHECKED_CAST")
-        val serializer = type.serializer as KSerializer<HudElementSpec<*, *>>
-        return try {
-            val encoded = json.encodeToJsonElement(serializer, spec) as? JsonObject
-                ?: return Failure(path, Reason.INVALID_VALUE, "HUD element spec must serialize as an object")
-            val updated = replace(encoded, path.segments, value)
-                ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        val type = HudElementTypeRegistry.bySpec(spec)
+            ?: return Failure(path, Reason.UNREGISTERED_SPEC, "HUD element spec '${spec::class.qualifiedName}' is not registered")
+        val serializer = serializer(type)
+        val encoded = encode(serializer, spec)
+            ?: return Failure(path, Reason.INVALID_VALUE, "HUD element spec must serialize as an object")
+        val property = resolveProperty(type.metadata.properties, encoded, path.segments)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        if (property.hidden) {
+            return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '${property.serialName}' is hidden")
+        }
+        val schema = property.schema as? HudPropertySchema.Sealed
+            ?: return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '$path' is not sealed")
+        if (schema.variants.none { it.serialName == variantSerialName }) {
+            return Failure(path, Reason.INVALID_VALUE, "Unknown variant '$variantSerialName' for HUD property '$path'")
+        }
+        val currentValue = valueAt(encoded, path.segments) as? JsonObject
+            ?: return Failure(path, Reason.INVALID_VALUE, "HUD property '$path' is not an object")
+        if ((currentValue[schema.discriminator] as? JsonPrimitive)?.content == variantSerialName) {
+            return Success(spec)
+        }
+        val replacement = JsonObject(
+            mapOf(schema.discriminator to JsonPrimitive(variantSerialName))
+        )
+        val updated = replace(encoded, path.segments, replacement)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        return decodeAndValidate(serializer, updated, path)
+    }
 
+    private fun decodeAndValidate(
+        serializer: KSerializer<HudElementSpec<*, *>>,
+        updated: JsonObject,
+        path: HudPropertyPath,
+    ): HudSpecPropertyUpdateResult {
+        return try {
             val updatedSpec = json.decodeFromJsonElement(serializer, updated)
             when (val validation = HudSpecValidator.validate(updatedSpec)) {
                 HudSpecValidationResult.Valid -> Success(updatedSpec)
@@ -102,6 +132,21 @@ object HudSpecPropertyEditor {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun serializer(type: HudElementType<*, *>): KSerializer<HudElementSpec<*, *>> =
+        type.serializer as KSerializer<HudElementSpec<*, *>>
+
+    private fun encode(
+        serializer: KSerializer<HudElementSpec<*, *>>,
+        spec: HudElementSpec<*, *>,
+    ): JsonObject? = try {
+        json.encodeToJsonElement(serializer, spec) as? JsonObject
+    } catch (exception: SerializationException) {
+        null
+    } catch (exception: IllegalArgumentException) {
+        null
+    }
+
     private fun unsupportedReason(
         property: HudPropertyMetadata,
         path: HudPropertyPath,
@@ -120,28 +165,13 @@ object HudSpecPropertyEditor {
         return null
     }
 
-    private fun validatePath(
-        property: HudPropertyMetadata,
-        path: HudPropertyPath,
-    ): Failure? {
-        val isLayout = property.editor is HudPropertyEditorType.LayoutEditor
-        if (!isLayout && path.segments.size > 1) {
-            return Failure(
-                path,
-                Reason.UNSUPPORTED_PROPERTY,
-                "Nested editing is only supported for @HudLayout properties",
-            )
-        }
-        return null
-    }
-
     private fun validateInput(
         property: HudPropertyMetadata,
         path: HudPropertyPath,
         value: JsonElement,
     ): Failure? {
         if (value is JsonNull) {
-            return if (property.nullable && path.segments.size == 1) null else Failure(
+            return if (property.nullable) null else Failure(
                 path,
                 Reason.INVALID_VALUE,
                 "HUD property '$path' is not nullable",
@@ -155,6 +185,20 @@ object HudSpecPropertyEditor {
             )
         }
         return null
+    }
+
+    private fun resolveProperty(
+        properties: List<HudPropertyMetadata>,
+        encoded: JsonObject,
+        path: List<String>,
+    ): HudPropertyMetadata? {
+        val property = properties.firstOrNull { it.serialName == path.first() } ?: return null
+        if (path.size == 1 || property.editor is HudPropertyEditorType.LayoutEditor) return property
+        val schema = property.schema as? HudPropertySchema.Sealed ?: return null
+        val objectValue = encoded[property.serialName] as? JsonObject ?: return null
+        val selected = (objectValue[schema.discriminator] as? JsonPrimitive)?.content ?: return null
+        val variant = schema.variants.firstOrNull { it.serialName == selected } ?: return null
+        return resolveProperty(variant.properties, objectValue, path.drop(1))
     }
 
     private fun replace(
@@ -171,5 +215,11 @@ object HudSpecPropertyEditor {
             replace(child, path.drop(1), replacement) ?: return null
         }
         return JsonObject(objectValue + (key to newValue))
+    }
+
+    private fun valueAt(objectValue: JsonObject, path: List<String>): JsonElement? {
+        val value = objectValue[path.first()] ?: return null
+        if (path.size == 1) return value
+        return valueAt(value as? JsonObject ?: return null, path.drop(1))
     }
 }

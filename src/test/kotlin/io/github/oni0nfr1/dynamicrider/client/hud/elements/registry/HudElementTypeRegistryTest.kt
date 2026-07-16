@@ -2,6 +2,8 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.registry
 
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyMetadata
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertySchema
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,10 +19,10 @@ class HudElementTypeRegistryTest {
         val type = HudElementTypeRegistry.EDITOR_PROPERTY_STRESS_TEST
 
         assertEquals(EditorPropertyStressElement.Spec::class, type.specClass)
-        assertTrue(type.metadata.properties.size >= 28)
+        assertTrue(type.metadata.properties.size >= 27)
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.BooleanToggle })
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.StringInput })
-        assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.EnumSelector })
+        assertTrue(type.metadata.properties.any { it.schema is HudPropertySchema.Sealed })
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.Slider })
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.ColorPicker })
     }
@@ -63,10 +65,7 @@ class HudElementTypeRegistryTest {
             buildList {
                 add(type.metadata.nameKey)
                 add(type.metadata.categoryNameKey)
-                type.metadata.properties.forEach { property ->
-                    add(property.nameKey)
-                    property.descriptionKey?.let(::add)
-                }
+                addPropertyKeys(type.metadata.properties)
             }
         }.toSet()
 
@@ -76,6 +75,18 @@ class HudElementTypeRegistryTest {
             }
             val missingKeys = requiredKeys - availableKeys
             assertTrue(missingKeys.isEmpty(), "$locale is missing metadata translations: $missingKeys")
+        }
+    }
+
+    private fun MutableList<String>.addPropertyKeys(properties: List<HudPropertyMetadata>) {
+        properties.forEach { property ->
+            add(property.nameKey)
+            property.descriptionKey?.let(::add)
+            val sealed = property.schema as? HudPropertySchema.Sealed ?: return@forEach
+            sealed.variants.forEach { variant ->
+                add(variant.nameKey)
+                addPropertyKeys(variant.properties)
+            }
         }
     }
 

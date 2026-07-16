@@ -11,6 +11,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
@@ -89,6 +90,36 @@ class HudElementInspectorTest {
         assertTrue(HudElementTypeRegistry.EDITOR_PROPERTY_STRESS_TEST.metadata.properties.single { it.serialName == "value20" }.hidden)
         assertTrue(stress.properties.none { it.path == HudPropertyPath.of("value20") })
         assertFalse(gauge.properties.single { it.path == HudPropertyPath.of("gradientStops") }.supported)
+    }
+
+    @Test
+    fun `sealed property exposes variants and only the selected subtype fields`() {
+        val document = HudSceneDocument.from(
+            HudSceneSpec(
+                elementIds = listOf("stress"),
+                elements = listOf(
+                    EditorPropertyStressElement.Spec(
+                        style = EditorPropertyStressElement.StressStyle.Outline(thickness = 3)
+                    )
+                ),
+            )
+        )
+
+        val model = assertInstanceOf(
+            HudElementInspectionResult.Inspected::class.java,
+            HudElementInspector(document).inspect("stress"),
+        ).model
+        val style = model.properties.single { it.path == HudPropertyPath.of("style") }
+        val sealed = assertInstanceOf(HudEditablePropertySchema.Sealed::class.java, style.schema)
+
+        assertEquals("outline", sealed.selectedVariant)
+        assertEquals(listOf("checker", "outline", "solid"), sealed.variants.map { it.serialName }.sorted())
+        assertEquals(
+            setOf(HudPropertyPath.parse("style.color"), HudPropertyPath.parse("style.thickness")),
+            sealed.properties.map { it.path }.toSet(),
+        )
+        assertEquals(3, sealed.properties.single { it.path == HudPropertyPath.parse("style.thickness") }
+            .value.jsonPrimitive.content.toInt())
     }
 
     @Test

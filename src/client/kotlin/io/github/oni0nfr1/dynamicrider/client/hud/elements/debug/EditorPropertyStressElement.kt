@@ -9,6 +9,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudHidden
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudRange
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudVariantInfo
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
@@ -29,7 +30,6 @@ class EditorPropertyStressElement(
     private val style = spec.style
     private val boxWidth = spec.boxWidth
     private val boxHeight = spec.boxHeight
-    private val boxColor = spec.boxColor
     private val textColor = spec.textColor
 
     override val width: Int get() = boxWidth
@@ -38,22 +38,52 @@ class EditorPropertyStressElement(
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
         if (!enabled) return
         when (style) {
-            StressStyle.SOLID -> guiGraphics.fill(0, 0, width, height, boxColor)
-            StressStyle.OUTLINE -> guiGraphics.renderOutline(0, 0, width, height, boxColor)
-            StressStyle.CHECKER -> {
-                guiGraphics.fill(0, 0, width, height, boxColor)
-                guiGraphics.fill(0, 0, width / 2, height / 2, boxColor xor 0x00202020)
-                guiGraphics.fill(width / 2, height / 2, width, height, boxColor xor 0x00202020)
+            is StressStyle.Solid -> guiGraphics.fill(0, 0, width, height, style.color)
+            is StressStyle.Outline -> repeat(style.thickness) { inset ->
+                guiGraphics.renderOutline(inset, inset, width - inset * 2, height - inset * 2, style.color)
+            }
+            is StressStyle.Checker -> {
+                guiGraphics.fill(0, 0, width, height, style.primaryColor)
+                guiGraphics.fill(0, 0, width / 2, height / 2, style.secondaryColor)
+                guiGraphics.fill(width / 2, height / 2, width, height, style.secondaryColor)
             }
         }
         guiGraphics.drawString(Minecraft.getInstance().font, label, 4, 4, textColor)
     }
 
     @Serializable
-    enum class StressStyle {
-        SOLID,
-        OUTLINE,
-        CHECKER,
+    sealed interface StressStyle {
+        @Serializable
+        @SerialName("solid")
+        @HudVariantInfo
+        data class Solid(
+            @HudColor(alpha = true)
+            @Serializable(with = HexColorSerdes::class)
+            val color: Int = 0xC0406080.toInt(),
+        ) : StressStyle
+
+        @Serializable
+        @SerialName("outline")
+        @HudVariantInfo
+        data class Outline(
+            @HudColor(alpha = true)
+            @Serializable(with = HexColorSerdes::class)
+            val color: Int = 0xFF80A0C0.toInt(),
+            @HudRange(min = 1.0, max = 4.0, step = 1.0)
+            val thickness: Int = 1,
+        ) : StressStyle
+
+        @Serializable
+        @SerialName("checker")
+        @HudVariantInfo
+        data class Checker(
+            @HudColor(alpha = true)
+            @Serializable(with = HexColorSerdes::class)
+            val primaryColor: Int = 0xC0406080.toInt(),
+            @HudColor(alpha = true)
+            @Serializable(with = HexColorSerdes::class)
+            val secondaryColor: Int = 0xC06080A0.toInt(),
+        ) : StressStyle
     }
 
     @Serializable
@@ -64,14 +94,11 @@ class EditorPropertyStressElement(
         override val layout: HudLayoutSpec = HudLayoutSpec(x = 20, y = 20),
         val enabled: Boolean = true,
         val label: String = "Property stress test",
-        val style: StressStyle = StressStyle.SOLID,
+        val style: StressStyle = StressStyle.Solid(),
         @HudRange(min = 20.0, max = 400.0, step = 1.0)
         val boxWidth: Int = 160,
         @HudRange(min = 20.0, max = 200.0, step = 1.0)
         val boxHeight: Int = 32,
-        @HudColor(alpha = true)
-        @Serializable(with = HexColorSerdes::class)
-        val boxColor: Int = 0xC0406080.toInt(),
         @HudColor(alpha = true)
         @Serializable(with = HexColorSerdes::class)
         val textColor: Int = 0xFFFFFFFF.toInt(),

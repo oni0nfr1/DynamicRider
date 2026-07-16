@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import kotlinx.serialization.json.JsonPrimitive
@@ -16,7 +17,7 @@ class HudLayoutEditorModelTest {
             path = HudPropertyPath.of("layout"),
             nameKey = "layout",
             descriptionKey = null,
-            editor = HudPropertyEditorType.LayoutEditor,
+            schema = HudEditablePropertySchema.Leaf(HudPropertyEditorType.LayoutEditor),
             value = buildJsonObject {
                 put("screenAnchor", JsonPrimitive("TOP_LEFT"))
                 put("elementAnchor", JsonPrimitive("MIDDLE_CENTER"))

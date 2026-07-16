@@ -20,13 +20,56 @@ data class HudEditableProperty(
     val path: HudPropertyPath,
     val nameKey: String,
     val descriptionKey: String?,
-    val editor: HudPropertyEditorType,
+    val schema: HudEditablePropertySchema,
     val value: JsonElement,
     val optional: Boolean,
     val nullable: Boolean,
 ) {
+    val editor: HudPropertyEditorType
+        get() = when (schema) {
+            is HudEditablePropertySchema.Leaf -> schema.editor
+            is HudEditablePropertySchema.Sealed -> HudPropertyEditorType.Unsupported(schema.serialName)
+            is HudEditablePropertySchema.Unsupported -> HudPropertyEditorType.Unsupported(schema.serialName)
+        }
+
     val supported: Boolean
-        get() = editor !is HudPropertyEditorType.Unsupported
+        get() = schema !is HudEditablePropertySchema.Unsupported
+}
+
+sealed interface HudEditablePropertySchema {
+    data class Leaf(
+        val editor: HudPropertyEditorType,
+    ) : HudEditablePropertySchema
+
+    data class Sealed(
+        val serialName: String,
+        val discriminator: String,
+        val selectedVariant: String,
+        val variants: List<HudEditableVariant>,
+        val properties: List<HudEditableProperty>,
+    ) : HudEditablePropertySchema
+
+    data class Unsupported(
+        val serialName: String,
+    ) : HudEditablePropertySchema
+}
+
+data class HudEditableVariant(
+    val serialName: String,
+    val nameKey: String,
+)
+
+/** 이 모델 안에서 중첩 경로에 해당하는 현재 property를 찾는다. */
+fun HudElementEditorModel.propertyAt(path: HudPropertyPath): HudEditableProperty? {
+    fun find(properties: List<HudEditableProperty>): HudEditableProperty? {
+        properties.forEach { property ->
+            if (property.path == path) return property
+            val nested = (property.schema as? HudEditablePropertySchema.Sealed)?.properties ?: return@forEach
+            find(nested)?.let { return it }
+        }
+        return null
+    }
+    return find(properties)
 }
 
 /** 현재 상태 타입의 요소 팔레트에 표시할 정적 요소 정보다. */

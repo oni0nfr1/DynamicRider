@@ -38,4 +38,25 @@ class HudSpecEditService(
             is HudSpecPropertyUpdateResult.Failure -> HudSpecEditCommandResult.PropertyRejected(result)
         }
     }
+
+    /** [elementId]의 sealed property를 지정 subtype으로 바꾸는 command를 생성한다. */
+    fun createVariantChangeCommand(
+        elementId: String,
+        path: HudPropertyPath,
+        variantSerialName: String,
+    ): HudSpecEditCommandResult {
+        val element = document.elementById(elementId)
+            ?: return HudSpecEditCommandResult.ElementNotFound(elementId)
+
+        return when (val result = HudSpecPropertyEditor.changeVariant(element.spec, path, variantSerialName)) {
+            is HudSpecPropertyUpdateResult.Success -> {
+                if (result.spec == element.spec) {
+                    HudSpecEditCommandResult.Unchanged(elementId)
+                } else {
+                    HudSpecEditCommandResult.Created(ReplaceElementSpecCommand(elementId, result.spec))
+                }
+            }
+            is HudSpecPropertyUpdateResult.Failure -> HudSpecEditCommandResult.PropertyRejected(result)
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumberType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
@@ -18,7 +19,7 @@ object HudLayoutEditorModel {
                     path = HudPropertyPath.of(*(layout.path.segments + definition.serialName).toTypedArray()),
                     nameKey = "dynamicrider.hud.editor.layout.${definition.translationId}",
                     descriptionKey = null,
-                    editor = definition.editor,
+                    schema = HudEditablePropertySchema.Leaf(definition.editor),
                     value = fieldValue,
                     optional = false,
                     nullable = false,

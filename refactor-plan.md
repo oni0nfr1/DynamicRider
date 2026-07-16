@@ -21,7 +21,7 @@ config/dynrider/hud/{mode}/{kartStateType}.json
 - [x] `PreviewKartState` 값을 조절하고 preset을 적용할 수 있는 preview 상태 UI를 완성한다.
 - [x] inspector, repository/session 저장 정책 및 모든 preview factory/preset의 핵심 회귀 테스트를 보강한다.
 - [x] 신규 요소의 색상 변경에 사용할 texture hue shift shader와 GUI RenderType을 제공한다.
-- [ ] 단일 요소 Spec 내 sealed style property의 subtype 선택·편집·검증을 지원한다.
+- [x] 단일 요소 Spec 내 sealed style property의 subtype 선택·편집·검증을 지원한다.
 - [ ] 신규 HUD 요소 1개를 추가하고 metadata, 번역, 기본 Spec 및 상태 호환성 검사를 통과시킨다.
 
 일반 중첩 object/list, 최상위 요소 Spec 다형성, compound child 편집과 KSP registry 생성 및 프레임 상태 snapshot은 이번 릴리즈 범위에서 제외한다.
@@ -232,7 +232,7 @@ validation 실패는 해당 property 경로와 함께 속성 패널에 표시한
      - 호환 preset은 기본 preview 값으로 초기화한 뒤 적용해 이전 수동 값이 섞이지 않게 한다.
      - preview 상태 변경은 장면 Spec, dirty와 undo/redo history를 변경하지 않는다.
 7. [ ] 기본 GUI가 완성된 뒤 compound child와 중첩 object/list spec의 재귀 편집을 구현한다.
-8. [ ] 신규 부스터 슬롯의 선행 작업으로 sealed interface style Spec의 다형성 편집을 지원한다.
+8. [x] 신규 부스터 슬롯의 선행 작업으로 sealed interface style Spec의 다형성 편집을 지원한다.
    - `PolymorphicKind.SEALED`에서 등록된 하위 타입과 현재 type discriminator를 inspector metadata로 노출한다.
    - GUI에서 하위 타입을 선택하고, 선택된 타입의 프로퍼티를 재귀적으로 편집한다.
    - subtype 교체와 중첩 프로퍼티 변경을 기존 immutable JSON round-trip과 command/undo/redo 흐름으로 처리한다.
