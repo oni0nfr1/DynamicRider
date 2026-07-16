@@ -9,9 +9,9 @@
       "gauge": { "layout": { "x": 79, "y": 2 } },
       "icons": { "layout": { "x": 152, "y": 91 }, "draftBlinkSpeed": 1.0 }
     },
-    { "type": "NITRO_SLOT", "layout": { "x": 10, "y": 10, "scaleX": 0.5, "scaleY": 0.5 }, "slotIndex": 1, "backgroundColor": "#FFFF0000" },
-    { "type": "NITRO_SLOT", "layout": { "x": 60, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "slotIndex": 2, "backgroundColor": "#FFFF0000" },
-    { "type": "NITRO_SLOT", "layout": { "x": 100, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "slotIndex": 3, "backgroundColor": "#FFFF0000" },
+    { "type": "STYLED_NITRO_SLOT", "layout": { "x": 10, "y": 10, "scaleX": 0.5, "scaleY": 0.5 }, "style": { "type": "charge", "backgroundColor": "#FFFF8080", "iconColor": "#FFFF6060" }, "slotIndex": 1 },
+    { "type": "STYLED_NITRO_SLOT", "layout": { "x": 61, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "style": { "type": "charge", "backgroundColor": "#FFFF8080", "iconColor": "#FFFF6060" }, "slotIndex": 2 },
+    { "type": "STYLED_NITRO_SLOT", "layout": { "x": 101, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "style": { "type": "charge", "backgroundColor": "#FFFF8080", "iconColor": "#FFFF6060" }, "slotIndex": 3 },
     { "type": "RIDE_TIMER", "layout": { "screenAnchor": "TOP_RIGHT", "elementAnchor": "TOP_RIGHT", "x": -10, "y": 10 } },
     { "type": "PLAIN_RANKING_TABLE", "layout": { "screenAnchor": "MIDDLE_LEFT", "elementAnchor": "MIDDLE_LEFT", "x": 10 } }
   ]

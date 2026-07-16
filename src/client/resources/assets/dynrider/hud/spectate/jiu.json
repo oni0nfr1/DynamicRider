@@ -8,9 +8,9 @@
       "icons": { "layout": { "screenAnchor": "TOP_CENTER", "elementAnchor": "TOP_CENTER", "y": 8 }, "draftBlinkSpeed": 1.0 },
       "gauge": { "layout": { "screenAnchor": "TOP_CENTER", "elementAnchor": "BOTTOM_CENTER", "y": -6 } }
     },
-    { "type": "NITRO_SLOT", "layout": { "x": 10, "y": 10, "scaleX": 0.5, "scaleY": 0.5 }, "slotIndex": 1, "backgroundColor": "#FF0000FF" },
-    { "type": "NITRO_SLOT", "layout": { "x": 60, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "slotIndex": 2, "backgroundColor": "#FF0000FF" },
-    { "type": "NITRO_SLOT", "layout": { "x": 100, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "slotIndex": 3, "backgroundColor": "#FF0000FF" },
+    { "type": "STYLED_NITRO_SLOT", "layout": { "x": 10, "y": 10, "scaleX": 0.5, "scaleY": 0.5 }, "style": { "type": "jiu", "frameHue": 0.0, "iconHue": 0.0 }, "slotIndex": 1 },
+    { "type": "STYLED_NITRO_SLOT", "layout": { "x": 61, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "style": { "type": "jiu", "frameHue": 0.0, "iconHue": 0.0 }, "slotIndex": 2 },
+    { "type": "STYLED_NITRO_SLOT", "layout": { "x": 101, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "style": { "type": "jiu", "frameHue": 0.0, "iconHue": 0.0 }, "slotIndex": 3 },
     { "type": "SPECTATE_TIMER", "layout": { "screenAnchor": "TOP_RIGHT", "elementAnchor": "TOP_RIGHT", "x": -10, "y": 10 } },
     { "type": "PLAIN_RANKING_TABLE", "layout": { "screenAnchor": "MIDDLE_LEFT", "elementAnchor": "MIDDLE_LEFT", "x": 10 } }
   ]
