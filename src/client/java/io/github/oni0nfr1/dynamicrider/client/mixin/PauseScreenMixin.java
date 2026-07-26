@@ -23,7 +23,7 @@ public abstract class PauseScreenMixin extends Screen {
 
         this.addRenderableWidget(
                 Button.builder(
-                        Component.literal("다이나믹 라이더 설정"),
+                        Component.translatable("dynamicrider.config.main.title"),
                         (btn) -> client.setScreen(new DynRiderConfigMain(this))
                 ).bounds(10, 60, 100, 20).build()
         );
