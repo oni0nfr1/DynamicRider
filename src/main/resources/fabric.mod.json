@@ -31,7 +31,7 @@
     "fabric-language-kotlin": ">=${kotlin_loader_version}",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}",
-    "skid": ">=${skidmc_version}"
+    "skid": "~${skidmc_version}"
   },
   "custom": {
     "modmenu": {
