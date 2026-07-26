@@ -6,4 +6,5 @@ import kotlinx.serialization.Serializable
 data class DynRiderConfigData(
     val isModEnabled: Boolean = true,
     val hudFont: String = "VANILLA",
+    val gaugeInterpolation: String = "LINEAR_EXTRAPOLATION",
 )

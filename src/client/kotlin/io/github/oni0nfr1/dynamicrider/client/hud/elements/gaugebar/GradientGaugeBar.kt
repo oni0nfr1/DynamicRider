@@ -4,7 +4,7 @@ import com.mojang.math.Axis
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBarFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
@@ -27,7 +27,7 @@ class GradientGaugeBar(
     context: HudSceneContext<NitroKartState>,
     parent: ElementHolder,
 ) : HudElementImpl<NitroKartState>(spec.layout, context, parent),
-    GaugeBar by LinearExtrapolator(context.kartState) {
+    GaugeBar by GaugeBarFactory.createConfigured(context.kartState) {
     companion object {
         val client: Minecraft by lazy { Minecraft.getInstance() }
         val fontManager: Font = client.font

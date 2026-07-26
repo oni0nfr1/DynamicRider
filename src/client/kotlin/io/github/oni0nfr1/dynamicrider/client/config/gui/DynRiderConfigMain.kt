@@ -3,10 +3,12 @@ package io.github.oni0nfr1.dynamicrider.client.config.gui
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfigData
 import io.github.oni0nfr1.dynamicrider.client.config.FontStyle
+import io.github.oni0nfr1.dynamicrider.client.config.GaugeInterpolationMode
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.HudEditorEntrypoint
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.CycleButton
+import net.minecraft.client.gui.components.Tooltip
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.network.chat.Component
 
@@ -15,9 +17,12 @@ class DynRiderConfigMain(
 ) : Screen(Component.translatable("dynamicrider.config.main.title")) {
     private var workingIsModEnabled: Boolean = true
     private var workingFontOption: FontStyle = FontStyle.VANILLA
+    private var workingGaugeInterpolation: GaugeInterpolationMode =
+        GaugeInterpolationMode.LINEAR_EXTRAPOLATION
 
     private lateinit var enableToggleButton: CycleButton<Boolean>
     private lateinit var fontCycleButton: CycleButton<FontStyle>
+    private lateinit var gaugeInterpolationButton: CycleButton<GaugeInterpolationMode>
 
     override fun init() {
         val currentConfig: DynRiderConfigData = DynRiderConfig.currentData
@@ -25,6 +30,9 @@ class DynRiderConfigMain(
         workingIsModEnabled = currentConfig.isModEnabled
         workingFontOption = runCatching { FontStyle.valueOf(currentConfig.hudFont) }
             .getOrElse { FontStyle.VANILLA }
+        workingGaugeInterpolation = runCatching {
+            GaugeInterpolationMode.valueOf(currentConfig.gaugeInterpolation)
+        }.getOrElse { GaugeInterpolationMode.LINEAR_EXTRAPOLATION }
 
         val centerX = this.width / 2
         val rowWidth = 220
@@ -58,27 +66,47 @@ class DynRiderConfigMain(
                 workingFontOption = newValue
             }
 
+        gaugeInterpolationButton = CycleButton.builder<GaugeInterpolationMode> { option ->
+            Component.translatable(option.translationKey)
+        }
+            .withValues(GaugeInterpolationMode.entries)
+            .withInitialValue(workingGaugeInterpolation)
+            .withTooltip { option ->
+                Tooltip.create(Component.translatable(option.descriptionTranslationKey))
+            }
+            .create(
+                centerX - rowWidth / 2,
+                firstRowY + rowGap * 2,
+                rowWidth,
+                rowHeight,
+                Component.translatable("dynamicrider.config.gauge_interpolation")
+            ) { _, newValue ->
+                workingGaugeInterpolation = newValue
+            }
+
         val editorButton = Button.builder(Component.translatable("dynamicrider.hud.editor.open")) {
             Minecraft.getInstance().setScreen(HudEditorEntrypoint.createEditor(this))
-        }.bounds(centerX - 110, firstRowY + rowGap * 2, 220, 20).build()
+        }.bounds(centerX - 110, firstRowY + rowGap * 3, 220, 20).build()
 
         val saveButton = Button.builder(Component.translatable("dynamicrider.config.save")) {
             val newConfig = DynRiderConfigData(
                 isModEnabled = workingIsModEnabled,
                 hudFont = workingFontOption.name,
+                gaugeInterpolation = workingGaugeInterpolation.name,
             )
             DynRiderConfig.save(newConfig)
             DynRiderConfig.apply(newConfig)
 
             Minecraft.getInstance().setScreen(parentScreen)
-        }.bounds(centerX - 110, firstRowY + rowGap * 4, 100, 20).build()
+        }.bounds(centerX - 110, firstRowY + rowGap * 5, 100, 20).build()
 
         val cancelButton = Button.builder(Component.translatable("dynamicrider.config.cancel")) {
             Minecraft.getInstance().setScreen(parentScreen)
-        }.bounds(centerX + 10, firstRowY + rowGap * 4, 100, 20).build()
+        }.bounds(centerX + 10, firstRowY + rowGap * 5, 100, 20).build()
 
         addRenderableWidget(enableToggleButton)
         addRenderableWidget(fontCycleButton)
+        addRenderableWidget(gaugeInterpolationButton)
         addRenderableWidget(editorButton)
         addRenderableWidget(saveButton)
         addRenderableWidget(cancelButton)

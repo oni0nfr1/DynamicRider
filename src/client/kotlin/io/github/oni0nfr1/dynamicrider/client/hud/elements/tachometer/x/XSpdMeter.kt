@@ -7,7 +7,7 @@ import io.github.oni0nfr1.dynamicrider.client.graphics.texture.SpriteAtlas
 import io.github.oni0nfr1.dynamicrider.client.graphics.texture.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBarFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
@@ -38,7 +38,7 @@ class XSpdMeter(
     parent: ElementHolder,
 ) : HudElementImpl<NitroKartState>(spec.layout, context, parent),
     Speedometer by SpdMeterImpl(context.kartState),
-    GaugeBar by LinearExtrapolator(context.kartState) {
+    GaugeBar by GaugeBarFactory.createConfigured(context.kartState) {
 
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(

@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
-import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBarFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
@@ -30,7 +30,7 @@ class ChargeGauge(
     context: HudSceneContext<NitroKartState>,
     parent: ElementHolder,
 ) : HudElementImpl<NitroKartState>(spec.layout, context, parent),
-    GaugeBar by LinearExtrapolator(context.kartState) {
+    GaugeBar by GaugeBarFactory.createConfigured(context.kartState) {
 
     companion object {
         val META by ElementRegistry.elementMeta<Meta>(

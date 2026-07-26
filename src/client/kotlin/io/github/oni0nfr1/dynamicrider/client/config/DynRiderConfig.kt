@@ -34,6 +34,8 @@ object DynRiderConfig {
         }
     var hudVisible: Boolean = true
     var hudFont: FontStyle = FontStyle.VANILLA
+    var gaugeInterpolationMode: GaugeInterpolationMode =
+        GaugeInterpolationMode.LINEAR_EXTRAPOLATION
 
     /////////////////////////////////////////////////////////////////
 
@@ -82,6 +84,9 @@ object DynRiderConfig {
         hudFont = runCatching {
             FontStyle.valueOf(data.hudFont)
         }.getOrElse { FontStyle.VANILLA }
+        gaugeInterpolationMode = runCatching {
+            GaugeInterpolationMode.valueOf(data.gaugeInterpolation)
+        }.getOrElse { GaugeInterpolationMode.LINEAR_EXTRAPOLATION }
     }
 
 }
