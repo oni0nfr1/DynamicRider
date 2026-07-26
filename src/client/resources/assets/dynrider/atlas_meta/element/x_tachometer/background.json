@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/x_tachometer/background.png",
+  "width": 193,
+  "height": 740,
+  "cellWidth": 193,
+  "cellHeight": 148
+}

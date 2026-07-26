@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/x_status_ring/ring.png",
+  "width": 370,
+  "height": 925,
+  "cellWidth": 370,
+  "cellHeight": 185
+}

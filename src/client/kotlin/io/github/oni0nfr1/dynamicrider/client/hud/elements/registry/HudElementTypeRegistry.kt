@@ -11,6 +11,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer.JiuStyleS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge.*
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.*
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.x.*
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.HudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.timer.SpectateHudTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.state.*
@@ -130,6 +131,24 @@ object HudElementTypeRegistry {
         NitroKartState::class.java,
         JiuGauge::Spec,
     )
+    val X_SPEEDOMETER = HudElementType(
+        XSpdMeter.Spec::class,
+        XSpdMeter.Spec.serializer(),
+        NitroKartState::class.java,
+        XSpdMeter::Spec,
+    )
+    val X_STATUS_RING = HudElementType(
+        XStatusRing.Spec::class,
+        XStatusRing.Spec.serializer(),
+        XKartState::class.java,
+        XStatusRing::Spec,
+    )
+    val X_TACHOMETER = HudElementType(
+        XTachometer.Spec::class,
+        XTachometer.Spec.serializer(),
+        XKartState::class.java,
+        XTachometer::Spec,
+    )
     val V1_TACHOMETER = HudElementType(
         V1Tachometer.Spec::class,
         V1Tachometer.Spec.serializer(),
@@ -156,6 +175,9 @@ object HudElementTypeRegistry {
         JIU_SPEEDOMETER,
         JIU_ICONS,
         JIU_GAUGE,
+        X_SPEEDOMETER,
+        X_STATUS_RING,
+        X_TACHOMETER,
         V1_TACHOMETER,
     )
 
@@ -201,6 +223,9 @@ object HudElementTypeRegistry {
         register(JIU_SPEEDOMETER)
         register(JIU_ICONS)
         register(JIU_GAUGE)
+        register(X_SPEEDOMETER)
+        register(X_STATUS_RING)
+        register(X_TACHOMETER)
         register(V1_TACHOMETER)
     }
 

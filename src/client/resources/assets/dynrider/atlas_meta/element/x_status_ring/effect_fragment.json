@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/x_status_ring/effect_fragment.png",
+  "width": 27,
+  "height": 37,
+  "cellWidth": 27,
+  "cellHeight": 37
+}

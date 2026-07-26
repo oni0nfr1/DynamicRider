@@ -1,0 +1,6 @@
+{
+  "type": "NUMBER",
+  "texture": "dynrider:textures/element/x_tachometer/number_cyan.png",
+  "digitWidth": 24,
+  "digitHeight": 36
+}

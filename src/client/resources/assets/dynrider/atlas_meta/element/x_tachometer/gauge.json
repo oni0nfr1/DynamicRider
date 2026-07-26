@@ -1,0 +1,8 @@
+{
+  "type": "SPRITE",
+  "texture": "dynrider:textures/element/x_tachometer/gauge.png",
+  "width": 193,
+  "height": 444,
+  "cellWidth": 193,
+  "cellHeight": 148
+}

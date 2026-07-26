@@ -2,12 +2,10 @@
   "formatVersion": 1,
   "elements": [
     {
-      "type": "JIU_TACHOMETER_SIMPLE",
-      "layout": { "screenAnchor": "BOTTOM_CENTER", "elementAnchor": "BOTTOM_CENTER" }
-    },
-    {
-      "type": "GRADIENT_GAUGE_BAR",
-      "layout": { "screenAnchor": "BOTTOM_CENTER", "elementAnchor": "BOTTOM_CENTER", "y": -75 }
+      "type": "X_TACHOMETER",
+      "layout": { "screenAnchor": "BOTTOM_CENTER", "elementAnchor": "BOTTOM_CENTER", "scaleX": 0.5, "scaleY": 0.5 },
+      "statusRing": { "layout": {}, "blinkSpeed": 3.0, "animationSpeed": 1.0 },
+      "speedometer": { "layout": { "x": 90, "y": 37 }, "animationSpeed": 1.0 }
     },
     { "type": "STYLED_NITRO_SLOT", "layout": { "x": 10, "y": 10, "scaleX": 0.5, "scaleY": 0.5 }, "style": { "type": "x", "backgroundColor": "#FFFFFFFF", "iconColor": "#FFFFFFFF" }, "slotIndex": 1 },
     { "type": "STYLED_NITRO_SLOT", "layout": { "x": 61, "y": 10, "scaleX": 0.375, "scaleY": 0.375 }, "style": { "type": "x", "backgroundColor": "#FFFFFFFF", "iconColor": "#FFFFFFFF" }, "slotIndex": 2 },

@@ -1,0 +1,24 @@
+{
+  "background": "dynrider:element/x_tachometer/background",
+  "gauge": "dynrider:element/x_tachometer/gauge",
+  "numberWhite": "dynrider:element/x_tachometer/number_white",
+  "numberCyan": "dynrider:element/x_tachometer/number_cyan",
+  "backgroundAnimationCells": [
+    { "row": 0, "col": 0 },
+    { "row": 1, "col": 0 },
+    { "row": 2, "col": 0 }
+  ],
+  "noLightBackgroundCell": { "row": 3, "col": 0 },
+  "lightBackgroundCell": { "row": 4, "col": 0 },
+  "teamGaugeBackgroundCell": { "row": 0, "col": 0 },
+  "nitroGaugeCell": { "row": 1, "col": 0 },
+  "teamGaugeCell": { "row": 2, "col": 0 },
+  "gaugeCenterX": 96.0,
+  "gaugeCenterY": 98.0,
+  "gaugeStartAngleDegrees": 175.0,
+  "gaugeSweepDegrees": 190.0,
+  "numberPosX": 96,
+  "numberPosY": 101,
+  "lightSpeedThreshold": 160.0,
+  "animationSpeedBase": 0.008
+}
