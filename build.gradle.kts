@@ -8,7 +8,16 @@ plugins {
     id("maven-publish")
 }
 
-version = project.property("mod_version") as String
+val configuredModVersion = providers.gradleProperty("mod_version").get()
+version = if (configuredModVersion.endsWith("-dev")) {
+    val commitHash = providers.exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+    }.standardOutput.asText.get().trim()
+    check(commitHash.isNotEmpty()) { "Could not determine the Git commit hash" }
+    "$configuredModVersion.$commitHash"
+} else {
+    configuredModVersion
+}
 group = project.property("maven_group") as String
 
 base {
