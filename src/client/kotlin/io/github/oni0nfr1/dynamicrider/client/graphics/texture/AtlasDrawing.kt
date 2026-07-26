@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.util
+package io.github.oni0nfr1.dynamicrider.client.graphics.texture
 
 import net.minecraft.client.gui.GuiGraphics
 

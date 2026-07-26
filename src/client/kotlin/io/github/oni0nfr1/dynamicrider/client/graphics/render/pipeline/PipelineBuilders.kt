@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.render
+package io.github.oni0nfr1.dynamicrider.client.graphics.render.pipeline
 
 import com.mojang.blaze3d.pipeline.BlendFunction
 import com.mojang.blaze3d.pipeline.RenderPipeline
@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.VertexFormat
 import net.minecraft.resources.ResourceLocation
 
-fun buildHudPositionColorPipeline(
+internal fun buildHudPositionColorPipeline(
     pipelineId: ResourceLocation,
     blend: BlendFunction?,
     mode: VertexFormat.Mode = VertexFormat.Mode.QUADS,
@@ -38,7 +38,7 @@ fun buildHudPositionColorPipeline(
     return builder.build()
 }
 
-fun buildHudHueShiftPipeline(pipelineId: ResourceLocation): RenderPipeline {
+internal fun buildHudHueShiftPipeline(pipelineId: ResourceLocation): RenderPipeline {
     val shaderId = ResourceLocation.fromNamespaceAndPath("dynrider", "core/hue_shift")
     return RenderPipeline.builder()
         .withLocation(pipelineId)
@@ -49,6 +49,29 @@ fun buildHudHueShiftPipeline(pipelineId: ResourceLocation): RenderPipeline {
         .withUniform("ModelViewMat", UniformType.MATRIX4X4)
         .withUniform("ProjMat", UniformType.MATRIX4X4)
         .withUniform("ColorModulator", UniformType.VEC4)
+        .withBlend(BlendFunction.TRANSLUCENT)
+        .withCull(false)
+        .withColorWrite(true, true)
+        .build()
+}
+
+internal fun buildHudArcClipPipeline(pipelineId: ResourceLocation): RenderPipeline {
+    val shaderId = ResourceLocation.fromNamespaceAndPath("dynrider", "core/arc_clip")
+    return RenderPipeline.builder()
+        .withLocation(pipelineId)
+        .withVertexShader(shaderId)
+        .withFragmentShader(shaderId)
+        .withSampler("Sampler0")
+        .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
+        .withUniform("ModelViewMat", UniformType.MATRIX4X4)
+        .withUniform("ProjMat", UniformType.MATRIX4X4)
+        .withUniform("ColorModulator", UniformType.VEC4)
+        .withUniform("ArcCenter", UniformType.VEC2)
+        .withUniform("ArcStartDirection", UniformType.VEC2)
+        .withUniform("ArcEndDirection", UniformType.VEC2)
+        .withUniform("ArcClockwise", UniformType.INT)
+        .withUniform("ArcMajor", UniformType.INT)
+        .withUniform("ArcFull", UniformType.INT)
         .withBlend(BlendFunction.TRANSLUCENT)
         .withCull(false)
         .withColorWrite(true, true)

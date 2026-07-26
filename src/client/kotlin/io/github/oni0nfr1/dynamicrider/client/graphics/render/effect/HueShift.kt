@@ -1,5 +1,6 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.render
+package io.github.oni0nfr1.dynamicrider.client.graphics.render.effect
 
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.DynRiderRenderTypes
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.resources.ResourceLocation
 import kotlin.math.roundToInt

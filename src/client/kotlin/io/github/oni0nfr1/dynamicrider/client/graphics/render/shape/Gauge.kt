@@ -1,5 +1,6 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.util
+package io.github.oni0nfr1.dynamicrider.client.graphics.render.shape
 
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.Atlas
 import io.github.oni0nfr1.dynamicrider.client.resource.element.data.GaugeFillRegion
 import net.minecraft.client.gui.GuiGraphics
 

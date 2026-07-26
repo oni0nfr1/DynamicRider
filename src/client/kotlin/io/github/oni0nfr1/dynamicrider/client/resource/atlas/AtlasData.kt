@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.resource.atlas
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.SpriteAtlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.Atlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.NumberAtlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.SpriteAtlas
 import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

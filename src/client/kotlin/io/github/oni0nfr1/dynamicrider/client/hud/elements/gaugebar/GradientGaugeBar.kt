@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar
 
 import com.mojang.math.Axis
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawScaledText
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.drawScaledText
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator

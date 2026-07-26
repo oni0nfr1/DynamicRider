@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawGauge
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.Atlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.drawGauge
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator

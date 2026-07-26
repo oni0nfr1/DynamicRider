@@ -1,10 +1,12 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.util
+package io.github.oni0nfr1.dynamicrider.client.graphics.texture
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.render.blitHueShifted
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.effect.blitArcClipped
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.effect.blitHueShifted
 import kotlinx.serialization.Serializable
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
+import org.joml.Vector2f
 
 open class SpriteAtlas(
     protected val texture: ResourceLocation,
@@ -198,6 +200,47 @@ open class SpriteAtlas(
                 textureHeight = atlasHeight,
                 hueDegrees = hueDegrees,
                 opacity = opacity,
+            )
+        }
+
+        /**
+         * 셀 전체를 [centerX], [centerY] 기준의 원호 영역으로 잘라 원래 크기로 그린다.
+         *
+         * 중심 좌표와 방향벡터는 셀의 텍스처 픽셀 좌표계를 사용한다. 즉 Y축의 양의 방향은 아래쪽이다.
+         */
+        fun drawArcClipped(
+            guiGraphics: GuiGraphics,
+            x: Int,
+            y: Int,
+            centerX: Float,
+            centerY: Float,
+            startDirection: Vector2f,
+            endDirection: Vector2f,
+            fillAmount: Float,
+            clockwise: Boolean = true,
+            majorArc: Boolean = false,
+            color: Int = 0xFFFFFFFF.toInt(),
+        ) {
+            guiGraphics.blitArcClipped(
+                texture = texture,
+                x = x,
+                y = y,
+                u = u.toFloat(),
+                v = v.toFloat(),
+                width = width,
+                height = height,
+                sourceWidth = width,
+                sourceHeight = height,
+                textureWidth = atlasWidth,
+                textureHeight = atlasHeight,
+                centerX = centerX,
+                centerY = centerY,
+                startDirection = startDirection,
+                endDirection = endDirection,
+                fillAmount = fillAmount,
+                clockwise = clockwise,
+                majorArc = majorArc,
+                color = color,
             )
         }
     }

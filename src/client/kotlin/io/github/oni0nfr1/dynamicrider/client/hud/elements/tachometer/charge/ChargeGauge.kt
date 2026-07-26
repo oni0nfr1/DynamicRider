@@ -8,9 +8,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudElementInfo
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.annotation.HudLayout
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawGauge
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.Atlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.drawGauge
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.fillImage
 import io.github.oni0nfr1.dynamicrider.client.resource.ResourceLocationSerializer
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementMetaData

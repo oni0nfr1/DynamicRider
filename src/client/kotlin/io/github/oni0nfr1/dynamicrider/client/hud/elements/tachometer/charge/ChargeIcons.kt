@@ -1,8 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.charge
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.amination.LoopTimer
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
+import io.github.oni0nfr1.dynamicrider.client.animation.LoopTimer
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.Atlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec

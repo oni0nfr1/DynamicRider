@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.util
+package io.github.oni0nfr1.dynamicrider.client.graphics.render.shape
 
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.util.dsegText

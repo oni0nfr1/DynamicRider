@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.amination.LoopTimer
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
+import io.github.oni0nfr1.dynamicrider.client.animation.LoopTimer
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.NumberAtlas
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.GaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.bridge.LinearExtrapolator

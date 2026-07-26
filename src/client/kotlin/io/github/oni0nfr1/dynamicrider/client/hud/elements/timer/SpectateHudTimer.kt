@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.timer
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.textWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec

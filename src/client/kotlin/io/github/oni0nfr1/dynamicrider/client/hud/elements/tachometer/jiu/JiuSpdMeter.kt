@@ -1,9 +1,9 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.amination.OneShotTimer
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.Atlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.NumberAtlas
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillImage
+import io.github.oni0nfr1.dynamicrider.client.animation.OneShotTimer
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.Atlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.NumberAtlas
+import io.github.oni0nfr1.dynamicrider.client.graphics.texture.fillImage
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec

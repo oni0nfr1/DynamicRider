@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.amination
+package io.github.oni0nfr1.dynamicrider.client.animation
 
 class OneShotTimer(
     val intervalMillis: Long,

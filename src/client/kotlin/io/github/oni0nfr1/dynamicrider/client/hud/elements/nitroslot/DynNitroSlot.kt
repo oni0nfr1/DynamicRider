@@ -1,6 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.amination.OneShotTimer
+import io.github.oni0nfr1.dynamicrider.client.animation.OneShotTimer
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec

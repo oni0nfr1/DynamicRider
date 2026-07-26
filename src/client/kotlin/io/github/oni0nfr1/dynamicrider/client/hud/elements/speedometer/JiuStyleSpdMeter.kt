@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.speedometer
 
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.drawSpeed7Seg
-import io.github.oni0nfr1.dynamicrider.client.graphics.util.fillRoundedTrapezoid
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.drawSpeed7Seg
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.fillRoundedTrapezoid
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec

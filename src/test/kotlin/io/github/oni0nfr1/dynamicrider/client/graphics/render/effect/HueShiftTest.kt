@@ -1,4 +1,4 @@
-package io.github.oni0nfr1.dynamicrider.client.graphics.render
+package io.github.oni0nfr1.dynamicrider.client.graphics.render.effect
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
