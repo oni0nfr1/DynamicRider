@@ -6,6 +6,7 @@ class LinearExtrapolator(
     private val state: NitroKartState,
 ) : GaugeBar {
     companion object {
+        private const val MIN_CHARGE_SPEED = 50f
         private const val SPEED_SCORE_SCALE = 139.0
         private const val DYNAMIC_CHARGE_DIVISOR = 360.0
         private const val MAX_GAUGE_SCORE = 2000.0
@@ -41,7 +42,7 @@ class LinearExtrapolator(
     private val drifting: Boolean
         get() = state.accurateDriftState
 
-    private var wasDrifting: Boolean = drifting
+    private var wasExtrapolating: Boolean = canCharge(speed.coerceAtLeast(0f))
 
     override val nitroGauge: Float
         get() = displayNitroGauge.coerceIn(0f, 1f)
@@ -51,16 +52,19 @@ class LinearExtrapolator(
 
     override fun updateGauge(deltaTicks: Float) {
         val currentSpeed = speed.coerceAtLeast(0f)
-        val extrapolate = drifting
+        val extrapolate = canCharge(currentSpeed)
         updateNitroGauge(
             currentSpeed = currentSpeed,
             deltaTicks = deltaTicks,
             extrapolate = extrapolate,
-            snapToRaw = wasDrifting && !extrapolate,
+            snapToRaw = wasExtrapolating && !extrapolate,
         )
-        wasDrifting = extrapolate
+        wasExtrapolating = extrapolate
         updateTeamBoostGauge(deltaTicks)
     }
+
+    private fun canCharge(currentSpeed: Float): Boolean =
+        drifting && currentSpeed >= MIN_CHARGE_SPEED
 
     private fun updateNitroGauge(
         currentSpeed: Float,
