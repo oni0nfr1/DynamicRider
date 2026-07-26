@@ -1,32 +1,35 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.runtime.state
 
 import io.github.oni0nfr1.dynamicrider.client.hud.state.*
+import io.github.oni0nfr1.dynamicrider.client.hud.state.internal.*
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.bossbar.KartTeamBoostTracker
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.inventory.KartTeamBoostCounter
 import io.github.oni0nfr1.skid.client.api.engine.*
-import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.skid.client.api.kart.Kart
+import io.github.oni0nfr1.skid.client.api.utils.Ref
+import io.github.oni0nfr1.skid.client.api.utils.access
 
-class LiveSpeedKartState<E : SpeedEngine>(
-    private val kart: KartRef.Specific<E>,
-) : SpeedKartState {
-    override val speed: Double
-        get() = kart.accessEngine { it.tachometer?.speed } ?: 0.0
+internal class LiveDriftKartState<E : DriftEngine>(private val kart: Ref<Kart<E>>) : DriftKartStateFields {
+    override val isDrifting: Boolean
+        get() = kart.access { engine.isDrifting } ?: false
+    override val accurateDriftState: Boolean
+        get() = kart.access { engine.accurateDriftState } ?: false
 }
 
-class LiveNitroKartState<E : NitroEngine>(
-    private val kart: KartRef.Specific<E>,
-) : NitroKartState,
-    SpeedKartState by LiveSpeedKartState(kart) {
-    override val isDrifting: Boolean
-        get() = kart.accessEngine { it.isDrifting } ?: false
+internal class LiveSpeedKartState<E : SpeedEngine>(private val kart: Ref<Kart<E>>) : SpeedKartStateFields {
+    override val speed: Double
+        get() = kart.access { engine.tachometer?.speed } ?: 0.0
+}
+
+internal class LiveNitroKartState<E : NitroEngine>(private val kart: Ref<Kart<E>>) : NitroKartStateFields {
     override val isBoosting: Boolean
-        get() = kart.accessEngine { it.isBoosting } ?: false
+        get() = kart.access { engine.isBoosting } ?: false
     override val maxBoost: Int
-        get() = kart.accessEngine { it.maxBoost } ?: 2
+        get() = kart.access { engine.maxBoost } ?: 2
     override val nitro: Int
-        get() = kart.accessEngine { it.tachometer?.nitro } ?: 0
+        get() = kart.access { engine.tachometer?.nitro } ?: 0
     override val nitroGauge: Float
-        get() = kart.accessEngine { it.tachometer?.gauge?.toFloat() } ?: 0f
+        get() = kart.access { engine.tachometer?.gauge?.toFloat() } ?: 0f
     override val teamNitro: Int
         get() = KartTeamBoostCounter.boostCount
     override val teamBoostGaugeAvailable: Boolean
@@ -35,132 +38,205 @@ class LiveNitroKartState<E : NitroEngine>(
         get() = if (teamBoostGaugeAvailable) KartTeamBoostTracker.gauge else 0f
 }
 
-class LiveDraftKartState<E>(
-    private val kart: KartRef.Specific<E>,
-) : DraftKartState
-    where E : KartEngine, E : DraftEngine {
+internal class LiveGearLikeKartState<E : GearLikeEngine>(private val kart: Ref<Kart<E>>) : GearLikeKartStateFields {
+    override val rpm: Double
+        get() = kart.access { engine.tachometer?.rpm } ?: 0.0
+    override val gear: Int
+        get() = kart.access { engine.tachometer?.gear } ?: 0
+}
+
+internal class LiveInstantBoostKartState<E : InstantBoostEngine>(private val kart: Ref<Kart<E>>) : InstantBoostKartStateFields {
+    override val instantBoostReady: Boolean
+        get() = kart.access { engine.instantBoostReady } ?: false
+    override val instantBoostEnabled: Boolean
+        get() = kart.access { engine.instantBoostEnabled } ?: false
+}
+
+internal class LiveDualBoostKartState<E : DualBoostEngine>(private val kart: Ref<Kart<E>>) : DualBoostKartStateFields {
+    override val dualBoostActive: Boolean
+        get() = kart.access { engine.dualBoostActive } ?: false
+    override val dualBoostCharging: Boolean
+        get() = kart.access { engine.dualBoostCharging } ?: false
+}
+
+internal class LiveDraftKartState<E : DraftEngine>(private val kart: Ref<Kart<E>>) : DraftKartStateFields {
     override val draftActive: Boolean
-        get() = kart.accessEngine { it.draftActive } ?: false
+        get() = kart.access { engine.draftActive } ?: false
     override val draftCharging: Boolean
-        get() = kart.accessEngine { it.draftCharging } ?: false
+        get() = kart.access { engine.draftCharging } ?: false
 }
 
-class LiveXKartState(
-    kart: KartRef.Specific<XEngine>,
-) : XKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveEXKartState(
-    kart: KartRef.Specific<EXEngine>,
-) : EXKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveJiuKartState(
-    kart: KartRef.Specific<JiuEngine>,
-) : JiuKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveNewKartState(
-    kart: KartRef.Specific<NewEngine>,
-) : NewKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveZ7KartState(
-    kart: KartRef.Specific<Z7Engine>,
-) : Z7KartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveV1KartState(
-    private val kart: KartRef.Specific<V1Engine>,
-) : V1KartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart) {
+internal class LiveExceedKartState<E : ExceedEngine>(private val kart: Ref<Kart<E>>) : ExceedKartStateFields {
     override val exceedGauge: Float
-        get() = kart.accessEngine { it.tachometer?.exceedGauge?.div(0.9851485f) } ?: 0f
+        get() = kart.access { engine.tachometer?.exceedGauge } ?: 0f
 }
 
-class LiveA2KartState(
-    kart: KartRef.Specific<A2Engine>,
-) : A2KartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveRushPlusKartStateFields(
+    private val kart: Ref<Kart<RushPlusEngine>>,
+) : RushPlusKartStateFields {
+    override val fusionActive: Boolean
+        get() = kart.access { engine.tachometer?.fusionActive } ?: false
+}
 
-class LiveLegacyKartState(
-    kart: KartRef.Specific<LegacyEngine>,
-) : LegacyKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveProKartState(
-    kart: KartRef.Specific<ProEngine>,
-) : ProKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveRushPlusKartState(
-    kart: KartRef.Specific<RushPlusEngine>,
-) : RushPlusKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
-
-class LiveChargeKartState(
-    private val kart: KartRef.Specific<ChargeEngine>,
-) : ChargeKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart) {
+internal class LiveChargeKartStateFields(
+    private val kart: Ref<Kart<ChargeEngine>>,
+) : ChargeKartStateFields {
     override val chargerGauge: Float
-        get() = kart.accessEngine { it.tachometer?.chargerGauge } ?: 0f
+        get() = kart.access { engine.tachometer?.chargerGauge } ?: 0f
 }
 
-class LiveSRKartState(
-    kart: KartRef.Specific<SREngine>,
-) : SRKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveF1KartStateFields(
+    private val kart: Ref<Kart<F1Engine>>,
+) : F1KartStateFields {
+    override val ers: Int
+        get() = kart.access { engine.tachometer?.ers } ?: 0
+}
 
-class LiveN1KartState(
-    kart: KartRef.Specific<N1Engine>,
-) : N1KartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveMKLikeKartState<E : MKLikeEngine>(
+    private val kart: Ref<Kart<E>>,
+) : MKLikeKartStateFields {
+    override val turboGauge: Float
+        get() = kart.access { engine.tachometer?.turboGauge?.toFloat() } ?: 0f
+}
 
-class LiveRXKartState(
-    kart: KartRef.Specific<RXEngine>,
-) : RXKartState,
-    NitroKartState by LiveNitroKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveXKartState(kart: Ref<Kart<XEngine>>) : XKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DualBoostKartStateFields by LiveDualBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
 
-class LiveKeyKartState(
-    kart: KartRef.Specific<KeyEngine>,
-) : KeyKartState,
-    NitroKartState by LiveNitroKartState(kart)
+internal class LiveEXKartState(kart: Ref<Kart<EXEngine>>) : EXKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DualBoostKartStateFields by LiveDualBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
 
-class LiveGearKartState(
-    kart: KartRef.Specific<GearEngine>,
-) : GearKartState,
-    SpeedKartState by LiveSpeedKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveJiuKartState(kart: Ref<Kart<JiuEngine>>) : JiuKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
 
-class LiveF1KartState(
-    kart: KartRef.Specific<F1Engine>,
-) : F1KartState,
-    SpeedKartState by LiveSpeedKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveNewKartState(kart: Ref<Kart<NewEngine>>) : NewKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
 
-class LiveRallyKartState(
-    kart: KartRef.Specific<RallyEngine>,
-) : RallyKartState,
-    SpeedKartState by LiveSpeedKartState(kart),
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveZ7KartState(kart: Ref<Kart<Z7Engine>>) : Z7KartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
 
-class LiveMKKartState(
-    kart: KartRef.Specific<MKEngine>,
-) : MKKartState,
-    DraftKartState by LiveDraftKartState(kart)
+internal class LiveV1KartState(kart: Ref<Kart<V1Engine>>) : V1KartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DualBoostKartStateFields by LiveDualBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart),
+    ExceedKartStateFields by LiveExceedKartState(kart)
 
-class LiveBoatKartState : BoatKartState
+internal class LiveA2KartState(kart: Ref<Kart<A2Engine>>) : A2KartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveLegacyKartState(kart: Ref<Kart<LegacyEngine>>) : LegacyKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DualBoostKartStateFields by LiveDualBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveProKartState(kart: Ref<Kart<ProEngine>>) : ProKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveRushPlusKartState(kart: Ref<Kart<RushPlusEngine>>) : RushPlusKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart),
+    ExceedKartStateFields by LiveExceedKartState(kart),
+    RushPlusKartStateFields by LiveRushPlusKartStateFields(kart)
+
+internal class LiveChargeKartState(kart: Ref<Kart<ChargeEngine>>) : ChargeKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart),
+    ChargeKartStateFields by LiveChargeKartStateFields(kart)
+
+internal class LiveSRKartState(kart: Ref<Kart<SREngine>>) : SRKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveN1KartState(kart: Ref<Kart<N1Engine>>) : N1KartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveRXKartState(kart: Ref<Kart<RXEngine>>) : RXKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart),
+    InstantBoostKartStateFields by LiveInstantBoostKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveKeyKartState(kart: Ref<Kart<KeyEngine>>) : KeyKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    NitroKartStateFields by LiveNitroKartState(kart)
+
+internal class LiveGearKartState(kart: Ref<Kart<GearEngine>>) : GearKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    GearLikeKartStateFields by LiveGearLikeKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveF1KartState(kart: Ref<Kart<F1Engine>>) : F1KartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    GearLikeKartStateFields by LiveGearLikeKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart),
+    F1KartStateFields by LiveF1KartStateFields(kart)
+
+internal class LiveRallyKartState(kart: Ref<Kart<RallyEngine>>) : RallyKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    SpeedKartStateFields by LiveSpeedKartState(kart),
+    GearLikeKartStateFields by LiveGearLikeKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart)
+
+internal class LiveMKKartState(kart: Ref<Kart<MKEngine>>) : MKKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart),
+    MKLikeKartStateFields by LiveMKLikeKartState(kart)
+
+internal class LiveDSKartState(kart: Ref<Kart<DSEngine>>) : DSKartState,
+    DriftKartStateFields by LiveDriftKartState(kart),
+    DraftKartStateFields by LiveDraftKartState(kart),
+    MKLikeKartStateFields by LiveMKLikeKartState(kart)
+
+internal class LiveBoatKartState : BoatKartState

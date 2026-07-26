@@ -29,11 +29,12 @@ object KartStateTypes {
     val F1 = KartStateType("f1", F1KartState::class.java)
     val RALLY = KartStateType("rally", RallyKartState::class.java)
     val MK = KartStateType("mk", MKKartState::class.java)
+    val DS = KartStateType("ds", DSKartState::class.java)
     val BOAT = KartStateType("boat", BoatKartState::class.java)
 
     val entries: List<KartStateType<out KartState>> = listOf(
         X, EX, JIU, NEW, Z7, V1, A2, LEGACY, PRO, RUSHPLUS,
-        CHARGE, SR, N1, RX, KEY, GEAR, F1, RALLY, MK, BOAT,
+        CHARGE, SR, N1, RX, KEY, GEAR, F1, RALLY, MK, DS, BOAT,
     )
 
     private val byId = entries.associateBy(KartStateType<*>::id)

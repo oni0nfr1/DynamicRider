@@ -1,11 +1,12 @@
 package io.github.oni0nfr1.dynamicrider.client.rider.backend
 
-import io.github.oni0nfr1.skid.client.api.kart.KartSaddleEntity
+import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.skid.client.api.kart.KartSaddle
 import net.minecraft.world.entity.Entity
 
 abstract class RiderBackend {
-    open fun onRiderMount(kartEntity: KartSaddleEntity, rider: Entity) {}
-    open fun onRiderDismount(kartEntity: KartSaddleEntity, rider: Entity) {}
+    open fun onRiderMount(kart: KartRef, rider: Entity) {}
+    open fun onRiderDismount(kartEntity: KartSaddle, rider: Entity) {}
 
     open fun onRaceStart() {}
     open fun onRaceEnd() {}

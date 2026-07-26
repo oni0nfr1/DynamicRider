@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.util
 
 import io.github.oni0nfr1.dynamicrider.client.ResourceStore
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
-import io.github.oni0nfr1.skid.client.api.kart.KartSaddleEntity
+import io.github.oni0nfr1.skid.client.api.kart.KartSaddle
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
 import net.minecraft.client.Minecraft
@@ -40,7 +40,7 @@ fun Int.ordinal(): String {
 }
 
 fun Entity?.isKart(): Boolean {
-    return this != null && this is KartSaddleEntity
+    return this != null && this is KartSaddle
 }
 
 fun isClientPlayerId(entityId: Int): Boolean {

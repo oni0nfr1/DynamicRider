@@ -39,7 +39,7 @@ class LinearExtrapolator(
         get() = state.speed.toFloat()
 
     private val drifting: Boolean
-        get() = state.isDrifting
+        get() = state.accurateDriftState
 
     private var wasDrifting: Boolean = drifting
 

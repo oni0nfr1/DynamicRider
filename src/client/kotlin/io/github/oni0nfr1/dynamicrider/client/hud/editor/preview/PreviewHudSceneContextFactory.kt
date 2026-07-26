@@ -11,7 +11,12 @@ object PreviewHudSceneContextFactory {
      *
      * 등록되지 않은 별도 상태 타입은 기본 preview 구현을 알 수 없으므로 예외를 던진다.
      */
-    fun create(
+    @Suppress("UNCHECKED_CAST")
+    fun <S : KartState> create(
+        stateType: KartStateType<S>,
+    ): PreviewHudSceneContext<S> = createKnown(stateType) as PreviewHudSceneContext<S>
+
+    private fun createKnown(
         stateType: KartStateType<out KartState>,
     ): PreviewHudSceneContext<out KartState> = when (stateType) {
         KartStateTypes.X -> context(KartStateTypes.X, DefaultPreviewXKartState())
@@ -33,6 +38,7 @@ object PreviewHudSceneContextFactory {
         KartStateTypes.F1 -> context(KartStateTypes.F1, DefaultPreviewF1KartState())
         KartStateTypes.RALLY -> context(KartStateTypes.RALLY, DefaultPreviewRallyKartState())
         KartStateTypes.MK -> context(KartStateTypes.MK, DefaultPreviewMKKartState())
+        KartStateTypes.DS -> context(KartStateTypes.DS, DefaultPreviewDSKartState())
         KartStateTypes.BOAT -> context(KartStateTypes.BOAT, DefaultPreviewBoatKartState())
         else -> throw IllegalArgumentException("Unsupported preview kart state type: ${stateType.id}")
     }

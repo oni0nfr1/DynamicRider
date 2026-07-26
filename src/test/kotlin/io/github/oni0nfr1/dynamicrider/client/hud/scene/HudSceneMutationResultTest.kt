@@ -1,7 +1,6 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene
 
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContextFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
@@ -11,7 +10,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 class HudSceneMutationResultTest {
-    private val context = PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState())
+    private val context = PreviewHudSceneContextFactory.create(KartStateTypes.JIU)
 
     @Test
     fun `valid compatible spec is added`() {

@@ -30,8 +30,11 @@ object PreviewStatePresets {
         requirement = PreviewPresetRequirement.NITRO_DRAFT,
         kart = PreviewKartValues(
             speed = 128.0,
-            nitro = PreviewNitroValues(
+            drift = PreviewDriftValues(
                 isDrifting = true,
+                accurateDriftState = true,
+            ),
+            nitro = PreviewNitroValues(
                 nitroGauge = 0.82f,
             ),
             draft = PreviewDraftValues(charging = true),

@@ -5,7 +5,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
 import io.github.oni0nfr1.skid.client.api.kart.Kart;
 import io.github.oni0nfr1.skid.client.api.kart.KartRef;
 import io.github.oni0nfr1.skid.client.api.kart.KartUtils;
-import io.github.oni0nfr1.skid.client.api.kart.MountType;
+import io.github.oni0nfr1.skid.client.api.kart.KartMountState;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
@@ -35,7 +35,7 @@ public abstract class GuiMixin {
         if (!(saddle instanceof Cod)) return;
         KartRef kartRef = KartUtils.getKart((Cod) saddle);
         if (kartRef == null) return;
-        Kart kart = kartRef.getHandle();
+        Kart<?> kart = kartRef.get().orElse(null);
         if (kart == null) return;
         if (kart.getAlive() && DynRiderConfig.INSTANCE.isModEnabled()) ci.cancel(); // 카트 탑승 시에 나오는 액션바 차단
     }
@@ -71,9 +71,9 @@ public abstract class GuiMixin {
         Minecraft client = Minecraft.getInstance();
         LocalPlayer player = client.player;
         if (player == null) return;
-        MountType mountStatus = KartUtils.getMountStatus(player);
+        KartMountState mountState = KartUtils.getMountState(player);
 
-        boolean shouldShow = mountStatus instanceof MountType.Dismounted || !VanillaSuppression.getSuppressVanillaHotbar();
+        boolean shouldShow = mountState instanceof KartMountState.None || !VanillaSuppression.getSuppressVanillaHotbar();
         if (!shouldShow) ci.cancel();
     }
 
@@ -90,9 +90,9 @@ public abstract class GuiMixin {
         Minecraft client = Minecraft.getInstance();
         LocalPlayer player = client.player;
         if (player == null) return;
-        MountType mountStatus = KartUtils.getMountStatus(player);
+        KartMountState mountState = KartUtils.getMountState(player);
 
-        boolean shouldShow = mountStatus instanceof MountType.Dismounted || !VanillaSuppression.getSuppressVanillaHotbar();
+        boolean shouldShow = mountState instanceof KartMountState.None || !VanillaSuppression.getSuppressVanillaHotbar();
         if (!shouldShow) ci.cancel();
     }
 }

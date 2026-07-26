@@ -4,8 +4,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewNitroKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewSpeedKartState
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContextFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
@@ -139,6 +139,7 @@ class HudEditorSessionTest {
     fun `preview state edits and presets do not affect document history`() {
         val session = session()
         val previewState = assertInstanceOf(PreviewNitroKartState::class.java, session.previewContext.kartState)
+        val speedState = assertInstanceOf(PreviewSpeedKartState::class.java, session.previewContext.kartState)
 
         assertTrue(session.previewStateFields().any { it.id == "speed" })
         assertTrue(session.availablePreviewPresets().any { it.id == "boosting" })
@@ -146,7 +147,7 @@ class HudEditorSessionTest {
             HudEditorActionResult.Applied::class.java,
             session.updatePreviewState("speed", JsonPrimitive(222.0)),
         )
-        assertEquals(222.0, previewState.speed)
+        assertEquals(222.0, speedState.speed)
         assertFalse(session.state.dirty)
         assertFalse(session.state.canUndo)
 
@@ -154,7 +155,7 @@ class HudEditorSessionTest {
             HudEditorActionResult.Applied::class.java,
             session.applyPreviewPreset("boosting"),
         )
-        assertEquals(245.0, previewState.speed)
+        assertEquals(245.0, speedState.speed)
         assertTrue(previewState.isBoosting)
         assertFalse(session.state.dirty)
         assertFalse(session.state.canUndo)
@@ -298,7 +299,7 @@ class HudEditorSessionTest {
                 HudSceneLoader.load(
                     resolution.spec,
                     resolution.sourcePath,
-                    PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState()),
+                    PreviewHudSceneContextFactory.create(KartStateTypes.JIU),
                 )
             },
         ).scene

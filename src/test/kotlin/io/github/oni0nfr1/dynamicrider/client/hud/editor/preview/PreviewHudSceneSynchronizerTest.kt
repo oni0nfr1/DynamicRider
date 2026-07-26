@@ -97,7 +97,7 @@ class PreviewHudSceneSynchronizerTest {
     )
 
     private fun scene(): HudScene<JiuKartState> {
-        val context = PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState())
+        val context = PreviewHudSceneContextFactory.create(KartStateTypes.JIU)
         val viewport = object : ElementHolder {
             override val width: Int = 800
             override val height: Int = 600

@@ -4,8 +4,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaug
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.DefaultPreviewJiuKartState
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContextFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartStateTypes
 import kotlinx.serialization.SerializationException
@@ -69,7 +68,7 @@ class HudSceneCodecTest {
     @Test
     fun `all built-in scenes decode and contain compatible element specs`() {
         val modes = listOf("ride", "spectate")
-        val stateIds = listOf("default", "charge", "jiu", "v1")
+        val stateIds = listOf("default", "charge", "ds", "jiu", "v1", "x")
 
         modes.forEach { mode ->
             stateIds.forEach { stateId ->
@@ -91,7 +90,7 @@ class HudSceneCodecTest {
 
     @Test
     fun `semantic validation failure becomes a scene load error`() {
-        val context = PreviewHudSceneContext(KartStateTypes.JIU, DefaultPreviewJiuKartState())
+        val context = PreviewHudSceneContextFactory.create(KartStateTypes.JIU)
         val spec = HudSceneCodec.decode(
             """{"formatVersion":1,"elementIds":["invalid-gauge"],"elements":[{"type":"GRADIENT_GAUGE_BAR","width":3000}]}"""
         )

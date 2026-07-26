@@ -7,8 +7,13 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.RankingState
 enum class PreviewPresetRequirement {
     ANY,
     SPEED,
+    DRIFT,
     DRAFT,
     NITRO,
+    GEARLIKE,
+    INSTANT_BOOST,
+    DUAL_BOOST,
+    EXCEED,
     NITRO_DRAFT,
     V1,
     CHARGE;
@@ -17,9 +22,14 @@ enum class PreviewPresetRequirement {
     fun accepts(state: KartState): Boolean = when (this) {
         ANY -> state is PreviewKartState
         SPEED -> state is PreviewSpeedKartState
+        DRIFT -> state is PreviewDriftKartState
         DRAFT -> state is PreviewDraftKartState
         NITRO -> state is PreviewNitroKartState
-        NITRO_DRAFT -> state is PreviewNitroDraftKartState
+        GEARLIKE -> state is PreviewGearLikeKartState
+        INSTANT_BOOST -> state is PreviewInstantBoostKartState
+        DUAL_BOOST -> state is PreviewDualBoostKartState
+        EXCEED -> state is PreviewExceedKartState
+        NITRO_DRAFT -> state is PreviewNitroKartState && state is PreviewDraftKartState
         V1 -> state is PreviewV1KartState
         CHARGE -> state is PreviewChargeKartState
     }
@@ -28,14 +38,25 @@ enum class PreviewPresetRequirement {
 /** Preview 카트에 적용할 capability별 원본 값이다. */
 data class PreviewKartValues(
     val speed: Double? = null,
+    val drift: PreviewDriftValues? = null,
     val nitro: PreviewNitroValues? = null,
+    val gearlike: PreviewGearLikeValues? = null,
+    val instantBoost: PreviewInstantBoostValues? = null,
+    val dualBoost: PreviewDualBoostValues? = null,
     val draft: PreviewDraftValues? = null,
     val exceedGauge: Float? = null,
+    val fusionActive: Boolean? = null,
     val chargerGauge: Float? = null,
+    val ers: Int? = null,
+    val turboGauge: Float? = null,
+)
+
+data class PreviewDriftValues(
+    val isDrifting: Boolean = false,
+    val accurateDriftState: Boolean = false,
 )
 
 data class PreviewNitroValues(
-    val isDrifting: Boolean = false,
     val isBoosting: Boolean = false,
     val maxBoost: Int = 3,
     val nitro: Int = 2,
@@ -43,6 +64,21 @@ data class PreviewNitroValues(
     val teamNitro: Int = 0,
     val teamBoostGaugeAvailable: Boolean = false,
     val teamBoostGauge: Float = 0f,
+)
+
+data class PreviewGearLikeValues(
+    val rpm: Double = 0.55,
+    val gear: Int = 3,
+)
+
+data class PreviewInstantBoostValues(
+    val ready: Boolean = false,
+    val enabled: Boolean = true,
+)
+
+data class PreviewDualBoostValues(
+    val active: Boolean = false,
+    val charging: Boolean = false,
 )
 
 data class PreviewDraftValues(

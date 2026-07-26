@@ -1,0 +1,13 @@
+{
+  "formatVersion": 1,
+  "elements": [
+    {
+      "type": "SPECTATE_TIMER",
+      "layout": { "screenAnchor": "TOP_RIGHT", "elementAnchor": "TOP_RIGHT", "x": -10, "y": 10 }
+    },
+    {
+      "type": "PLAIN_RANKING_TABLE",
+      "layout": { "screenAnchor": "MIDDLE_LEFT", "elementAnchor": "MIDDLE_LEFT", "x": 10 }
+    }
+  ]
+}

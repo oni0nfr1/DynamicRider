@@ -24,12 +24,10 @@ import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
 import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import io.github.oni0nfr1.korigadier.api.korigadier
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
 import io.github.oni0nfr1.skid.client.api.events.KartMountEvents
 import io.github.oni0nfr1.skid.client.api.events.KartTachometerEvents
-import io.github.oni0nfr1.skid.client.api.kart.Kart
-import io.github.oni0nfr1.skid.client.api.kart.KartSaddleEntity
-import io.github.oni0nfr1.skid.client.api.kart.kart
+import io.github.oni0nfr1.skid.client.api.kart.KartRef
+import io.github.oni0nfr1.skid.client.api.kart.KartSaddle
 import io.github.oni0nfr1.skid.client.api.kart.subject
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
@@ -129,7 +127,7 @@ class DynamicRiderClient : ClientModInitializer {
         RiderBackendRegistry.init()
     }
 
-    fun onTachometerMatch(kart: Kart, engine: KartEngine, text: Component): KartTachometerEvents.Result
+    fun onTachometerMatch(kart: KartRef, text: Component): KartTachometerEvents.Result
     =   if (VanillaSuppression.suppressVanillaKartState) KartTachometerEvents.Result.BLOCK
         else KartTachometerEvents.Result.SHOW
 
@@ -146,49 +144,42 @@ class DynamicRiderClient : ClientModInitializer {
         currentScene?.draw(guiGraphics, deltaTracker)
     }
 
-    fun onKartMount(kartEntity: KartSaddleEntity, rider: Player) {
+    fun onKartMount(kart: KartRef, rider: Player) {
         val client = Minecraft.getInstance()
-        debugLog("Kart mount event received: entity=${kartEntity.id}")
+        debugLog("Kart mount event received: entity=${kart.saddleId}")
         if (client.player?.subject != rider) {
-            debugLog("Ignoring kart mount event for another rider: entity=${kartEntity.id}")
+            debugLog("Ignoring kart mount event for another rider: entity=${kart.saddleId}")
             return
         }
 
-        val kart = kartEntity.kart
-        if (kart == null) {
-            warnLog("Could not create ride HUD scene because the mounted kart reference is unavailable")
-            currentScene = null
-            return
-        }
         val context = LiveHudSceneContextFactory.create(kart)
         if (context == null) {
-            warnLog("Could not create ride HUD scene context: entity=${kartEntity.id}")
+            warnLog("Could not create ride HUD scene context: entity=${kart.saddleId}")
             currentScene = null
             return
         }
-        debugLog("Creating ride HUD scene: state=${context.kartStateType.id}, entity=${kartEntity.id}")
+        debugLog("Creating ride HUD scene: state=${context.kartStateType.id}, entity=${kart.saddleId}")
         currentScene = HudSceneLifecycle.createRideScene(context)
     }
 
-    fun onKartDismount(kartEntity: KartSaddleEntity, rider: Player) {
+    fun onKartDismount(kartEntity: KartSaddle, rider: Player) {
         val client = Minecraft.getInstance()
         if (client.player?.subject != rider) return
 
         currentScene = null
     }
 
-    fun onKartSpectate(kartEntity: KartSaddleEntity, spectator: Player, rider: Player) {
+    fun onKartSpectate(kart: KartRef, spectator: Player, rider: Player) {
         val client = Minecraft.getInstance()
         if (client.player != spectator || client.player?.subject != rider) return
 
-        currentScene = kartEntity.kart
-            ?.let(LiveHudSceneContextFactory::create)
+        currentScene = LiveHudSceneContextFactory.create(kart)
             ?.let(HudSceneLifecycle::createSpectateScene)
     }
 
-    fun onKartSpectateEnd(kartEntity: KartSaddleEntity, spectator: Player, rider: Player) {
+    fun onKartSpectateEnd(kartEntity: KartSaddle, spectator: Player, rider: Player) {
         val client = Minecraft.getInstance()
-        if (client.player != spectator || client.player?.subject != rider) return
+        if (client.player != spectator) return
 
         currentScene = null
     }

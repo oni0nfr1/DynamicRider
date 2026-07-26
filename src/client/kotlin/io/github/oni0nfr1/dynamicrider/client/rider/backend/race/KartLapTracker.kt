@@ -6,17 +6,20 @@ import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.rider.time.Millis
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackend
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
-import io.github.oni0nfr1.skid.client.api.attr.maxLap
-import io.github.oni0nfr1.skid.client.api.events.RiderAttrEvents
+import io.github.oni0nfr1.skid.client.api.events.unstable.KartAttrModifierEvents
+import io.github.oni0nfr1.skid.client.api.kart.ridingKart
+import io.github.oni0nfr1.skid.client.api.kart.subject
+import io.github.oni0nfr1.skid.client.api.kart.unstable.maxLap
+import io.github.oni0nfr1.skid.client.api.utils.access
 import net.minecraft.client.Minecraft
-import net.minecraft.client.player.LocalPlayer
+import net.minecraft.world.entity.player.Player
 
 object KartLapTracker : RiderBackend() {
 
     override fun onRaceStart() {
         raceActive = true
         currentLap = 1
-        maxLap = Minecraft.getInstance().level?.maxLap ?: 0
+        maxLap = (Minecraft.getInstance().player?.subject as? Player)?.ridingKart?.access { maxLap } ?: 0
         bestLapTime = null
         lapTimes = emptyList()
     }
@@ -63,8 +66,9 @@ object KartLapTracker : RiderBackend() {
             HandleResult.PASS
         }
 
-        RiderAttrEvents.MAX_LAP.register { player, value ->
-            if (!raceActive || player !is LocalPlayer) return@register
+        KartAttrModifierEvents.CTX_MAX_LAP.register { kartEntity, _, value ->
+            val rider = Minecraft.getInstance().player ?: return@register
+            if (!raceActive || rider.vehicle !== kartEntity) return@register
 
             maxLap = value.toInt()
         }

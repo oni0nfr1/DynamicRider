@@ -4,17 +4,18 @@ import com.mojang.brigadier.Command
 import io.github.oni0nfr1.korigadier.api.Args
 import io.github.oni0nfr1.korigadier.api.fragment
 import io.github.oni0nfr1.korigadier.api.get
-import io.github.oni0nfr1.skid.client.api.engine.KartEngine
+import io.github.oni0nfr1.skid.client.api.engine.EngineKind
+import io.github.oni0nfr1.skid.client.api.utils.KartType
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 
 object Commands {
 
-    private val engines = KartEngine.Type.entries
-        .filter { !it.isDummy }
+    private val engines = KartType.entries
+        .filter { it.engineKind != EngineKind.DUMMY }
         .map { it.engineName to it.engineCode }
 
-    private val dummyEngines = KartEngine.Type.entries
-        .filter { it.isDummy }
+    private val dummyEngines = KartType.entries
+        .filter { it.engineKind == EngineKind.DUMMY }
         .map { it.engineName to it.engineCode }
 
     val setEngineCommand = fragment<FabricClientCommandSource> {

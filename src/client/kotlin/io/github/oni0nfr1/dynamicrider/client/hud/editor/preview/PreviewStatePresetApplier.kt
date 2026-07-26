@@ -55,8 +55,11 @@ object PreviewStatePresetApplier {
         if (source is PreviewSpeedKartState && target is PreviewSpeedKartState) {
             target.speed = source.speed
         }
-        if (source is PreviewNitroKartState && target is PreviewNitroKartState) {
+        if (source is PreviewDriftKartState && target is PreviewDriftKartState) {
             target.isDrifting = source.isDrifting
+            target.accurateDriftState = source.accurateDriftState
+        }
+        if (source is PreviewNitroKartState && target is PreviewNitroKartState) {
             target.isBoosting = source.isBoosting
             target.maxBoost = source.maxBoost
             target.nitro = source.nitro
@@ -65,15 +68,36 @@ object PreviewStatePresetApplier {
             target.teamBoostGaugeAvailable = source.teamBoostGaugeAvailable
             target.teamBoostGauge = source.teamBoostGauge
         }
+        if (source is PreviewGearLikeKartState && target is PreviewGearLikeKartState) {
+            target.rpm = source.rpm
+            target.gear = source.gear
+        }
+        if (source is PreviewInstantBoostKartState && target is PreviewInstantBoostKartState) {
+            target.instantBoostReady = source.instantBoostReady
+            target.instantBoostEnabled = source.instantBoostEnabled
+        }
+        if (source is PreviewDualBoostKartState && target is PreviewDualBoostKartState) {
+            target.dualBoostActive = source.dualBoostActive
+            target.dualBoostCharging = source.dualBoostCharging
+        }
         if (source is PreviewDraftKartState && target is PreviewDraftKartState) {
             target.draftActive = source.draftActive
             target.draftCharging = source.draftCharging
         }
-        if (source is PreviewV1KartState && target is PreviewV1KartState) {
+        if (source is PreviewExceedKartState && target is PreviewExceedKartState) {
             target.exceedGauge = source.exceedGauge
+        }
+        if (source is PreviewRushPlusKartState && target is PreviewRushPlusKartState) {
+            target.fusionActive = source.fusionActive
         }
         if (source is PreviewChargeKartState && target is PreviewChargeKartState) {
             target.chargerGauge = source.chargerGauge
+        }
+        if (source is PreviewF1KartState && target is PreviewF1KartState) {
+            target.ers = source.ers
+        }
+        if (source is PreviewMKLikeKartState && target is PreviewMKLikeKartState) {
+            target.turboGauge = source.turboGauge
         }
     }
 
@@ -86,22 +110,47 @@ object PreviewStatePresetApplier {
         values.speed?.let {
             state.requireCapability<PreviewSpeedKartState>(preset).speed = it
         }
+        values.drift?.let {
+            state.requireCapability<PreviewDriftKartState>(preset).applyValues(it)
+        }
         values.nitro?.let {
             state.requireCapability<PreviewNitroKartState>(preset).applyValues(it)
+        }
+        values.gearlike?.let {
+            state.requireCapability<PreviewGearLikeKartState>(preset).applyValues(it)
+        }
+        values.instantBoost?.let {
+            state.requireCapability<PreviewInstantBoostKartState>(preset).applyValues(it)
+        }
+        values.dualBoost?.let {
+            state.requireCapability<PreviewDualBoostKartState>(preset).applyValues(it)
         }
         values.draft?.let {
             state.requireCapability<PreviewDraftKartState>(preset).applyValues(it)
         }
         values.exceedGauge?.let {
-            state.requireCapability<PreviewV1KartState>(preset).exceedGauge = it
+            state.requireCapability<PreviewExceedKartState>(preset).exceedGauge = it
+        }
+        values.fusionActive?.let {
+            state.requireCapability<PreviewRushPlusKartState>(preset).fusionActive = it
         }
         values.chargerGauge?.let {
             state.requireCapability<PreviewChargeKartState>(preset).chargerGauge = it
         }
+        values.ers?.let {
+            state.requireCapability<PreviewF1KartState>(preset).ers = it
+        }
+        values.turboGauge?.let {
+            state.requireCapability<PreviewMKLikeKartState>(preset).turboGauge = it
+        }
+    }
+
+    private fun PreviewDriftKartState.applyValues(values: PreviewDriftValues) {
+        isDrifting = values.isDrifting
+        accurateDriftState = values.accurateDriftState
     }
 
     private fun PreviewNitroKartState.applyValues(values: PreviewNitroValues) {
-        isDrifting = values.isDrifting
         isBoosting = values.isBoosting
         maxBoost = values.maxBoost
         nitro = values.nitro
@@ -109,6 +158,21 @@ object PreviewStatePresetApplier {
         teamNitro = values.teamNitro
         teamBoostGaugeAvailable = values.teamBoostGaugeAvailable
         teamBoostGauge = values.teamBoostGauge
+    }
+
+    private fun PreviewGearLikeKartState.applyValues(values: PreviewGearLikeValues) {
+        rpm = values.rpm
+        gear = values.gear
+    }
+
+    private fun PreviewInstantBoostKartState.applyValues(values: PreviewInstantBoostValues) {
+        instantBoostReady = values.ready
+        instantBoostEnabled = values.enabled
+    }
+
+    private fun PreviewDualBoostKartState.applyValues(values: PreviewDualBoostValues) {
+        dualBoostActive = values.active
+        dualBoostCharging = values.charging
     }
 
     private fun PreviewDraftKartState.applyValues(values: PreviewDraftValues) {
