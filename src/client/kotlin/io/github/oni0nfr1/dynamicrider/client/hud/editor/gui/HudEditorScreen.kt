@@ -77,6 +77,7 @@ class HudEditorScreen(
     private val sealedVariantDropdowns = mutableListOf<DropdownWidget<String>>()
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
+    private var keyboardNudgeElementId: String? = null
     private var modal: EditorModal? = null
     private var previewMode = false
     private var editorWidgets: List<AbstractWidget> = emptyList()
@@ -372,7 +373,37 @@ class HudEditorScreen(
             removeSelected()
             return true
         }
+        val direction = when (keyCode) {
+            GLFW.GLFW_KEY_LEFT -> -1 to 0
+            GLFW.GLFW_KEY_RIGHT -> 1 to 0
+            GLFW.GLFW_KEY_UP -> 0 to -1
+            GLFW.GLFW_KEY_DOWN -> 0 to 1
+            else -> null
+        }
+        val focusedWidget = focused
+        val inputFocused = focusedWidget is EditBox ||
+            focusedWidget is HudRangeSlider ||
+            focusedWidget is DropdownWidget<*>
+        if (direction != null && !Screen.hasControlDown() && !Screen.hasAltDown() && !inputFocused) {
+            val distance = if (Screen.hasShiftDown()) 10 else 1
+            if (nudgeSelectedElement(direction.first * distance, direction.second * distance)) {
+                return true
+            }
+        } else {
+            keyboardNudgeElementId = null
+        }
         return super.keyPressed(keyCode, scanCode, modifiers)
+    }
+
+    override fun keyReleased(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+        if (keyCode == GLFW.GLFW_KEY_LEFT ||
+            keyCode == GLFW.GLFW_KEY_RIGHT ||
+            keyCode == GLFW.GLFW_KEY_UP ||
+            keyCode == GLFW.GLFW_KEY_DOWN
+        ) {
+            keyboardNudgeElementId = null
+        }
+        return super.keyReleased(keyCode, scanCode, modifiers)
     }
 
     override fun onClose() {
@@ -1284,6 +1315,36 @@ class HudEditorScreen(
     private fun clearPropertyError(elementId: String, path: HudPropertyPath) {
         propertyErrors.remove(elementId to path)
         if (propertyErrors.isEmpty()) status = null
+    }
+
+    private fun nudgeSelectedElement(deltaX: Int, deltaY: Int): Boolean {
+        val elementId = session.state.selectedElementId ?: return false
+        val inspected = session.inspectElement(elementId) as? HudElementInspectionResult.Inspected ?: return false
+        val layout = inspected.model.properties.firstOrNull {
+            it.editor is HudPropertyEditorType.LayoutEditor
+        } ?: return false
+        val replacement = HudLayoutEditorModel.translatePosition(layout, deltaX, deltaY)
+        return when (
+            session.updateProperty(
+                elementId = elementId,
+                path = layout.path,
+                value = replacement,
+                mergeWithPrevious = keyboardNudgeElementId == elementId,
+            )
+        ) {
+            is HudEditorActionResult.Applied -> {
+                keyboardNudgeElementId = elementId
+                status = null
+                true
+            }
+            HudEditorActionResult.Unchanged -> true
+            is HudEditorActionResult.PropertyRejected -> {
+                keyboardNudgeElementId = null
+                status = Component.translatable("dynamicrider.hud.editor.property.rejected")
+                true
+            }
+            else -> false
+        }
     }
 
     private fun dragSelectedElement(mouseX: Double, mouseY: Double, drag: ElementDrag) {

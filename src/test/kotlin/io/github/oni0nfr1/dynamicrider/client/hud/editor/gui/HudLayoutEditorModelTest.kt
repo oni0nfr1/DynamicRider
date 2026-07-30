@@ -48,6 +48,11 @@ class HudLayoutEditorModelTest {
         assertEquals(JsonPrimitive(48), moved["y"])
         assertEquals(JsonPrimitive(1f), moved["scaleX"])
 
+        val translated = HudLayoutEditorModel.translatePosition(layout, -1, 10)
+        assertEquals(JsonPrimitive(9), translated["x"])
+        assertEquals(JsonPrimitive(30), translated["y"])
+        assertEquals(JsonPrimitive("MIDDLE_CENTER"), translated["elementAnchor"])
+
         val scaled = HudLayoutEditorModel.replaceUniformScale(layout, 1.75f)
         assertEquals(JsonPrimitive(1.75f), scaled["scaleX"])
         assertEquals(JsonPrimitive(1.75f), scaled["scaleY"])
