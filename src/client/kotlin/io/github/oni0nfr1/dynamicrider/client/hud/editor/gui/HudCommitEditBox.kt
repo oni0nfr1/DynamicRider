@@ -26,7 +26,11 @@ class HudCommitEditBox(
 
     /** 변경된 문자열을 적용하고 파싱 또는 검증 성공 여부를 반환한다. */
     fun commitPending(): Boolean {
-        if (committing || value == acceptedValue) return true
+        if (committing) return true
+        if (value == acceptedValue) {
+            onCancel()
+            return true
+        }
         committing = true
         return try {
             onCommit(value).also { accepted ->
