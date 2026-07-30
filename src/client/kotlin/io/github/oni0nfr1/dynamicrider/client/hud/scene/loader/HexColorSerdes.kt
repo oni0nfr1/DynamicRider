@@ -16,7 +16,12 @@ object HexColorSerdes : KSerializer<Int> {
     }
 
     override fun deserialize(decoder: Decoder): Int {
-        val raw = decoder.decodeString().trim()
+        return parse(decoder.decodeString())
+    }
+
+    /** HUD JSON과 editor 색상 입력에서 공통으로 사용하는 색상 문자열 검증 및 변환 함수다. */
+    fun parse(value: String): Int {
+        val raw = value.trim()
         val hex = raw.removePrefix("#").removePrefix("0x").removePrefix("0X")
         require(hex.length == 6 || hex.length == 8) {
             "Color must be #RRGGBB or #AARRGGBB: $raw"
@@ -26,4 +31,3 @@ object HexColorSerdes : KSerializer<Int> {
         return normalized.toUInt(16).toInt()
     }
 }
-

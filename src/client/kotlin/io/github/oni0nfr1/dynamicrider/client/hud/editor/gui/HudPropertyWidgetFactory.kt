@@ -5,6 +5,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePr
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumberType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumericRange
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HexColorSerdes
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
@@ -108,14 +109,14 @@ class HudPropertyWidgetFactory(
                 onCancelInput = onCancelInput,
             )
         }
-        is HudPropertyEditorType.ColorPicker -> textInput(
+        is HudPropertyEditorType.ColorPicker -> colorInput(
             property = property,
             x = x,
             y = y,
             width = width,
-            parser = { value -> nullableValue(property, value) { JsonPrimitive(it) } },
-            onCommit = { onCommit(it) },
+            onCommit = onCommit,
             onInvalidInput = onInvalidInput,
+            onCancelInput = onCancelInput,
         )
         HudPropertyEditorType.LayoutEditor -> listOf(
             Button.builder(Component.translatable("dynamicrider.hud.editor.property.edit_layout")) { onOpenLayout() }
@@ -239,6 +240,53 @@ class HudPropertyWidgetFactory(
             HudNumberType.DOUBLE -> JsonPrimitive(value.toDouble())
         }
 
+    private fun colorInput(
+        property: HudEditableProperty,
+        x: Int,
+        y: Int,
+        width: Int,
+        onCommit: (JsonElement) -> Boolean,
+        onInvalidInput: (String) -> Unit,
+        onCancelInput: () -> Unit,
+    ): List<AbstractWidget> {
+        val initialValue = displayValue(property.value)
+        val swatch = HudColorSwatch(
+            x = x,
+            y = y,
+            size = WIDGET_HEIGHT,
+            initialValue = initialValue,
+            message = Component.translatable(property.nameKey),
+        )
+        val input = HudCommitEditBox(
+            font = font,
+            x = x + WIDGET_HEIGHT + WIDGET_GAP,
+            y = y,
+            width = (width - WIDGET_HEIGHT - WIDGET_GAP).coerceAtLeast(20),
+            height = WIDGET_HEIGHT,
+            message = Component.translatable(property.nameKey),
+            initialValue = initialValue,
+            onCommit = { input ->
+                runCatching {
+                    nullableValue(property, input) {
+                        HexColorSerdes.parse(it)
+                        JsonPrimitive(it.trim())
+                    }
+                }.fold(
+                    onSuccess = onCommit,
+                    onFailure = {
+                        onInvalidInput(it.message ?: "Invalid color")
+                        false
+                    },
+                )
+            },
+            onCancel = onCancelInput,
+        ).also {
+            it.setMaxLength(COLOR_INPUT_MAX_LENGTH)
+            it.setResponder(swatch::preview)
+        }
+        return listOf(swatch, input)
+    }
+
     private fun textInput(
         property: HudEditableProperty,
         x: Int,
@@ -310,5 +358,6 @@ class HudPropertyWidgetFactory(
         const val WIDGET_GAP = 2
         const val MIN_SLIDER_WIDTH = 30
         const val NULL_LITERAL = "null"
+        const val COLOR_INPUT_MAX_LENGTH = 10
     }
 }
