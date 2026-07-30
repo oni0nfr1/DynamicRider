@@ -15,10 +15,16 @@ class PreviewStateFieldEditorTest {
         val v1 = PreviewHudSceneContextFactory.create(KartStateTypes.V1)
         val boat = PreviewHudSceneContextFactory.create(KartStateTypes.BOAT)
 
-        val v1Fields = PreviewStateFieldEditor.fields(v1).map { it.id }
+        val fields = PreviewStateFieldEditor.fields(v1)
+        val v1Fields = fields.map { it.id }
         val boatFields = PreviewStateFieldEditor.fields(boat).map { it.id }
+        val speedEditor = assertInstanceOf(
+            PreviewStateField.Editor.Number::class.java,
+            fields.single { it.id == "speed" }.editor,
+        )
 
         assertTrue("speed" in v1Fields)
+        assertEquals(0.1, speedEditor.range?.step)
         assertTrue("nitro_gauge" in v1Fields)
         assertTrue("draft_active" in v1Fields)
         assertTrue("exceed_gauge" in v1Fields)

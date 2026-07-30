@@ -34,7 +34,7 @@ object PreviewStateFieldEditor {
     fun fields(context: PreviewHudSceneContext<*>): List<PreviewStateField> = buildList {
         val state = context.kartState
         if (state is PreviewSpeedKartState) {
-            add(number(SPEED, state.speed, HudNumberType.DOUBLE, 0.0, 400.0, 1.0))
+            add(number(SPEED, state.speed, HudNumberType.DOUBLE, 0.0, 400.0, 0.1))
         }
         if (state is PreviewDriftKartState) {
             add(toggle(DRIFTING, state.isDrifting))
