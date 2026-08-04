@@ -7,7 +7,6 @@ import io.github.oni0nfr1.dynamicrider.client.event.scoreboard.RiderRankingUpdat
 import io.github.oni0nfr1.dynamicrider.client.event.util.HandleResult
 import io.github.oni0nfr1.dynamicrider.client.rider.sidebar.SidebarSnapshot
 import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackend
-import io.github.oni0nfr1.dynamicrider.client.util.schedule.Ticker
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
@@ -39,8 +38,16 @@ object KartRankingManager: RiderBackend() {
         }
 
         RiderRankingUpdateCallback.EVENT.register { sidebar ->
-            if (!raceActive || !initialized) {
+            if (!raceActive) {
                 return@register HandleResult.PASS
+            }
+
+            if (!initialized) {
+                if (!sidebar.isRaceRankingSidebar) {
+                    return@register HandleResult.PASS
+                }
+                startRace(captureParticipantsNow())
+                initialized = true
             }
 
             updateRanking(sidebar)
@@ -79,29 +86,17 @@ object KartRankingManager: RiderBackend() {
     override fun onRaceStart() {
         raceActive = true
         initialized = false
-        initTask?.cancel()
         clearState()
-
-        initTask = Ticker.runTaskLater(3) {
-            if (!raceActive) return@runTaskLater
-
-            startRace(captureParticipantsNow())
-            initialized = true
-            SidebarSnapshot.fromMcClient()?.let(::updateRanking)
-        }
     }
 
     override fun onRaceEnd() {
         raceActive = false
         initialized = false
-        initTask?.cancel()
-        initTask = null
         clearState()
     }
 
     private var raceActive: Boolean = isRaceActiveNow()
     private var initialized: Boolean = false
-    private var initTask: Ticker.TaskHandle? = null
 
     var racers: LinkedHashMap<UUID, Racer> = linkedMapOf()
         private set

@@ -110,7 +110,8 @@ public abstract class RiderScoreboardMixin {
     @Inject(method = "handleSetScore", at = @At("TAIL"))
     private void onSetScore(ClientboundSetScorePacket packet, CallbackInfo ci) {
         @NotNull Minecraft client = Minecraft.getInstance();
-        if (scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR) == null) return;
+        @Nullable Objective objective = scoreboard.getDisplayObjective(DisplaySlot.SIDEBAR);
+        if (objective == null) return;
 
         if (packet.owner().equals("timertext")) {
             if (packet.display().isPresent()) {
@@ -130,6 +131,14 @@ public abstract class RiderScoreboardMixin {
         if (snapshot == null) return;
 
         RiderRankingUpdateCallback.EVENT.invoker().handle(snapshot);
+    }
+
+    @Inject(method = "handleAddObjective", at = @At("TAIL"))
+    private void dynamicrider$onObjectiveChanged(ClientboundSetObjectivePacket packet, CallbackInfo ci) {
+        @Nullable SidebarSnapshot snapshot = SidebarSnapshot.fromMcClient(Minecraft.getInstance());
+        if (snapshot != null) {
+            RiderRankingUpdateCallback.EVENT.invoker().handle(snapshot);
+        }
     }
 
     @Inject(method = "handlePlayerInfoRemove", at = @At("TAIL"))

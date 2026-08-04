@@ -13,7 +13,15 @@ data class SidebarSnapshot(
     val objective: Objective?,
     val lines: List<SidebarLine>,
 ) {
+    /** 로딩용 트랙 정보가 아닌 실제 레이스 순위를 표시하는 timer sidebar인지 판별한다. */
+    val isRaceRankingSidebar: Boolean
+        get() = objective?.name == RACE_TIMER_OBJECTIVE_NAME &&
+            title.string.isEmpty() &&
+            title.siblings.isEmpty()
+
     companion object {
+        private const val RACE_TIMER_OBJECTIVE_NAME = "timerdisplay"
+
         @JvmStatic
         fun fromMcClient(client: Minecraft = Minecraft.getInstance()): SidebarSnapshot? {
             val level = client.level ?: return null
