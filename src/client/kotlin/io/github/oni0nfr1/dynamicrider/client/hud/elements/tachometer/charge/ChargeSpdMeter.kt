@@ -39,6 +39,8 @@ class ChargeSpdMeter(
 
         val BG_ATLAS
             get() = AtlasRegistry.requireSprite(META.background)
+        val ENGINE_ICON_ATLAS
+            get() = AtlasRegistry.requireSprite(META.engineIcon)
 
         val BG_ANIM_EMPTY get() = BG_ATLAS.cellAt(META.emptyBackgroundAnimationCell)
         val BG_ANIM get() = buildList {
@@ -47,6 +49,8 @@ class ChargeSpdMeter(
 
         val BACKGROUND_NO_LIGHT get() = BG_ATLAS.cellAt(META.noLightBackgroundCell)
         val BACKGROUND_LIGHT get() = BG_ATLAS.cellAt(META.lightBackgroundCell)
+        val ENGINE_ICON_OFF get() = ENGINE_ICON_ATLAS.cellAt(META.engineIconOffCell)
+        val ENGINE_ICON_ON get() = ENGINE_ICON_ATLAS.cellAt(META.engineIconOnCell)
 
         val NUMBER_WHITE get() = AtlasRegistry.requireNumber(META.numberWhite)
         val NUMBER_BLUE get() = AtlasRegistry.requireNumber(META.numberBlue)
@@ -59,6 +63,8 @@ class ChargeSpdMeter(
         @Serializable(with = ResourceLocationSerializer::class)
         val background: ResourceLocation,
         @Serializable(with = ResourceLocationSerializer::class)
+        val engineIcon: ResourceLocation,
+        @Serializable(with = ResourceLocationSerializer::class)
         val numberWhite: ResourceLocation,
         @Serializable(with = ResourceLocationSerializer::class)
         val numberBlue: ResourceLocation,
@@ -69,6 +75,8 @@ class ChargeSpdMeter(
         val emptyBackgroundAnimationCell: Atlas.CellPosition,
         val noLightBackgroundCell: Atlas.CellPosition,
         val lightBackgroundCell: Atlas.CellPosition,
+        val engineIconOffCell: Atlas.CellPosition,
+        val engineIconOnCell: Atlas.CellPosition,
 
         val numberPosX: Int,
         val numberPosY: Int,
@@ -95,6 +103,8 @@ class ChargeSpdMeter(
 
     private val background: Atlas.Cell
         get() = if (speed > META.lightSpeedThreshold) BACKGROUND_LIGHT else BACKGROUND_NO_LIGHT
+    private val engineIcon: Atlas.Cell
+        get() = if (speed > META.lightSpeedThreshold) ENGINE_ICON_ON else ENGINE_ICON_OFF
 
     private val numberFont: NumberAtlas
         get() = when {
@@ -108,6 +118,7 @@ class ChargeSpdMeter(
         deltaTracker: DeltaTracker
     ) {
         guiGraphics.fillImage(background)
+        guiGraphics.fillImage(engineIcon)
 
         numberFont.drawNumber(
             guiGraphics = guiGraphics,

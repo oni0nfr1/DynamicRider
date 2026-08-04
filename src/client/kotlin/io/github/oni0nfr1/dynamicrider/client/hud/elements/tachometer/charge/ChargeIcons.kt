@@ -72,8 +72,9 @@ class ChargeIcons(
         get() = ATLAS.cellHeight
 
     override fun render(guiGraphics: GuiGraphics, deltaTracker: DeltaTracker) {
-        if (draftCharging && !draftBlink.running) draftBlink.start()
-        if (!draftCharging && !draftActive && draftBlink.running) draftBlink.stop()
+        val draftBlinking = draftCharging && !draftActive
+        if (draftBlinking && !draftBlink.running) draftBlink.start()
+        if (!draftBlinking && draftBlink.running) draftBlink.stop()
 
         guiGraphics.fillImage(BACKGROUND)
         if (autoGauge) guiGraphics.fillImage(AUTO_GAUGE)

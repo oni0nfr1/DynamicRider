@@ -248,6 +248,10 @@ class V1Tachometer(
     ) {
         updateGauge(deltaTracker.realtimeDeltaTicks)
 
+        val draftBlinking = draftCharging && !draftActive
+        if (draftBlinking && !draftBlink.running) draftBlink.start()
+        if (!draftBlinking && draftBlink.running) draftBlink.stop()
+
         guiGraphics.fillImage(background)
 
         guiGraphics.fillImage(ENGINE_ICON_OFF)

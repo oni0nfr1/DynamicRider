@@ -3,9 +3,16 @@ package io.github.oni0nfr1.dynamicrider.client.graphics.render.shape
 import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig
 import io.github.oni0nfr1.dynamicrider.client.util.dsegText
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.network.chat.Component
+import net.minecraft.network.chat.MutableComponent
 import org.joml.Matrix4f
+
+fun dynriderText(text: String): MutableComponent =
+    Component.literal(text).setStyle(DynRiderConfig.hudFont.style)
+
+fun Font.widthWithDynriderFont(text: String): Int = width(dynriderText(text))
 
 fun GuiGraphics.drawScaledText(
     x: Int,
@@ -35,9 +42,7 @@ fun GuiGraphics.textWithDynriderFont(
     shadow: Boolean = false
 ) {
     val client = Minecraft.getInstance()
-    val font = DynRiderConfig.hudFont.style
-    val component = Component.literal(text).setStyle(font)
-    this.drawString(client.font, component, x, y, argbColor, shadow)
+    this.drawString(client.font, dynriderText(text), x, y, argbColor, shadow)
 }
 
 fun GuiGraphics.drawSpeed7Seg(

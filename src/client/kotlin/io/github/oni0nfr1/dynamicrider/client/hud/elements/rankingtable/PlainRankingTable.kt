@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.elements.rankingtable
 
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.textWithDynriderFont
+import io.github.oni0nfr1.dynamicrider.client.graphics.render.shape.widthWithDynriderFont
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.HudElementImpl
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -70,9 +71,9 @@ class PlainRankingTable(
 
         val visibleEntries = ranking.filter { it.racer.uuid in alive }
         val headerText = headerText()
-        val headerWidth = fontManager.width(headerText)
+        val headerWidth = fontManager.widthWithDynriderFont(headerText)
         val widestRowWidth = visibleEntries.maxOfOrNull { entry ->
-            dotSize + dotGap + fontManager.width(entry.displayName.string)
+            dotSize + dotGap + fontManager.widthWithDynriderFont(entry.displayName.string)
         } ?: 0
 
         val contentWidth = max(headerWidth, widestRowWidth)
