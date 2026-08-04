@@ -3,6 +3,8 @@
   "key.dynrider.toggle_hud": "toggle HUD",
   "dynrider.hud.enabled": "DynamicRider HUD Enabled",
   "dynrider.hud.disabled": "DynamicRider HUD Hidden",
+  "dynrider.hud.hidden_warning.unbound": "The DynamicRider HUD is hidden. Assign the HUD toggle key in Controls, then press it to show the HUD again.",
+  "dynrider.hud.hidden_warning.bound": "The DynamicRider HUD is hidden. Press %s to show it again.",
   "dynamicrider.config.main.title": "DynamicRider Settings",
   "dynamicrider.config.enabled": "enable DynamicRider",
   "dynamicrider.config.font": "HUD Font",

@@ -19,6 +19,7 @@ import io.github.oni0nfr1.dynamicrider.client.rider.backend.RiderBackendRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.atlas.AtlasRegistry
 import io.github.oni0nfr1.dynamicrider.client.resource.element.ElementRegistry
 import io.github.oni0nfr1.dynamicrider.client.util.DynRiderJvmFlags
+import io.github.oni0nfr1.dynamicrider.client.util.chatLog
 import io.github.oni0nfr1.dynamicrider.client.util.debugLog
 import io.github.oni0nfr1.dynamicrider.client.util.infoLog
 import io.github.oni0nfr1.dynamicrider.client.util.warnLog
@@ -35,6 +36,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
 import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
 import net.fabricmc.fabric.api.client.rendering.v1.LayeredDrawerWrapper
+import net.minecraft.ChatFormatting
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -160,6 +162,7 @@ class DynamicRiderClient : ClientModInitializer {
         }
         debugLog("Creating ride HUD scene: state=${context.kartStateType.id}, entity=${kart.saddleId}")
         currentScene = HudSceneLifecycle.createRideScene(context)
+        warnIfHudHidden()
     }
 
     fun onKartDismount(kartEntity: KartSaddle, rider: Player) {
@@ -175,6 +178,7 @@ class DynamicRiderClient : ClientModInitializer {
 
         currentScene = LiveHudSceneContextFactory.create(kart)
             ?.let(HudSceneLifecycle::createSpectateScene)
+        warnIfHudHidden()
     }
 
     fun onKartSpectateEnd(kartEntity: KartSaddle, spectator: Player, rider: Player) {
@@ -182,6 +186,19 @@ class DynamicRiderClient : ClientModInitializer {
         if (client.player != spectator) return
 
         currentScene = null
+    }
+
+    private fun warnIfHudHidden() {
+        if (currentScene == null || !DynRiderConfig.isModEnabled || DynRiderConfig.hudVisible) return
+        val toggleKey = DynRiderKeybinds.toggleHudKeyName
+        val message = if (toggleKey == null) {
+            Component.translatable("dynrider.hud.hidden_warning.unbound")
+        } else {
+            Component.translatable("dynrider.hud.hidden_warning.bound", toggleKey)
+        }
+        chatLog(
+            message.withStyle(ChatFormatting.YELLOW)
+        )
     }
 
     ////////////////////////////////// Event Handlers //////////////////////////////////

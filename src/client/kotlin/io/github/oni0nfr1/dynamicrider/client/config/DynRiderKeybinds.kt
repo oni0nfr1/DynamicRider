@@ -13,10 +13,14 @@ object DynRiderKeybinds {
         KeyMapping(
             "key.dynrider.toggle_hud",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_GRAVE_ACCENT,
+            GLFW.GLFW_KEY_UNKNOWN,
             "key.category.dynrider"
         )
     )
+
+    /** HUD 토글 키의 표시 이름을 반환하며, 미할당 상태라면 `null`이다. */
+    val toggleHudKeyName: Component?
+        get() = if (toggleHudKeyBinding.isUnbound) null else toggleHudKeyBinding.translatedKeyMessage
 
     fun init() {
         ClientTickEvents.END_CLIENT_TICK.register { client ->

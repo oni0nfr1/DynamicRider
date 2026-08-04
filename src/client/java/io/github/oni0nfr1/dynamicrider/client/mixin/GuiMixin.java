@@ -1,9 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.mixin;
 
-import io.github.oni0nfr1.dynamicrider.client.config.DynRiderConfig;
+import io.github.oni0nfr1.dynamicrider.client.DynamicRiderClient;
 import io.github.oni0nfr1.dynamicrider.client.hud.VanillaSuppression;
-import io.github.oni0nfr1.skid.client.api.kart.Kart;
-import io.github.oni0nfr1.skid.client.api.kart.KartRef;
 import io.github.oni0nfr1.skid.client.api.kart.KartUtils;
 import io.github.oni0nfr1.skid.client.api.kart.KartMountState;
 import net.minecraft.client.DeltaTracker;
@@ -11,9 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.Cod;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.Objective;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -29,15 +24,7 @@ public abstract class GuiMixin {
 
     @Inject(method = "renderOverlayMessage", at = @At("HEAD"), cancellable = true)
     private void onRenderOverlayMessage(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-        Player clientPlayer = Minecraft.getInstance().player;
-        if (clientPlayer == null) return;
-        Entity saddle = clientPlayer.getVehicle();
-        if (!(saddle instanceof Cod)) return;
-        KartRef kartRef = KartUtils.getKart((Cod) saddle);
-        if (kartRef == null) return;
-        Kart<?> kart = kartRef.get().orElse(null);
-        if (kart == null) return;
-        if (kart.getAlive() && DynRiderConfig.INSTANCE.isModEnabled()) ci.cancel(); // 카트 탑승 시에 나오는 액션바 차단
+        if (DynamicRiderClient.getInstance().getCurrentScene() != null) ci.cancel();
     }
 
     @Inject(

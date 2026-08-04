@@ -3,6 +3,8 @@
   "key.dynrider.toggle_hud": "HUD 토글",
   "dynrider.hud.enabled": "DynamicRider HUD 보이기",
   "dynrider.hud.disabled": "DynamicRider HUD 숨기기",
+  "dynrider.hud.hidden_warning.unbound": "DynamicRider HUD가 숨겨져 있습니다. 조작 설정에서 HUD 토글 키를 할당한 후 해당 키를 누르면 다시 표시할 수 있습니다.",
+  "dynrider.hud.hidden_warning.bound": "DynamicRider HUD가 숨겨져 있습니다. %s 키를 눌러 다시 표시할 수 있습니다.",
   "dynamicrider.config.main.title": "DynamicRider 설정",
   "dynamicrider.config.enabled": "모드 활성화",
   "dynamicrider.config.font": "HUD 글꼴",
