@@ -19,9 +19,9 @@ class JiuTachometer(
 ) : CompoundElement<JiuKartState>(spec.layout, context, parent)
 {
     init {
-        addChild(spec.speedometer)
-        addChild(spec.icons)
-        addChild(spec.gauge)
+        addChild(spec::speedometer)
+        addChild(spec::icons)
+        addChild(spec::gauge)
     }
 
     override val width: Int

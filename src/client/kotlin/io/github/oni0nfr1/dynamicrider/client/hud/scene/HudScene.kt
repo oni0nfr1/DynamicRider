@@ -1,6 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.scene
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
+import io.github.oni0nfr1.dynamicrider.client.hud.HeldHudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
@@ -67,6 +68,11 @@ class HudScene<S : KartState>(
         get() = viewport?.width ?: Minecraft.getInstance().window.guiScaledWidth
     override val height: Int
         get() = viewport?.height ?: Minecraft.getInstance().window.guiScaledHeight
+
+    override val heldElements: List<HeldHudElement>
+        get() = mutableEntries.mapNotNull { entry ->
+            entry.element?.let { HeldHudElement(entry.id, it) }
+        }
 
     /** [id]와 [spec]으로 scene entry를 [index]에 추가한다. */
     fun addElement(

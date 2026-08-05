@@ -18,10 +18,10 @@ class ChargeTachometer(
 ) : CompoundElement<ChargeKartState>(spec.layout, context, parent) {
 
     init {
-        addChild(spec.speedometer)
-        addChild(spec.chargerGauge)
-        addChild(spec.gauge)
-        addChild(spec.icons)
+        addChild(spec::speedometer)
+        addChild(spec::chargerGauge)
+        addChild(spec::gauge)
+        addChild(spec::icons)
     }
 
     override val width: Int

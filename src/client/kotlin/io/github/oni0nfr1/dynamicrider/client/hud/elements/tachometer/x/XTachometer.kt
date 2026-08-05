@@ -18,8 +18,8 @@ class XTachometer(
 ) : CompoundElement<XKartState>(spec.layout, context, parent) {
 
     init {
-        addChild(spec.statusRing)
-        addChild(spec.speedometer)
+        addChild(spec::statusRing)
+        addChild(spec::speedometer)
     }
 
     override val width: Int
