@@ -3,7 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableVariant
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -42,7 +42,7 @@ class HudPropertyPanelModelTest {
     }
 
     @Test
-    fun `expanded layout exposes fields tied to their parent layout`() {
+    fun `expanded object exposes its metadata children`() {
         val layout = layout()
 
         val rows = HudPropertyPanelModel.rows(
@@ -50,23 +50,21 @@ class HudPropertyPanelModelTest {
             expandedPaths = setOf(layout.path),
         )
 
-        val header = rows.first() as HudPropertyPanelRow.LayoutHeader
-        val fields = rows.drop(1).map { it as HudPropertyPanelRow.LayoutField }
+        val header = rows.first() as HudPropertyPanelRow.ObjectHeader
+        val fields = rows.drop(1).map { it as HudPropertyPanelRow.Leaf }
         assertEquals(layout.path, header.property.path)
         assertEquals(7, fields.size)
-        assertEquals(List(7) { layout.path }, fields.map { it.layout.path })
-        assertEquals(1, fields.single { it.property.path == HudPropertyPath.parse("layout.x") }.depth)
+        assertEquals(1, fields.single { it.property.path == HudPath.parse("layout.x") }.depth)
     }
 
     private fun describe(row: HudPropertyPanelRow): String = when (row) {
         is HudPropertyPanelRow.Leaf -> "leaf:${row.property.path}:${row.depth}"
         is HudPropertyPanelRow.SealedHeader -> "sealed:${row.property.path}:${row.depth}"
-        is HudPropertyPanelRow.LayoutHeader -> "layout:${row.property.path}:${row.depth}"
-        is HudPropertyPanelRow.LayoutField -> "layout-field:${row.property.path}:${row.depth}"
+        is HudPropertyPanelRow.ObjectHeader -> "object:${row.property.path}:${row.depth}"
     }
 
     private fun leaf(path: String) = HudEditableProperty(
-        path = HudPropertyPath.parse(path),
+        path = HudPath.parse(path),
         nameKey = "$path.name",
         descriptionKey = null,
         schema = HudEditablePropertySchema.Leaf(HudPropertyEditorType.StringInput),
@@ -79,7 +77,7 @@ class HudPropertyPanelModelTest {
         path: String,
         children: List<HudEditableProperty>,
     ) = HudEditableProperty(
-        path = HudPropertyPath.parse(path),
+        path = HudPath.parse(path),
         nameKey = "$path.name",
         descriptionKey = null,
         schema = HudEditablePropertySchema.Sealed(
@@ -95,10 +93,21 @@ class HudPropertyPanelModelTest {
     )
 
     private fun layout() = HudEditableProperty(
-        path = HudPropertyPath.parse("layout"),
+        path = HudPath.parse("layout"),
         nameKey = "layout.name",
         descriptionKey = null,
-        schema = HudEditablePropertySchema.Leaf(HudPropertyEditorType.LayoutEditor),
+        schema = HudEditablePropertySchema.Object(
+            serialName = "HudLayoutSpec",
+            properties = listOf(
+                leaf("layout.screenAnchor"),
+                leaf("layout.elementAnchor"),
+                leaf("layout.scaleX"),
+                leaf("layout.scaleY"),
+                leaf("layout.x"),
+                leaf("layout.y"),
+                leaf("layout.zIndex"),
+            ),
+        ),
         value = JsonObject(
             mapOf(
                 "screenAnchor" to JsonPrimitive("TOP_LEFT"),

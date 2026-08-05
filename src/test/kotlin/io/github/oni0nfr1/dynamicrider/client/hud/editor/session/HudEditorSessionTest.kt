@@ -1,14 +1,16 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.session
 
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewNitroKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewSpeedKartState
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContextFactory
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.nitroslot.PlainNitroSlot
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.V1Tachometer
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneRepository
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoader
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadResult
@@ -45,10 +47,8 @@ class HudEditorSessionTest {
         val states = mutableListOf<HudEditorState>()
         session.addStateListener(listener = states::add)
 
-        val result = session.updateProperty(
-            "slot",
-            HudPropertyPath.parse("iconSize"),
-            JsonPrimitive(64),
+        val result = session.updateLeaf(
+            HudPath.parse("slot.iconSize") to JsonPrimitive(64),
         )
 
         assertEquals(HudEditorActionResult.Applied("slot"), result)
@@ -61,7 +61,7 @@ class HudEditorSessionTest {
         )
         assertEquals(
             64,
-            inspected.model.properties.single { it.path == HudPropertyPath.of("iconSize") }
+            inspected.model.properties.single { it.path == HudPath.of("iconSize") }
                 .value.jsonPrimitive.content.toInt(),
         )
         assertTrue(session.state.dirty)
@@ -109,6 +109,57 @@ class HudEditorSessionTest {
     }
 
     @Test
+    fun `absolute variant and presence edits use the command history`() {
+        val session = session()
+        assertEquals(
+            HudEditorActionResult.Applied("element-1"),
+            session.addElement(EditorPropertyStressElement.Spec(nullableStyle = null)),
+        )
+        val path = HudPath.parse("element-1.nullableStyle")
+
+        assertEquals(HudEditorActionResult.Applied("element-1"), session.changeVariant(path, "outline"))
+        var spec = session.state.elements.last().spec as EditorPropertyStressElement.Spec
+        assertEquals(EditorPropertyStressElement.StressStyle.Outline(), spec.nullableStyle)
+
+        assertEquals(HudEditorActionResult.Applied("element-1"), session.setPresence(path, false))
+        spec = session.state.elements.last().spec as EditorPropertyStressElement.Spec
+        assertEquals(null, spec.nullableStyle)
+
+        assertInstanceOf(HudEditorActionResult.Applied::class.java, session.undo())
+        spec = session.state.elements.last().spec as EditorPropertyStressElement.Spec
+        assertEquals(EditorPropertyStressElement.StressStyle.Outline(), spec.nullableStyle)
+    }
+
+    @Test
+    fun `nested hierarchy selection drives absolute inspection and leaf edits`() {
+        val repository = HudSceneRepository(root)
+        repository.saveCustom(
+            HudSceneMode.RIDE,
+            KartStateTypes.JIU,
+            HudSceneSpec(elementIds = listOf("tach"), elements = listOf(JiuTachometer.Spec())),
+        ).getOrThrow()
+        val session = openSession(repository)
+        val childPath = HudPath.parse("tach.speedometer")
+
+        assertTrue(childPath in session.state.hierarchy)
+        assertEquals(HudEditorActionResult.Applied("tach"), session.select(childPath))
+        assertEquals(childPath, session.state.selectedPath)
+        val inspected = assertInstanceOf(
+            HudElementInspectionResult.Inspected::class.java,
+            session.inspect(childPath),
+        )
+        assertEquals(childPath, inspected.model.path)
+
+        assertEquals(
+            HudEditorActionResult.Applied("tach"),
+            session.updateLeaf(HudPath.parse("tach.speedometer.layout.x") to JsonPrimitive(24)),
+        )
+        val speedometer = (session.state.elements.single().spec as JiuTachometer.Spec).speedometer
+        assertEquals(24, speedometer.layout.x)
+        assertEquals(childPath, session.state.selectedPath)
+    }
+
+    @Test
     fun `rejected changes leave document history and preview unchanged`() {
         val session = session()
 
@@ -116,12 +167,12 @@ class HudEditorSessionTest {
         val incompatible = session.addElement(V1Tachometer.Spec())
         val rejectedProperty = session.updateProperty(
             "slot",
-            HudPropertyPath.parse("iconSize"),
+            HudPath.parse("iconSize"),
             JsonPrimitive(3_000),
         )
         val missing = session.updateProperty(
             "missing",
-            HudPropertyPath.parse("iconSize"),
+            HudPath.parse("iconSize"),
             JsonPrimitive(64),
         )
 
@@ -201,7 +252,7 @@ class HudEditorSessionTest {
         val previewScene = session.previewScene
         val existingLiveScene = resolvedScene(repository)
         assertEquals(HudSceneSource.RESOURCE, session.state.source)
-        session.updateProperty("slot", HudPropertyPath.of("iconSize"), JsonPrimitive(64))
+        session.updateProperty("slot", HudPath.of("iconSize"), JsonPrimitive(64))
 
         val result = assertInstanceOf(HudEditorPersistenceResult.Saved::class.java, session.save())
 
@@ -237,7 +288,7 @@ class HudEditorSessionTest {
         val session = session(repository)
         val previewScene = session.previewScene
         val existingLiveScene = resolvedScene(repository)
-        session.updateProperty("slot", HudPropertyPath.of("iconSize"), JsonPrimitive(64))
+        session.updateProperty("slot", HudPath.of("iconSize"), JsonPrimitive(64))
 
         assertSame(HudEditorPersistenceResult.DiscardConfirmationRequired, session.deleteCustom())
         assertTrue(Files.exists(HudScenePaths.customHudScenePath(root, HudSceneMode.RIDE, KartStateTypes.JIU)))

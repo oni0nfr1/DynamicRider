@@ -1,6 +1,8 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.session
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.hierarchy.HudHierarchyModel
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneLoadError
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.loader.HudSceneSource
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneMode
@@ -13,11 +15,16 @@ data class HudEditorState(
     val kartStateType: KartStateType<out KartState>,
     val source: HudSceneSource,
     val elements: List<HudDocumentElement>,
-    val selectedElementId: String?,
+    val hierarchy: HudHierarchyModel,
+    val selectedPath: HudPath?,
     val dirty: Boolean,
     val canUndo: Boolean,
     val canRedo: Boolean,
     val diagnostics: List<HudSceneLoadError>,
     val previewFailure: Throwable?,
     val closed: Boolean,
-)
+) {
+    /** Root 요소 전용 기존 조작에서 사용할 선택 root ID다. */
+    val selectedElementId: String?
+        get() = selectedPath?.firstSegment
+}

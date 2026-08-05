@@ -2,7 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.service
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.command.HudCommandStack
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyStressElement
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -23,7 +23,7 @@ class HudSpecEditServiceTest {
 
         val result = service.createPropertyChangeCommand(
             "gauge",
-            HudPropertyPath.parse("width"),
+            HudPath.parse("width"),
             JsonPrimitive(240),
         )
 
@@ -41,6 +41,26 @@ class HudSpecEditServiceTest {
     }
 
     @Test
+    fun `multiple leaf changes create one undoable command`() {
+        val original = GradientGaugeBar.Spec()
+        val document = document(original)
+        val service = HudSpecEditService(document)
+
+        val result = service.createLeafChangeCommand(
+            "gauge",
+            HudPath.parse("layout.x") to JsonPrimitive(12),
+            HudPath.parse("layout.y") to JsonPrimitive(34),
+        )
+
+        val command = assertInstanceOf(HudSpecEditCommandResult.Created::class.java, result).command
+        val commands = HudCommandStack(document)
+        commands.execute(command)
+        assertEquals(original.layout.copy(x = 12, y = 34), (document.elementById("gauge")!!.spec as GradientGaugeBar.Spec).layout)
+        assertTrue(commands.undo())
+        assertEquals(original, document.elementById("gauge")!!.spec)
+    }
+
+    @Test
     fun `invalid property change returns rejection without creating undo history`() {
         val original = GradientGaugeBar.Spec(width = 120)
         val document = document(original)
@@ -49,12 +69,12 @@ class HudSpecEditServiceTest {
 
         val result = service.createPropertyChangeCommand(
             "gauge",
-            HudPropertyPath.parse("width"),
+            HudPath.parse("width"),
             JsonPrimitive(3_000),
         )
 
         val rejected = assertInstanceOf(HudSpecEditCommandResult.PropertyRejected::class.java, result)
-        assertEquals(HudPropertyPath.parse("width"), rejected.failure.path)
+        assertEquals(HudPath.parse("width"), rejected.failure.path)
         assertEquals(original, document.elementById("gauge")?.spec)
         assertFalse(document.dirty)
         assertFalse(commandStack.canUndo)
@@ -66,7 +86,7 @@ class HudSpecEditServiceTest {
 
         val result = HudSpecEditService(document).createPropertyChangeCommand(
             "missing",
-            HudPropertyPath.parse("width"),
+            HudPath.parse("width"),
             JsonPrimitive(240),
         )
 
@@ -80,7 +100,7 @@ class HudSpecEditServiceTest {
 
         val result = HudSpecEditService(document).createPropertyChangeCommand(
             "gauge",
-            HudPropertyPath.parse("width"),
+            HudPath.parse("width"),
             JsonPrimitive(120),
         )
 
@@ -96,7 +116,7 @@ class HudSpecEditServiceTest {
 
         val result = service.createVariantChangeCommand(
             "stress",
-            HudPropertyPath.parse("style"),
+            HudPath.parse("style"),
             "checker",
         )
 

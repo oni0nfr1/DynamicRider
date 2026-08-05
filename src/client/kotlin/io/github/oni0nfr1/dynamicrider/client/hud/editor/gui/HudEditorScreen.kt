@@ -6,7 +6,11 @@ import io.github.oni0nfr1.dynamicrider.client.gui.widget.DropdownEntry
 import io.github.oni0nfr1.dynamicrider.client.gui.widget.DropdownWidget
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.hierarchy.HudHierarchyNode
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.hierarchy.HudHierarchyNodeKind
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropertyUpdateResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateField
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorActionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorPersistenceResult
@@ -16,6 +20,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorSessio
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.session.HudEditorState
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudNumberType
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyRole
 import io.github.oni0nfr1.dynamicrider.client.hud.layout.HudLayoutEngine
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.DynRiderRenderTypes
 import io.github.oni0nfr1.dynamicrider.client.graphics.render.batch
@@ -66,6 +71,7 @@ class HudEditorScreen(
     private var resizingSidePanel = false
     private var lastDividerClickMillis = 0L
     private var elementScroll = 0
+    private val expandedHierarchyPaths = session.state.hierarchy.roots.mapTo(mutableSetOf()) { it.path }
     private var paletteScroll = 0
     private val collapsedPaletteCategories = session.availableElementTypes()
         .mapTo(mutableSetOf()) { it.category }
@@ -73,16 +79,17 @@ class HudEditorScreen(
     private var previewStateScroll = 0
     private var selectedPreviewPresetId: String? = null
     private var previewPresetDropdown: DropdownWidget<String>? = null
-    private val expandedPropertyGroups = mutableSetOf<Pair<String, HudPropertyPath>>()
+    private val expandedPropertyGroups = mutableSetOf<Pair<String, HudPath>>()
     private val sealedVariantDropdowns = mutableListOf<DropdownWidget<String>>()
+    private val hierarchyVariantDropdowns = mutableListOf<DropdownWidget<String>>()
     private var elementDrag: ElementDrag? = null
     private var scaleDrag: ScaleDrag? = null
-    private var keyboardNudgeElementId: String? = null
+    private var keyboardNudgePath: HudPath? = null
     private var modal: EditorModal? = null
     private var previewMode = false
     private var editorWidgets: List<AbstractWidget> = emptyList()
     private var modalWidgets: List<AbstractWidget> = emptyList()
-    private val propertyErrors = mutableMapOf<Pair<String, HudPropertyPath>, String>()
+    private val propertyErrors = mutableMapOf<Pair<String, HudPath>, String>()
     private val previewStateErrors = mutableMapOf<String, String>()
 
     private var previewX = 8
@@ -97,10 +104,12 @@ class HudEditorScreen(
         calculateLayout()
         previewPresetDropdown = null
         sealedVariantDropdowns.clear()
+        hierarchyVariantDropdowns.clear()
         if (stateSubscription == null) {
             stateSubscription = session.addStateListener(emitCurrent = false) {
                 Minecraft.getInstance().execute {
                     if (Minecraft.getInstance().screen === this) {
+                        revealSelectedHierarchyPath(it.selectedPath)
                         if (propertyErrors.isNotEmpty()) {
                             propertyErrors.clear()
                             status = null
@@ -136,17 +145,18 @@ class HudEditorScreen(
     override fun render(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTick: Float) {
         guiGraphics.fill(0, 0, width, height, 0xF0080808.toInt())
         if (previewMode) {
-            renderPreview(guiGraphics)
+            renderPreview(guiGraphics, mouseX, mouseY)
             renderPreviewModeHint(guiGraphics)
             return
         }
         renderEditorChrome(guiGraphics, mouseX, mouseY)
-        renderPreview(guiGraphics)
+        renderPreview(guiGraphics, mouseX, mouseY)
         renderSideContent(guiGraphics)
         if (modal == null) {
             super.render(guiGraphics, mouseX, mouseY, partialTick)
             previewPresetDropdown?.renderPopup(guiGraphics, mouseX, mouseY)
             sealedVariantDropdowns.forEach { it.renderPopup(guiGraphics, mouseX, mouseY) }
+            hierarchyVariantDropdowns.forEach { it.renderPopup(guiGraphics, mouseX, mouseY) }
         } else {
             editorWidgets.forEach { it.render(guiGraphics, -1, -1, partialTick) }
             guiGraphics.flush()
@@ -173,6 +183,22 @@ class HudEditorScreen(
                     collapsedPaletteCategories.remove(header.category)
                 }
                 paletteScroll = clampScroll(paletteScroll, paletteRows().size, paletteVisibleRows())
+                rebuildWidgets()
+                return true
+            }
+        }
+        if (button == 0 && activeTab == SideTab.ELEMENTS && !paletteOpen) {
+            hierarchyHeaderAt(mouseX, mouseY)?.let { row ->
+                val disclosureRight = sideX + row.depth * HIERARCHY_INDENT + HIERARCHY_DISCLOSURE_WIDTH
+                if (row.node.children.isNotEmpty() && mouseX < disclosureRight) {
+                    if (!expandedHierarchyPaths.add(row.node.path)) {
+                        expandedHierarchyPaths.remove(row.node.path)
+                    }
+                    elementScroll = clampScroll(elementScroll, hierarchyRows().size, elementVisibleRows())
+                } else {
+                    session.select(row.node.path)
+                    propertyErrors.clear()
+                }
                 rebuildWidgets()
                 return true
             }
@@ -212,22 +238,36 @@ class HudEditorScreen(
             val localX = logical.x
             val localY = logical.y
             val guides = previewGuides()
-            val selectedGuide = session.state.selectedElementId
-                ?.let { selectedId -> guides.firstOrNull { it.elementId == selectedId } }
+            val selectedGuide = session.state.selectedPath
+                ?.let { selectedPath -> guides.firstOrNull { it.path == selectedPath } }
             if (selectedGuide != null && isOverScaleHandle(selectedGuide, mouseX, mouseY)) {
                 beginScaleDrag(selectedGuide)
                 return true
             }
-            val guide = HudPreviewElementGuideCalculator.hitTest(guides, localX, localY)
-            session.selectElement(guide?.elementId)
+            val guide = HudPreviewElementGuideCalculator.hitTest(
+                guides,
+                localX,
+                localY,
+                session.state.selectedPath,
+            )
+            session.select(guide?.path)
+            revealSelectedHierarchyPath(guide?.path)
             if (guide != null) {
                 activeTab = SideTab.PROPERTIES
                 paletteOpen = false
                 propertyErrors.clear()
+                val parentPointer = guide.parentTransform.toLocal(localX, localY)
+                val localElementAnchor = guide.parentTransform.toLocal(guide.elementAnchorX, guide.elementAnchorY)
+                if (parentPointer == null || localElementAnchor == null) {
+                    rebuildWidgets()
+                    return true
+                }
                 elementDrag = ElementDrag(
-                    elementId = guide.elementId,
-                    grabOffsetX = localX - guide.elementAnchorX,
-                    grabOffsetY = localY - guide.elementAnchorY,
+                    path = guide.path,
+                    pressScreenX = mouseX,
+                    pressScreenY = mouseY,
+                    grabOffsetX = parentPointer.first - localElementAnchor.first,
+                    grabOffsetY = parentPointer.second - localElementAnchor.second,
                 )
                 isDragging = true
             }
@@ -322,7 +362,7 @@ class HudEditorScreen(
             SideTab.ELEMENTS -> if (paletteOpen) {
                 paletteScroll = clampScroll(paletteScroll + direction, paletteRows().size, paletteVisibleRows())
             } else {
-                elementScroll = clampScroll(elementScroll + direction, session.state.elements.size, elementVisibleRows())
+                elementScroll = clampScroll(elementScroll + direction, hierarchyRows().size, elementVisibleRows())
             }
             SideTab.PROPERTIES -> {
                 val count = selectedPropertyRows()?.size ?: 0
@@ -390,7 +430,7 @@ class HudEditorScreen(
                 return true
             }
         } else {
-            keyboardNudgeElementId = null
+            keyboardNudgePath = null
         }
         return super.keyPressed(keyCode, scanCode, modifiers)
     }
@@ -401,7 +441,7 @@ class HudEditorScreen(
             keyCode == GLFW.GLFW_KEY_UP ||
             keyCode == GLFW.GLFW_KEY_DOWN
         ) {
-            keyboardNudgeElementId = null
+            keyboardNudgePath = null
         }
         return super.keyReleased(keyCode, scanCode, modifiers)
     }
@@ -530,22 +570,49 @@ class HudEditorScreen(
         }
 
         val state = session.state
+        val rows = hierarchyRows()
         val visibleRows = elementVisibleRows()
-        elementScroll = clampScroll(elementScroll, state.elements.size, visibleRows)
-        state.elements.drop(elementScroll).take(visibleRows).forEachIndexed { index, element ->
-            val label = when (val inspected = session.inspectElement(element.id)) {
-                is HudElementInspectionResult.Inspected -> Component.translatable(inspected.model.nameKey)
-                else -> Component.literal(element.id)
-            }
-            addRenderableWidget(
-                Button.builder(label) {
-                    session.selectElement(element.id)
-                    propertyErrors.clear()
-                    rebuildWidgets()
-                }.bounds(sideX, contentY + index * 22, sideWidth, 20).build().also {
-                    it.active = state.selectedElementId != element.id
+        elementScroll = clampScroll(elementScroll, rows.size, visibleRows)
+        rows.drop(elementScroll).take(visibleRows).forEachIndexed { index, row ->
+            val y = contentY + index * ROW_HEIGHT
+            val controlWidth = hierarchyControlWidth(row.node)
+            when (val kind = row.node.kind) {
+                is HudHierarchyNodeKind.Variant -> {
+                    hierarchyVariantDropdowns += addRenderableWidget(
+                        DropdownWidget(
+                            x = sideX + sideWidth - controlWidth,
+                            y = y,
+                            width = controlWidth,
+                            height = 20,
+                            entries = buildList {
+                                if (kind.nullable) {
+                                    add(DropdownEntry(NULL_VARIANT, Component.translatable("dynamicrider.hud.editor.property.none")))
+                                }
+                                addAll(kind.variants.map { DropdownEntry(it.typeId, Component.translatable(it.nameKey)) })
+                            },
+                            selected = kind.selectedTypeId ?: NULL_VARIANT,
+                            maxVisibleRows = propertyVariantVisibleRows(y),
+                            onSelected = { variant ->
+                                if (variant == NULL_VARIANT) session.setPresence(row.node.path, false)
+                                else session.changeVariant(row.node.path, variant)
+                                rebuildWidgets()
+                            },
+                        )
+                    )
                 }
-            )
+                is HudHierarchyNodeKind.Fixed -> if (kind.nullable) {
+                    addRenderableWidget(
+                        Button.builder(
+                            if (kind.present) Component.literal("✓")
+                            else Component.translatable("dynamicrider.hud.editor.property.none")
+                        ) {
+                            session.setPresence(row.node.path, !kind.present)
+                            rebuildWidgets()
+                        }.bounds(sideX + sideWidth - controlWidth, y, controlWidth, 20).build()
+                    )
+                }
+                is HudHierarchyNodeKind.Root -> Unit
+            }
         }
 
         val buttonY = height - 28
@@ -556,21 +623,22 @@ class HudEditorScreen(
         }.bounds(sideX, buttonY, smallWidth, 20).build())
         addRenderableWidget(Button.builder(Component.literal("−")) { removeSelected() }
             .bounds(sideX + smallWidth + 2, buttonY, smallWidth, 20).build().also {
-                it.active = state.selectedElementId != null
+                it.active = state.selectedPath?.isSingle == true
             })
         addRenderableWidget(Button.builder(Component.literal("↑")) { moveSelected(-1) }
             .bounds(sideX + (smallWidth + 2) * 2, buttonY, smallWidth, 20).build().also {
-                it.active = state.selectedElementId != null
+                it.active = state.selectedPath?.isSingle == true
             })
         addRenderableWidget(Button.builder(Component.literal("↓")) { moveSelected(1) }
             .bounds(sideX + (smallWidth + 2) * 3, buttonY, smallWidth, 20).build().also {
-                it.active = state.selectedElementId != null
+                it.active = state.selectedPath?.isSingle == true
             })
     }
 
     private fun buildPropertiesTab() {
-        val elementId = session.state.selectedElementId ?: return
-        val inspected = session.inspectElement(elementId) as? HudElementInspectionResult.Inspected ?: return
+        val selectedPath = session.state.selectedPath ?: return
+        val elementId = selectedPath.firstSegment
+        val inspected = session.inspect(selectedPath) as? HudElementInspectionResult.Inspected ?: return
         val properties = inspected.model.properties
         val rows = propertyRows(elementId, properties)
         val visibleRows = propertyVisibleRows()
@@ -590,22 +658,29 @@ class HudEditorScreen(
                             y = y,
                             width = widgetWidth,
                             height = PROPERTY_WIDGET_HEIGHT,
-                            entries = row.schema.variants.map {
-                                DropdownEntry(it.serialName, Component.translatable(it.nameKey))
+                            entries = buildList {
+                                if (property.nullable) {
+                                    add(DropdownEntry(NULL_VARIANT, Component.translatable("dynamicrider.hud.editor.property.none")))
+                                }
+                                addAll(row.schema.variants.map {
+                                    DropdownEntry(it.serialName, Component.translatable(it.nameKey))
+                                })
                             },
-                            selected = row.schema.selectedVariant,
+                            selected = row.schema.selectedVariant ?: NULL_VARIANT,
                             maxVisibleRows = propertyVariantVisibleRows(y),
                             onSelected = { variant ->
-                                changePropertyVariant(elementId, property, variant)
+                                if (variant == NULL_VARIANT) {
+                                    changePropertyPresence(elementId, property, false)
+                                } else {
+                                    changePropertyVariant(elementId, property, variant)
+                                }
                                 rebuildWidgets()
                             },
                         )
                     )
                 }
-                is HudPropertyPanelRow.LayoutHeader -> Unit
-                is HudPropertyPanelRow.Leaf,
-                is HudPropertyPanelRow.LayoutField,
-                -> {
+                is HudPropertyPanelRow.ObjectHeader -> Unit
+                is HudPropertyPanelRow.Leaf -> {
                     val property = row.property
                     factory.create(
                         property = property,
@@ -613,12 +688,7 @@ class HudEditorScreen(
                         y = y,
                         width = widgetWidth,
                         onCommit = { value ->
-                            if (row is HudPropertyPanelRow.LayoutField) {
-                                val replacement = HudLayoutEditorModel.replace(row.layout, property, value)
-                                updateProperty(elementId, row.layout, replacement, property.path)
-                            } else {
-                                updateProperty(elementId, property, value)
-                            }
+                            updateProperty(elementId, property, value)
                         },
                         onInvalidInput = { message ->
                             propertyErrors[elementId to property.path] = message
@@ -817,7 +887,7 @@ class HudEditorScreen(
         status?.let { guiGraphics.drawString(font, it, previewX + 4, height - 18, 0xFFFF7777.toInt()) }
     }
 
-    private fun renderPreview(guiGraphics: GuiGraphics) {
+    private fun renderPreview(guiGraphics: GuiGraphics, mouseX: Int, mouseY: Int) {
         val transform = previewTransform
         val scissorLeft = floor(transform.contentX).toInt()
         val scissorTop = floor(transform.contentY).toInt()
@@ -829,7 +899,7 @@ class HudEditorScreen(
         guiGraphics.pose().scale(transform.scale, transform.scale, 1f)
         session.previewScene.draw(guiGraphics, Minecraft.getInstance().deltaTracker)
         guiGraphics.pose().popPose()
-        if (!previewMode) renderSelectionOverlay(guiGraphics, transform)
+        if (!previewMode) renderSelectionOverlay(guiGraphics, transform, mouseX, mouseY)
         guiGraphics.disableScissor()
     }
 
@@ -852,7 +922,7 @@ class HudEditorScreen(
             SideTab.ELEMENTS -> {
                 if (paletteOpen) {
                     renderPaletteHeaders(guiGraphics)
-                } else if (session.state.elements.isEmpty()) {
+                } else if (session.state.hierarchy.roots.isEmpty()) {
                     guiGraphics.drawWordWrap(
                         font,
                         Component.translatable("dynamicrider.hud.editor.elements.empty"),
@@ -861,6 +931,8 @@ class HudEditorScreen(
                         sideWidth - 12,
                         0xFFBBBBBB.toInt(),
                     )
+                } else {
+                    renderHierarchyHeaders(guiGraphics)
                 }
             }
             SideTab.PROPERTIES -> renderProperties(guiGraphics, contentY)
@@ -888,6 +960,72 @@ class HudEditorScreen(
         }
     }
 
+    private fun renderHierarchyHeaders(guiGraphics: GuiGraphics) {
+        val rows = hierarchyRows()
+        val visibleRows = elementVisibleRows()
+        elementScroll = clampScroll(elementScroll, rows.size, visibleRows)
+        rows.drop(elementScroll).take(visibleRows).forEachIndexed { index, row ->
+            val y = previewY + 26 + index * ROW_HEIGHT
+            val left = sideX + row.depth * HIERARCHY_INDENT
+            val right = (sideX + sideWidth - hierarchyControlWidth(row.node)).coerceAtLeast(left + 1)
+            drawHierarchyConnectors(guiGraphics, rows, elementScroll + index, row, y, left)
+            guiGraphics.fill(left, y, right, y + HIERARCHY_HEADER_HEIGHT, PALETTE_HEADER_BACKGROUND)
+            val disclosure = when {
+                row.node.children.isEmpty() -> "  "
+                row.expanded -> "▼ "
+                else -> "▶ "
+            }
+            guiGraphics.enableScissor(left, y, right, y + HIERARCHY_HEADER_HEIGHT)
+            guiGraphics.drawString(
+                font,
+                Component.literal(disclosure).append(Component.translatable(row.node.nameKey)),
+                left + 6,
+                y + (HIERARCHY_HEADER_HEIGHT - font.lineHeight) / 2,
+                PALETTE_HEADER_TEXT,
+            )
+            guiGraphics.disableScissor()
+            if (session.state.selectedPath == row.node.path) {
+                guiGraphics.renderOutline(
+                    left,
+                    y,
+                    (right - left).coerceAtLeast(1),
+                    HIERARCHY_HEADER_HEIGHT,
+                    HIERARCHY_SELECTED_OUTLINE,
+                )
+            }
+        }
+    }
+
+    private fun drawHierarchyConnectors(
+        guiGraphics: GuiGraphics,
+        rows: List<HudHierarchyRow>,
+        rowIndex: Int,
+        row: HudHierarchyRow,
+        y: Int,
+        headerLeft: Int,
+    ) {
+        if (row.depth == 0) return
+        val centerY = y + HIERARCHY_HEADER_HEIGHT / 2
+        repeat(row.depth) { level ->
+            val ancestorSegments = row.node.path.segments.take(level + 1)
+            val x = sideX + level * HIERARCHY_INDENT + HIERARCHY_INDENT / 2
+            val hasFollowingDescendant = rows.asSequence().drop(rowIndex + 1).any { following ->
+                following.depth > level &&
+                    following.node.path.segments.take(level + 1) == ancestorSegments
+            }
+            guiGraphics.fill(
+                x,
+                y,
+                x + 1,
+                if (hasFollowingDescendant) y + ROW_HEIGHT else centerY + 1,
+                HIERARCHY_CONNECTOR_COLOR,
+            )
+            if (level == row.depth - 1) {
+                guiGraphics.fill(x, centerY, headerLeft, centerY + 1, HIERARCHY_CONNECTOR_COLOR)
+            }
+        }
+    }
+
     private fun renderPreviewState(guiGraphics: GuiGraphics) {
         guiGraphics.drawString(
             font,
@@ -910,8 +1048,8 @@ class HudEditorScreen(
     }
 
     private fun renderProperties(guiGraphics: GuiGraphics, contentY: Int) {
-        val selectedId = session.state.selectedElementId
-        if (selectedId == null) {
+        val selectedPath = session.state.selectedPath
+        if (selectedPath == null) {
             guiGraphics.drawWordWrap(
                 font,
                 Component.translatable("dynamicrider.hud.editor.properties.empty"),
@@ -922,7 +1060,20 @@ class HudEditorScreen(
             )
             return
         }
-        val inspected = session.inspectElement(selectedId)
+        val selectedId = selectedPath.firstSegment
+        val inspected = session.inspect(selectedPath)
+        if (inspected is HudElementInspectionResult.AbsentElement) {
+            guiGraphics.drawString(font, Component.translatable(inspected.nameKey), sideX + 6, contentY, 0xFFFFFFFF.toInt())
+            guiGraphics.drawWordWrap(
+                font,
+                Component.translatable("dynamicrider.hud.editor.property.none"),
+                sideX + 6,
+                contentY + 18,
+                sideWidth - 12,
+                0xFFBBBBBB.toInt(),
+            )
+            return
+        }
         if (inspected !is HudElementInspectionResult.Inspected) {
             guiGraphics.drawString(font, Component.translatable("dynamicrider.hud.editor.inspect_failed"), sideX + 6, contentY, 0xFFFF7777.toInt())
             return
@@ -957,9 +1108,7 @@ class HudEditorScreen(
                         },
                     )
                 }
-                is HudPropertyPanelRow.Leaf,
-                is HudPropertyPanelRow.LayoutField,
-                -> {
+                is HudPropertyPanelRow.Leaf -> {
                     val color = when {
                         propertyErrors.containsKey(selectedId to property.path) -> 0xFFFF6666.toInt()
                         property.supported -> 0xFFDDDDDD.toInt()
@@ -1210,12 +1359,12 @@ class HudEditorScreen(
     }
 
     private fun removeSelected() {
-        session.state.selectedElementId?.let(session::removeElement)
+        session.state.selectedPath?.takeIf { it.isSingle }?.firstSegment?.let(session::removeElement)
     }
 
     private fun moveSelected(offset: Int) {
         val state = session.state
-        val id = state.selectedElementId ?: return
+        val id = state.selectedPath?.takeIf { it.isSingle }?.firstSegment ?: return
         val index = state.elements.indexOfFirst { it.id == id }
         if (index >= 0) session.moveElement(id, index + offset)
     }
@@ -1252,10 +1401,15 @@ class HudEditorScreen(
         elementId: String,
         property: HudEditableProperty,
         value: kotlinx.serialization.json.JsonElement,
-        errorPath: HudPropertyPath = property.path,
+        errorPath: HudPath = property.path,
     ): Boolean {
         val key = elementId to errorPath
-        return when (val result = session.updateProperty(elementId, property.path, value)) {
+        val relativePath = if (property.path.firstSegment == elementId && !property.path.isSingle) {
+            HudPath.of(*property.path.segments.drop(1).toTypedArray())
+        } else {
+            property.path
+        }
+        return when (val result = session.updateProperty(elementId, relativePath, value)) {
             is HudEditorActionResult.Applied -> {
                 propertyErrors.remove(key)
                 status = null
@@ -1286,7 +1440,9 @@ class HudEditorScreen(
         property: HudEditableProperty,
         variant: String,
     ) {
-        when (val result = session.changePropertyVariant(elementId, property.path, variant)) {
+        val absolutePath = property.path.takeIf { it.firstSegment == elementId }
+            ?: HudPath.of(elementId).append(property.path)
+        when (val result = session.changeVariant(absolutePath, variant)) {
             is HudEditorActionResult.Applied,
             HudEditorActionResult.Unchanged,
             -> {
@@ -1308,38 +1464,61 @@ class HudEditorScreen(
         }
     }
 
-    private fun HudPropertyPath.isDescendantOf(parent: HudPropertyPath): Boolean =
+    private fun changePropertyPresence(
+        elementId: String,
+        property: HudEditableProperty,
+        present: Boolean,
+    ) {
+        val absolutePath = property.path.takeIf { it.firstSegment == elementId }
+            ?: HudPath.of(elementId).append(property.path)
+        when (val result = session.setPresence(absolutePath, present)) {
+            is HudEditorActionResult.Applied,
+            HudEditorActionResult.Unchanged,
+            -> {
+                propertyErrors.remove(elementId to property.path)
+                status = null
+            }
+            is HudEditorActionResult.PropertyRejected -> {
+                propertyErrors[elementId to property.path] = result.failure.message
+                status = Component.translatable("dynamicrider.hud.editor.property.rejected")
+                    .append(": ")
+                    .append(result.failure.message)
+            }
+            else -> status = Component.translatable("dynamicrider.hud.editor.action_failed")
+        }
+    }
+
+    private fun HudPath.isDescendantOf(parent: HudPath): Boolean =
         segments.size > parent.segments.size &&
             segments.take(parent.segments.size) == parent.segments
 
-    private fun clearPropertyError(elementId: String, path: HudPropertyPath) {
+    private fun clearPropertyError(elementId: String, path: HudPath) {
         propertyErrors.remove(elementId to path)
         if (propertyErrors.isEmpty()) status = null
     }
 
     private fun nudgeSelectedElement(deltaX: Int, deltaY: Int): Boolean {
-        val elementId = session.state.selectedElementId ?: return false
-        val inspected = session.inspectElement(elementId) as? HudElementInspectionResult.Inspected ?: return false
+        val selectedPath = session.state.selectedPath ?: return false
+        val inspected = session.inspect(selectedPath) as? HudElementInspectionResult.Inspected ?: return false
         val layout = inspected.model.properties.firstOrNull {
-            it.editor is HudPropertyEditorType.LayoutEditor
+            it.role == HudPropertyRole.LAYOUT
         } ?: return false
         val replacement = HudLayoutEditorModel.translatePosition(layout, deltaX, deltaY)
-        return when (
-            session.updateProperty(
-                elementId = elementId,
-                path = layout.path,
-                value = replacement,
-                mergeWithPrevious = keyboardNudgeElementId == elementId,
-            )
-        ) {
+        return when (updateLayoutLeaves(
+            elementPath = selectedPath,
+            layout = layout,
+            replacement = replacement,
+            fieldNames = listOf("x", "y"),
+            mergeWithPrevious = keyboardNudgePath == selectedPath,
+        )) {
             is HudEditorActionResult.Applied -> {
-                keyboardNudgeElementId = elementId
+                keyboardNudgePath = selectedPath
                 status = null
                 true
             }
             HudEditorActionResult.Unchanged -> true
             is HudEditorActionResult.PropertyRejected -> {
-                keyboardNudgeElementId = null
+                keyboardNudgePath = null
                 status = Component.translatable("dynamicrider.hud.editor.property.rejected")
                 true
             }
@@ -1348,20 +1527,27 @@ class HudEditorScreen(
     }
 
     private fun dragSelectedElement(mouseX: Double, mouseY: Double, drag: ElementDrag) {
-        val guide = previewGuides().firstOrNull { it.elementId == drag.elementId } ?: return
-        val inspected = session.inspectElement(drag.elementId) as? HudElementInspectionResult.Inspected ?: return
-        val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor } ?: return
+        if (!drag.started) {
+            val dx = mouseX - drag.pressScreenX
+            val dy = mouseY - drag.pressScreenY
+            if (dx * dx + dy * dy < DRAG_START_DISTANCE * DRAG_START_DISTANCE) return
+            drag.started = true
+        }
+        val guide = previewGuides().firstOrNull { it.path == drag.path } ?: return
+        val inspected = session.inspect(drag.path) as? HudElementInspectionResult.Inspected ?: return
+        val layout = inspected.model.properties.firstOrNull { it.role == HudPropertyRole.LAYOUT } ?: return
         val pointer = previewTransform.screenToLogical(mouseX, mouseY)
-        val anchorX = pointer.x - drag.grabOffsetX
-        val anchorY = pointer.y - drag.grabOffsetY
+        val parentPointer = guide.parentTransform.toLocal(pointer.x, pointer.y) ?: return
+        val anchorX = parentPointer.first - drag.grabOffsetX
+        val anchorY = parentPointer.second - drag.grabOffsetY
         val (x, y) = HudLayoutEngine.offsetForElementAnchor(
-            guide.screenAnchorX,
-            guide.screenAnchorY,
+            guide.localScreenAnchorX,
+            guide.localScreenAnchorY,
             anchorX,
             anchorY,
         )
         val replacement = HudLayoutEditorModel.replacePosition(layout, x, y)
-        when (session.updateProperty(drag.elementId, layout.path, replacement, drag.commandStarted)) {
+        when (updateLayoutLeaves(drag.path, layout, replacement, listOf("x", "y"), drag.commandStarted)) {
             is HudEditorActionResult.Applied -> {
                 drag.commandStarted = true
                 status = null
@@ -1372,22 +1558,40 @@ class HudEditorScreen(
         }
     }
 
-    private fun renderSelectionOverlay(guiGraphics: GuiGraphics, transform: HudPreviewTransform) {
-        val selectedId = session.state.selectedElementId ?: return
-        val guide = previewGuides().firstOrNull { it.elementId == selectedId } ?: return
-        val topLeft = transform.logicalToScreen(guide.bounds.left, guide.bounds.top)
-        val bottomRight = transform.logicalToScreen(guide.bounds.right, guide.bounds.bottom)
-        val left = topLeft.x.roundToInt()
-        val top = topLeft.y.roundToInt()
-        val right = bottomRight.x.roundToInt()
-        val bottom = bottomRight.y.roundToInt()
-        guiGraphics.renderOutline(
-            left,
-            top,
-            (right - left).coerceAtLeast(1),
-            (bottom - top).coerceAtLeast(1),
-            SELECTION_COLOR,
-        )
+    private fun renderSelectionOverlay(
+        guiGraphics: GuiGraphics,
+        transform: HudPreviewTransform,
+        mouseX: Int,
+        mouseY: Int,
+    ) {
+        val guides = previewGuides()
+        val selectedPath = session.state.selectedPath
+        val hoverGuide = if (isInsidePreview(mouseX.toDouble(), mouseY.toDouble())) {
+            val pointer = transform.screenToLogical(mouseX.toDouble(), mouseY.toDouble())
+            HudPreviewElementGuideCalculator.hitTest(guides, pointer.x, pointer.y, selectedPath)
+        } else {
+            null
+        }
+        val guide = selectedPath?.let { path -> guides.firstOrNull { it.path == path } }
+        if (guide == null) {
+            if (hoverGuide != null) {
+                drawGuideOutline(guiGraphics, transform, hoverGuide, HOVER_GUIDE_COLOR)
+                drawHoverGuideLabel(guiGraphics, transform, hoverGuide)
+            }
+            return
+        }
+        selectedPath.parent
+            ?.let { parentPath -> guides.firstOrNull { it.path == parentPath } }
+            ?.let { parentGuide -> drawDashedGuideOutline(guiGraphics, transform, parentGuide, PARENT_GUIDE_COLOR) }
+        guides.asSequence()
+            .filter { it.path.parent == selectedPath }
+            .forEach { drawGuideOutline(guiGraphics, transform, it, CHILD_GUIDE_COLOR) }
+
+        if (hoverGuide != null && hoverGuide.path != selectedPath) {
+            drawGuideOutline(guiGraphics, transform, hoverGuide, HOVER_GUIDE_COLOR)
+            drawHoverGuideLabel(guiGraphics, transform, hoverGuide)
+        }
+        drawGuideOutline(guiGraphics, transform, guide, SELECTION_COLOR)
 
         val screenAnchor = transform.logicalToScreen(guide.screenAnchorX, guide.screenAnchorY)
         val elementAnchor = transform.logicalToScreen(guide.elementAnchorX, guide.elementAnchorY)
@@ -1407,6 +1611,70 @@ class HudEditorScreen(
             handle.y.roundToInt() + SCALE_HANDLE_RADIUS + 1,
             SCALE_HANDLE_COLOR,
         )
+    }
+
+    private fun drawGuideOutline(
+        guiGraphics: GuiGraphics,
+        transform: HudPreviewTransform,
+        guide: HudPreviewElementGuide,
+        color: Int,
+    ) {
+        val topLeft = transform.logicalToScreen(guide.bounds.left, guide.bounds.top)
+        val bottomRight = transform.logicalToScreen(guide.bounds.right, guide.bounds.bottom)
+        val left = topLeft.x.roundToInt()
+        val top = topLeft.y.roundToInt()
+        val right = bottomRight.x.roundToInt()
+        val bottom = bottomRight.y.roundToInt()
+        guiGraphics.renderOutline(
+            left,
+            top,
+            (right - left).coerceAtLeast(1),
+            (bottom - top).coerceAtLeast(1),
+            color,
+        )
+    }
+
+    private fun drawDashedGuideOutline(
+        guiGraphics: GuiGraphics,
+        transform: HudPreviewTransform,
+        guide: HudPreviewElementGuide,
+        color: Int,
+    ) {
+        val topLeft = transform.logicalToScreen(guide.bounds.left, guide.bounds.top)
+        val bottomRight = transform.logicalToScreen(guide.bounds.right, guide.bounds.bottom)
+        val left = topLeft.x.roundToInt()
+        val top = topLeft.y.roundToInt()
+        val right = bottomRight.x.roundToInt()
+        val bottom = bottomRight.y.roundToInt()
+        var x = left
+        while (x < right) {
+            val end = (x + GUIDE_DASH_LENGTH).coerceAtMost(right)
+            guiGraphics.fill(x, top, end, top + 1, color)
+            guiGraphics.fill(x, bottom, end, bottom + 1, color)
+            x += GUIDE_DASH_LENGTH + GUIDE_DASH_GAP
+        }
+        var y = top
+        while (y < bottom) {
+            val end = (y + GUIDE_DASH_LENGTH).coerceAtMost(bottom)
+            guiGraphics.fill(left, y, left + 1, end, color)
+            guiGraphics.fill(right, y, right + 1, end, color)
+            y += GUIDE_DASH_LENGTH + GUIDE_DASH_GAP
+        }
+    }
+
+    private fun drawHoverGuideLabel(
+        guiGraphics: GuiGraphics,
+        transform: HudPreviewTransform,
+        guide: HudPreviewElementGuide,
+    ) {
+        val label = session.state.hierarchy[guide.path]
+            ?.let { Component.translatable(it.nameKey) }
+            ?: Component.literal(guide.path.toString())
+        val point = transform.logicalToScreen(guide.bounds.left, guide.bounds.top)
+        val x = point.x.roundToInt().coerceIn(previewX, (previewX + previewWidth - font.width(label) - 6).coerceAtLeast(previewX))
+        val y = (point.y.roundToInt() - font.lineHeight - 4).coerceAtLeast(previewY)
+        guiGraphics.fill(x, y, x + font.width(label) + 6, y + font.lineHeight + 4, HOVER_LABEL_BACKGROUND)
+        guiGraphics.drawString(font, label, x + 3, y + 2, HOVER_LABEL_TEXT)
     }
 
     private fun drawAnchorCross(guiGraphics: GuiGraphics, x: Int, y: Int, color: Int, radius: Int) {
@@ -1434,14 +1702,14 @@ class HudEditorScreen(
     }
 
     private fun beginScaleDrag(guide: HudPreviewElementGuide) {
-        val element = session.previewScene.entries.firstOrNull { it.id == guide.elementId }?.element ?: return
+        val element = guide.element
         val (handleX, handleY) = guide.scaleHandle()
         val vectorX = handleX - guide.elementAnchorX
         val vectorY = handleY - guide.elementAnchorY
         val vectorLengthSquared = vectorX * vectorX + vectorY * vectorY
         if (vectorLengthSquared == 0f) return
         scaleDrag = ScaleDrag(
-            elementId = guide.elementId,
+            path = guide.path,
             anchorX = guide.elementAnchorX,
             anchorY = guide.elementAnchorY,
             handleVectorX = vectorX,
@@ -1454,8 +1722,8 @@ class HudEditorScreen(
     }
 
     private fun scaleSelectedElement(mouseX: Double, mouseY: Double, drag: ScaleDrag) {
-        val inspected = session.inspectElement(drag.elementId) as? HudElementInspectionResult.Inspected ?: return
-        val layout = inspected.model.properties.firstOrNull { it.editor is HudPropertyEditorType.LayoutEditor } ?: return
+        val inspected = session.inspect(drag.path) as? HudElementInspectionResult.Inspected ?: return
+        val layout = inspected.model.properties.firstOrNull { it.role == HudPropertyRole.LAYOUT } ?: return
         val pointer = previewTransform.screenToLogical(mouseX, mouseY)
         val pointerX = pointer.x - drag.anchorX
         val pointerY = pointer.y - drag.anchorY
@@ -1464,7 +1732,13 @@ class HudEditorScreen(
             .coerceIn(MIN_UNIFORM_SCALE, MAX_UNIFORM_SCALE)
             .let { (it * 100f).roundToInt() / 100f }
         val replacement = HudLayoutEditorModel.replaceUniformScale(layout, scale)
-        when (session.updateProperty(drag.elementId, layout.path, replacement, drag.commandStarted)) {
+        when (updateLayoutLeaves(
+            drag.path,
+            layout,
+            replacement,
+            listOf("scaleX", "scaleY"),
+            drag.commandStarted,
+        )) {
             is HudEditorActionResult.Applied -> {
                 drag.commandStarted = true
                 status = null
@@ -1473,6 +1747,34 @@ class HudEditorScreen(
                 Component.translatable("dynamicrider.hud.editor.property.rejected")
             else -> Unit
         }
+    }
+
+    private fun updateLayoutLeaves(
+        elementPath: HudPath,
+        layout: HudEditableProperty,
+        replacement: kotlinx.serialization.json.JsonObject,
+        fieldNames: List<String>,
+        mergeWithPrevious: Boolean,
+    ): HudEditorActionResult {
+        val schema = layout.schema as? HudEditablePropertySchema.Object
+            ?: return HudEditorActionResult.PropertyRejected(
+                HudSpecPropertyUpdateResult.Failure(
+                    layout.path,
+                    HudSpecPropertyUpdateResult.Reason.UNSUPPORTED_PROPERTY,
+                    "HUD layout is not an object",
+                ),
+            )
+        val rootPath = HudPath.of(elementPath.firstSegment)
+        val changes = fieldNames.map { fieldName ->
+            val field = schema.properties.firstOrNull { it.path.segments.last() == fieldName }
+                ?: error("HUD layout field '$fieldName' is missing")
+            val value = replacement[fieldName] as? JsonPrimitive
+                ?: error("HUD layout field '$fieldName' is not primitive")
+            val absolutePath = field.path.takeIf { it.firstSegment == elementPath.firstSegment }
+                ?: rootPath.append(field.path)
+            absolutePath to value
+        }
+        return session.updateLeaf(*changes.toTypedArray(), mergeWithPrevious = mergeWithPrevious)
     }
 
     private fun isOverScaleHandle(guide: HudPreviewElementGuide, x: Double, y: Double): Boolean {
@@ -1504,8 +1806,8 @@ class HudEditorScreen(
         rebuildWidgets()
     }
 
-    private fun selectedProperties() = session.state.selectedElementId
-        ?.let(session::inspectElement)
+    private fun selectedProperties() = session.state.selectedPath
+        ?.let(session::inspect)
         ?.let { (it as? HudElementInspectionResult.Inspected)?.model?.properties }
 
     private fun propertyRows(
@@ -1520,7 +1822,7 @@ class HudEditorScreen(
     )
 
     private fun selectedPropertyRows(): List<HudPropertyPanelRow>? {
-        val elementId = session.state.selectedElementId ?: return null
+        val elementId = session.state.selectedPath?.firstSegment ?: return null
         val properties = selectedProperties() ?: return null
         return propertyRows(elementId, properties)
     }
@@ -1528,6 +1830,7 @@ class HudEditorScreen(
     private fun expandedDropdown(): DropdownWidget<String>? =
         sequenceOf(previewPresetDropdown)
             .plus(sealedVariantDropdowns.asSequence())
+            .plus(hierarchyVariantDropdowns.asSequence())
             .filterNotNull()
             .firstOrNull(DropdownWidget<String>::isExpanded)
 
@@ -1536,6 +1839,55 @@ class HudEditorScreen(
             entries = session.availableElementTypes(),
             collapsedCategories = collapsedPaletteCategories,
         )
+
+    private fun hierarchyRows(): List<HudHierarchyRow> = buildList {
+        fun addNode(node: HudHierarchyNode, depth: Int) {
+            val expanded = node.path in expandedHierarchyPaths
+            add(HudHierarchyRow(node, depth, expanded))
+            if (expanded) node.children.forEach { addNode(it, depth + 1) }
+        }
+        session.state.hierarchy.roots.forEach { addNode(it, 0) }
+    }
+
+    private fun revealSelectedHierarchyPath(path: HudPath?) {
+        path ?: return
+        var ancestor = path.parent
+        while (ancestor != null) {
+            expandedHierarchyPaths += ancestor
+            ancestor = ancestor.parent
+        }
+        val rows = hierarchyRows()
+        val index = rows.indexOfFirst { it.node.path == path }
+        if (index < 0) return
+        val visibleRows = elementVisibleRows()
+        elementScroll = when {
+            index < elementScroll -> index
+            index >= elementScroll + visibleRows -> (index - visibleRows + 1).coerceAtLeast(0)
+            else -> elementScroll
+        }
+    }
+
+    private fun hierarchyControlWidth(node: HudHierarchyNode): Int = when (val kind = node.kind) {
+        is HudHierarchyNodeKind.Variant -> HIERARCHY_VARIANT_WIDTH
+        is HudHierarchyNodeKind.Fixed -> if (kind.nullable) HIERARCHY_PRESENCE_WIDTH else 0
+        is HudHierarchyNodeKind.Root -> 0
+    }
+
+    private fun hierarchyHeaderAt(mouseX: Double, mouseY: Double): HudHierarchyRow? {
+        val contentY = previewY + 26
+        val visibleRows = elementVisibleRows()
+        if (mouseY < contentY || mouseY >= contentY + visibleRows * ROW_HEIGHT) return null
+        val rowOffset = (mouseY - contentY).toInt()
+        if (rowOffset % ROW_HEIGHT >= HIERARCHY_HEADER_HEIGHT) return null
+        val row = hierarchyRows()
+            .drop(elementScroll)
+            .take(visibleRows)
+            .getOrNull(rowOffset / ROW_HEIGHT)
+            ?: return null
+        val left = sideX + row.depth * HIERARCHY_INDENT
+        val right = (sideX + sideWidth - hierarchyControlWidth(row.node)).coerceAtLeast(left + 1)
+        return row.takeIf { mouseX >= left && mouseX < right }
+    }
 
     private fun paletteHeaderAt(mouseX: Double, mouseY: Double): HudElementPaletteRow.CategoryHeader? {
         if (mouseX < sideX || mouseX >= sideX + sideWidth) return null
@@ -1603,14 +1955,23 @@ class HudEditorScreen(
     )
 
     private data class ElementDrag(
-        val elementId: String,
+        val path: HudPath,
+        val pressScreenX: Double,
+        val pressScreenY: Double,
         val grabOffsetX: Float,
         val grabOffsetY: Float,
+        var started: Boolean = false,
         var commandStarted: Boolean = false,
     )
 
+    private data class HudHierarchyRow(
+        val node: HudHierarchyNode,
+        val depth: Int,
+        val expanded: Boolean,
+    )
+
     private data class ScaleDrag(
-        val elementId: String,
+        val path: HudPath,
         val anchorX: Float,
         val anchorY: Float,
         val handleVectorX: Float,
@@ -1645,7 +2006,7 @@ class HudEditorScreen(
         SideTab.ELEMENTS -> if (paletteOpen) {
             ScrollMetrics(paletteScroll, paletteRows().size, paletteVisibleRows())
         } else {
-            ScrollMetrics(elementScroll, session.state.elements.size, elementVisibleRows())
+            ScrollMetrics(elementScroll, hierarchyRows().size, elementVisibleRows())
         }
         SideTab.PROPERTIES ->
             selectedPropertyRows()?.let { ScrollMetrics(propertyScroll, it.size, propertyVisibleRows()) }
@@ -1676,6 +2037,7 @@ class HudEditorScreen(
             mouseX >= sideX - DIVIDER_HIT_WIDTH && mouseX <= sideX
 
     private companion object {
+        const val NULL_VARIANT = "\u0000null"
         const val DEFAULT_SIDE_WIDTH = 260
         const val MIN_SIDE_WIDTH = 190
         const val MAX_SIDE_WIDTH = 420
@@ -1688,6 +2050,13 @@ class HudEditorScreen(
         const val TAB_HEIGHT = 24
         const val ROW_HEIGHT = 22
         const val PALETTE_ELEMENT_INDENT = 8
+        const val HIERARCHY_INDENT = 12
+        const val HIERARCHY_DISCLOSURE_WIDTH = 18
+        const val HIERARCHY_VARIANT_WIDTH = 96
+        const val HIERARCHY_PRESENCE_WIDTH = 44
+        const val HIERARCHY_HEADER_HEIGHT = 20
+        const val HIERARCHY_SELECTED_OUTLINE = 0xFFFFFFFF.toInt()
+        const val HIERARCHY_CONNECTOR_COLOR = 0xFF686868.toInt()
         const val PALETTE_HEADER_BACKGROUND = 0x80303030.toInt()
         const val PALETTE_HEADER_TEXT = 0xFFE0E0E0.toInt()
         const val PROPERTY_PANEL_ROW_HEIGHT = 24
@@ -1711,12 +2080,20 @@ class HudEditorScreen(
         const val PREVIEW_HINT_SCALE = 2f
         const val PREVIEW_HINT_COLOR = 0xA0FFFFFF.toInt()
         const val SELECTION_COLOR = 0xFFFFFFFF.toInt()
+        const val CHILD_GUIDE_COLOR = 0x7055DDFF
+        const val PARENT_GUIDE_COLOR = 0x80909090.toInt()
+        const val HOVER_GUIDE_COLOR = 0xD055DDFF.toInt()
+        const val HOVER_LABEL_BACKGROUND = 0xD0202020.toInt()
+        const val HOVER_LABEL_TEXT = 0xFFFFFFFF.toInt()
         const val SCREEN_ANCHOR_COLOR = 0xFF55DDFF.toInt()
         const val ELEMENT_ANCHOR_COLOR = 0xFFFFCC33.toInt()
         const val OFFSET_COLOR = 0xAAFFFFFF.toInt()
         const val SCALE_HANDLE_COLOR = 0xFFFFFFFF.toInt()
         const val SCALE_HANDLE_RADIUS = 2
         const val SCALE_HANDLE_HIT_RADIUS = 5f
+        const val DRAG_START_DISTANCE = 3.0
+        const val GUIDE_DASH_LENGTH = 4
+        const val GUIDE_DASH_GAP = 3
         const val MIN_UNIFORM_SCALE = 0.05f
         const val MAX_UNIFORM_SCALE = 10f
     }

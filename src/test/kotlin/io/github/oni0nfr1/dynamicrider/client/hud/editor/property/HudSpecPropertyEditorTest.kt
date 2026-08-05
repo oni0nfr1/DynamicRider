@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class HudSpecPropertyEditorTest {
@@ -17,7 +18,7 @@ class HudSpecPropertyEditorTest {
     fun `primitive update creates a new spec without mutating the original`() {
         val original = GradientGaugeBar.Spec()
 
-        val result = HudSpecPropertyEditor.update(original, HudPropertyPath.parse("width"), JsonPrimitive(240))
+        val result = HudSpecPropertyEditor.update(original, HudPath.parse("width"), JsonPrimitive(240))
 
         val updated = assertInstanceOf(Success::class.java, result).spec as GradientGaugeBar.Spec
         assertNotSame(original, updated)
@@ -29,7 +30,7 @@ class HudSpecPropertyEditorTest {
     fun `layout child update preserves the rest of the layout`() {
         val original = GradientGaugeBar.Spec()
 
-        val result = HudSpecPropertyEditor.update(original, HudPropertyPath.parse("layout.x"), JsonPrimitive(25))
+        val result = HudSpecPropertyEditor.update(original, HudPath.parse("layout.x"), JsonPrimitive(25))
 
         val updated = assertInstanceOf(Success::class.java, result).spec as GradientGaugeBar.Spec
         assertEquals(original.layout.copy(x = 25), updated.layout)
@@ -37,8 +38,24 @@ class HudSpecPropertyEditorTest {
     }
 
     @Test
+    fun `multiple leaf updates rebuild the root spec atomically`() {
+        val original = GradientGaugeBar.Spec()
+
+        val result = HudSpecPropertyEditor.updateLeaf(
+            original,
+            HudPath.parse("layout.x") to JsonPrimitive(25),
+            HudPath.parse("layout.y") to JsonPrimitive(-40),
+        )
+
+        val updated = assertInstanceOf(Success::class.java, result).spec as GradientGaugeBar.Spec
+        assertEquals(original.layout.copy(x = 25, y = -40), updated.layout)
+        assertEquals(0, original.layout.x)
+        assertEquals(0, original.layout.y)
+    }
+
+    @Test
     fun `range violation returns the edited property path`() {
-        val path = HudPropertyPath.parse("width")
+        val path = HudPath.parse("width")
 
         val result = HudSpecPropertyEditor.update(GradientGaugeBar.Spec(), path, JsonPrimitive(3_000))
 
@@ -51,7 +68,7 @@ class HudSpecPropertyEditorTest {
     fun `serializer type violation is returned instead of thrown`() {
         val result = HudSpecPropertyEditor.update(
             GradientGaugeBar.Spec(),
-            HudPropertyPath.parse("width"),
+            HudPath.parse("width"),
             JsonPrimitive("wide"),
         )
 
@@ -62,7 +79,7 @@ class HudSpecPropertyEditorTest {
     fun `unknown property is distinguished from an invalid value`() {
         val result = HudSpecPropertyEditor.update(
             GradientGaugeBar.Spec(),
-            HudPropertyPath.parse("missing"),
+            HudPath.parse("missing"),
             JsonPrimitive(1),
         )
 
@@ -73,12 +90,12 @@ class HudSpecPropertyEditorTest {
     fun `list and nested element specs stay unsupported`() {
         val listResult = HudSpecPropertyEditor.update(
             GradientGaugeBar.Spec(),
-            HudPropertyPath.parse("gradientStops"),
+            HudPath.parse("gradientStops"),
             JsonPrimitive("not-a-list"),
         )
         val nestedSpecResult = HudSpecPropertyEditor.update(
             JiuTachometer.Spec(),
-            HudPropertyPath.parse("speedometer"),
+            HudPath.parse("speedometer"),
             JsonPrimitive("not-a-spec"),
         )
 
@@ -92,7 +109,7 @@ class HudSpecPropertyEditorTest {
 
         val result = HudSpecPropertyEditor.update(
             original,
-            HudPropertyPath.parse("style.color"),
+            HudPath.parse("style.color"),
             JsonPrimitive("#FFAABBCC"),
         )
 
@@ -104,7 +121,7 @@ class HudSpecPropertyEditorTest {
     @Test
     fun `sealed subtype can be replaced from defaults and rejects unknown variants`() {
         val original = EditorPropertyStressElement.Spec()
-        val path = HudPropertyPath.parse("style")
+        val path = HudPath.parse("style")
 
         val changed = HudSpecPropertyEditor.changeVariant(original, path, "outline")
         val updated = assertInstanceOf(Success::class.java, changed).spec as EditorPropertyStressElement.Spec
@@ -122,7 +139,7 @@ class HudSpecPropertyEditorTest {
 
         val result = HudSpecPropertyEditor.changeVariant(
             original,
-            HudPropertyPath.parse("style"),
+            HudPath.parse("style"),
             "outline",
         )
 
@@ -130,11 +147,41 @@ class HudSpecPropertyEditorTest {
     }
 
     @Test
+    fun `variant selection activates a nullable sealed value with defaults`() {
+        val original = EditorPropertyStressElement.Spec(nullableStyle = null)
+
+        val result = HudSpecPropertyEditor.changeVariant(
+            original,
+            HudPath.parse("nullableStyle"),
+            "outline",
+        )
+
+        val updated = assertInstanceOf(Success::class.java, result).spec as EditorPropertyStressElement.Spec
+        assertEquals(EditorPropertyStressElement.StressStyle.Outline(), updated.nullableStyle)
+    }
+
+    @Test
+    fun `presence change disables and restores nullable sealed defaults`() {
+        val original = EditorPropertyStressElement.Spec(
+            nullableStyle = EditorPropertyStressElement.StressStyle.Outline(thickness = 3),
+        )
+        val path = HudPath.parse("nullableStyle")
+
+        val disabled = HudSpecPropertyEditor.setPresence(original, path, false)
+        val disabledSpec = assertInstanceOf(Success::class.java, disabled).spec as EditorPropertyStressElement.Spec
+        assertEquals(null, disabledSpec.nullableStyle)
+
+        val enabled = HudSpecPropertyEditor.setPresence(disabledSpec, path, true)
+        val enabledSpec = assertInstanceOf(Success::class.java, enabled).spec as EditorPropertyStressElement.Spec
+        assertTrue(enabledSpec.nullableStyle is EditorPropertyStressElement.StressStyle)
+    }
+
+    @Test
     fun `sealed subtype leaf uses the common validator`() {
         val original = EditorPropertyStressElement.Spec(
             style = EditorPropertyStressElement.StressStyle.Outline()
         )
-        val path = HudPropertyPath.parse("style.thickness")
+        val path = HudPath.parse("style.thickness")
 
         val result = HudSpecPropertyEditor.update(original, path, JsonPrimitive(10))
 

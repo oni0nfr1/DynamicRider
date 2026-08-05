@@ -10,6 +10,9 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocume
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspectionResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementInspector
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudElementPaletteEntry
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.hierarchy.HudHierarchyBuilder
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.hierarchy.HudHierarchyNodeKind
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.hierarchy.HudHierarchyModel
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneContext
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewHudSceneSynchronizer
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateField
@@ -18,7 +21,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStatePre
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStatePresetApplier
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStatePresets
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.preview.PreviewStateUpdateResult
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropertyUpdateResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditCommandResult
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.service.HudSpecEditService
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
@@ -34,6 +38,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.state.KartState
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * GUI 요청을 document command로 변환하고 하나의 preview scene에 반영하는 편집 수명주기다.
@@ -54,7 +59,8 @@ class HudEditorSession<S : KartState> internal constructor(
 ) : AutoCloseable {
     private val stateListeners = LinkedHashSet<(HudEditorState) -> Unit>()
     private val documentSubscription: AutoCloseable
-    private var selectedElementId: String? = null
+    private var hierarchy: HudHierarchyModel = HudHierarchyBuilder(document).build()
+    private var selectedPath: HudPath? = null
     private var closed: Boolean = false
     private var currentSource: HudSceneSource = source
     private var currentDiagnostics: List<HudSceneLoadError> = diagnostics.toList()
@@ -72,7 +78,8 @@ class HudEditorSession<S : KartState> internal constructor(
             kartStateType = previewContext.kartStateType,
             source = source,
             elements = document.elements,
-            selectedElementId = selectedElementId,
+            hierarchy = hierarchy,
+            selectedPath = selectedPath,
             dirty = document.dirty,
             canUndo = commandStack.canUndo,
             canRedo = commandStack.canRedo,
@@ -101,18 +108,26 @@ class HudEditorSession<S : KartState> internal constructor(
 
     /** 요소를 선택하거나 `null`로 현재 선택을 해제한다. */
     fun selectElement(elementId: String?): HudEditorActionResult {
+        return select(elementId?.let { HudPath.of(it) })
+    }
+
+    /** Root 또는 중첩 요소 [path]를 선택하며 document와 command history는 변경하지 않는다. */
+    fun select(path: HudPath?): HudEditorActionResult {
         if (closed) return HudEditorActionResult.Closed
-        if (elementId != null && document.elementById(elementId) == null) {
-            return HudEditorActionResult.ElementNotFound(elementId)
+        if (path != null && path !in hierarchy) {
+            return HudEditorActionResult.ElementNotFound(path.toString())
         }
-        if (selectedElementId == elementId) return HudEditorActionResult.Unchanged
-        selectedElementId = elementId
+        if (selectedPath == path) return HudEditorActionResult.Unchanged
+        selectedPath = path
         publishState()
-        return HudEditorActionResult.Applied(elementId)
+        return HudEditorActionResult.Applied(path?.firstSegment)
     }
 
     /** [elementId]의 현재 Spec 값과 편집 metadata를 결합한 속성 패널 모델을 반환한다. */
     fun inspectElement(elementId: String): HudElementInspectionResult = elementInspector.inspect(elementId)
+
+    /** 절대 [path]의 root 또는 중첩 요소에 대한 Inspector snapshot을 반환한다. */
+    fun inspect(path: HudPath): HudElementInspectionResult = elementInspector.inspect(path)
 
     /** 현재 카트 상태 타입과 호환되는 요소 팔레트의 읽기 전용 snapshot을 반환한다. */
     fun availableElementTypes(): List<HudElementPaletteEntry> =
@@ -183,7 +198,7 @@ class HudEditorSession<S : KartState> internal constructor(
         if (closed) return HudEditorActionResult.Closed
         validateSpec(spec)?.let { return it }
         val elementId = generateElementId()
-        selectedElementId = elementId
+        selectedPath = HudPath.of(elementId)
         commandStack.execute(AddElementCommand(HudDocumentElement(elementId, spec), index))
         return HudEditorActionResult.Applied(elementId)
     }
@@ -210,7 +225,7 @@ class HudEditorSession<S : KartState> internal constructor(
     /** Spec property 변경을 검증된 command로 변환해 즉시 실행한다. */
     fun updateProperty(
         elementId: String,
-        path: HudPropertyPath,
+        path: HudPath,
         value: JsonElement,
         mergeWithPrevious: Boolean = false,
     ): HudEditorActionResult {
@@ -226,10 +241,44 @@ class HudEditorSession<S : KartState> internal constructor(
         }
     }
 
+    /** 같은 root 요소에 속한 하나 이상의 primitive leaf를 하나의 undo/redo 작업으로 변경한다. */
+    fun updateLeaf(
+        vararg changes: Pair<HudPath, JsonPrimitive>,
+        mergeWithPrevious: Boolean = false,
+    ): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        require(changes.isNotEmpty()) { "At least one HUD leaf change is required" }
+        val rootId = changes.first().first.firstSegment
+        require(changes.all { it.first.firstSegment == rootId }) {
+            "A HUD leaf update cannot span multiple root elements"
+        }
+        val relativeChanges = changes.map { (path, value) ->
+            if (path.isSingle) {
+                return HudEditorActionResult.PropertyRejected(
+                    HudSpecPropertyUpdateResult.Failure(
+                        path = path,
+                        reason = HudSpecPropertyUpdateResult.Reason.UNKNOWN_PROPERTY,
+                        message = "HUD leaf path '$path' does not contain a property",
+                    ),
+                )
+            }
+            HudPath.of(*path.segments.drop(1).toTypedArray()) to value
+        }
+        return when (val result = editService.createLeafChangeCommand(rootId, *relativeChanges.toTypedArray())) {
+            is HudSpecEditCommandResult.Created -> {
+                commandStack.execute(result.command, mergeWithPrevious)
+                HudEditorActionResult.Applied(rootId)
+            }
+            is HudSpecEditCommandResult.Unchanged -> HudEditorActionResult.Unchanged
+            is HudSpecEditCommandResult.ElementNotFound -> HudEditorActionResult.ElementNotFound(result.elementId)
+            is HudSpecEditCommandResult.PropertyRejected -> HudEditorActionResult.PropertyRejected(result.failure)
+        }
+    }
+
     /** sealed property를 지정 subtype으로 교체하고 새 Spec을 undo/redo history에 적용한다. */
     fun changePropertyVariant(
         elementId: String,
-        path: HudPropertyPath,
+        path: HudPath,
         variantSerialName: String,
     ): HudEditorActionResult {
         if (closed) return HudEditorActionResult.Closed
@@ -242,6 +291,46 @@ class HudEditorSession<S : KartState> internal constructor(
             is HudSpecEditCommandResult.ElementNotFound -> HudEditorActionResult.ElementNotFound(result.elementId)
             is HudSpecEditCommandResult.PropertyRejected -> HudEditorActionResult.PropertyRejected(result.failure)
         }
+    }
+
+    /** 절대 [path]의 일반 또는 요소 sealed property를 지정 subtype으로 교체한다. */
+    fun changeVariant(
+        path: HudPath,
+        variantSerialName: String,
+    ): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        val (rootId, relativePath) = splitPropertyPath(path) ?: return missingPropertyPath(path)
+        val hierarchyKind = hierarchy[path]?.kind as? HudHierarchyNodeKind.Variant
+        if (hierarchyKind != null) {
+            val variant = hierarchyKind.variants.firstOrNull { it.typeId == variantSerialName }
+                ?: return rejected(path, "Unknown HUD element variant '$variantSerialName'")
+            val type = HudElementTypeRegistry.byId(variant.typeId)
+                ?: return HudEditorActionResult.ElementTypeNotFound(variant.typeId)
+            if (!type.accepts(previewContext.kartStateType)) {
+                return HudEditorActionResult.IncompatibleState(
+                    requiredStateClass = type.requiredStateClass,
+                    sceneStateClass = previewContext.kartStateType.stateClass,
+                    specType = type.specClass.java.name,
+                )
+            }
+        }
+        return applyEditResult(rootId, editService.createVariantChangeCommand(rootId, relativePath, variantSerialName))
+    }
+
+    /** 절대 [path]의 nullable property를 비활성화하거나 스키마 기본값으로 활성화한다. */
+    fun setPresence(path: HudPath, present: Boolean): HudEditorActionResult {
+        if (closed) return HudEditorActionResult.Closed
+        val (rootId, relativePath) = splitPropertyPath(path) ?: return missingPropertyPath(path)
+        if (present) {
+            when (val kind = hierarchy[path]?.kind) {
+                is HudHierarchyNodeKind.Fixed -> compatibilityFailure(kind.typeId)?.let { return it }
+                is HudHierarchyNodeKind.Variant -> kind.variants.firstOrNull()?.typeId
+                    ?.let(::compatibilityFailure)
+                    ?.let { return it }
+                else -> Unit
+            }
+        }
+        return applyEditResult(rootId, editService.createPresenceChangeCommand(rootId, relativePath, present))
     }
 
     /** 마지막 편집 command를 되돌린다. */
@@ -320,14 +409,39 @@ class HudEditorSession<S : KartState> internal constructor(
     }
 
     private fun onDocumentChange(change: HudDocumentChange) {
-        if (change is HudDocumentChange.Removed && selectedElementId == change.element.id) {
-            val elements = document.elements
-            selectedElementId = elements.getOrNull(change.index.coerceAtMost(elements.lastIndex))?.id
-        }
-        if (change is HudDocumentChange.Reset && document.elementById(selectedElementId ?: "") == null) {
-            selectedElementId = document.elements.firstOrNull()?.id
-        }
+        val oldHierarchy = hierarchy
+        hierarchy = HudHierarchyBuilder(document).build()
+        selectedPath = reconcileSelection(change, oldHierarchy, hierarchy, selectedPath)
         publishState()
+    }
+
+    private fun reconcileSelection(
+        change: HudDocumentChange,
+        oldHierarchy: HudHierarchyModel,
+        newHierarchy: HudHierarchyModel,
+        selected: HudPath?,
+    ): HudPath? {
+        selected ?: return null
+        if (change is HudDocumentChange.Removed && selected.firstSegment == change.element.id) {
+            return newHierarchy.roots
+                .getOrNull(change.index.coerceAtMost(newHierarchy.roots.lastIndex))
+                ?.path
+        }
+
+        for (size in 1..selected.segments.size) {
+            val prefix = HudPath.of(*selected.segments.take(size).toTypedArray())
+            val oldType = oldHierarchy[prefix]?.kind?.selectedTypeId
+            val newType = newHierarchy[prefix]?.kind?.selectedTypeId
+            if (oldType != null && oldType != newType) {
+                return prefix.takeIf { it in newHierarchy }
+            }
+        }
+        var candidate: HudPath? = selected
+        while (candidate != null) {
+            if (candidate in newHierarchy) return candidate
+            candidate = candidate.parent
+        }
+        return if (change is HudDocumentChange.Reset) newHierarchy.roots.firstOrNull()?.path else null
     }
 
     private fun validateSpec(spec: HudElementSpec<*, *>): HudEditorActionResult? {
@@ -344,6 +458,52 @@ class HudEditorSession<S : KartState> internal constructor(
             HudSpecValidationResult.Valid -> null
             is HudSpecValidationResult.Invalid -> HudEditorActionResult.InvalidSpec(validation.errors)
         }
+    }
+
+    private fun splitPropertyPath(path: HudPath): Pair<String, HudPath>? =
+        path.segments.drop(1)
+            .takeIf(List<String>::isNotEmpty)
+            ?.let { path.firstSegment to HudPath.of(*it.toTypedArray()) }
+
+    private fun missingPropertyPath(path: HudPath): HudEditorActionResult.PropertyRejected = rejected(
+        path,
+        "HUD path '$path' does not contain a property",
+        HudSpecPropertyUpdateResult.Reason.UNKNOWN_PROPERTY,
+    )
+
+    private fun rejected(
+        path: HudPath,
+        message: String,
+        reason: HudSpecPropertyUpdateResult.Reason = HudSpecPropertyUpdateResult.Reason.INVALID_VALUE,
+    ): HudEditorActionResult.PropertyRejected = HudEditorActionResult.PropertyRejected(
+        HudSpecPropertyUpdateResult.Failure(path, reason, message),
+    )
+
+    private fun compatibilityFailure(typeId: String): HudEditorActionResult? {
+        val type = HudElementTypeRegistry.byId(typeId)
+            ?: return HudEditorActionResult.ElementTypeNotFound(typeId)
+        return if (type.accepts(previewContext.kartStateType)) {
+            null
+        } else {
+            HudEditorActionResult.IncompatibleState(
+                requiredStateClass = type.requiredStateClass,
+                sceneStateClass = previewContext.kartStateType.stateClass,
+                specType = type.specClass.java.name,
+            )
+        }
+    }
+
+    private fun applyEditResult(
+        rootId: String,
+        result: HudSpecEditCommandResult,
+    ): HudEditorActionResult = when (result) {
+        is HudSpecEditCommandResult.Created -> {
+            commandStack.execute(result.command)
+            HudEditorActionResult.Applied(rootId)
+        }
+        is HudSpecEditCommandResult.Unchanged -> HudEditorActionResult.Unchanged
+        is HudSpecEditCommandResult.ElementNotFound -> HudEditorActionResult.ElementNotFound(result.elementId)
+        is HudSpecEditCommandResult.PropertyRejected -> HudEditorActionResult.PropertyRejected(result.failure)
     }
 
     private fun generateElementId(): String {

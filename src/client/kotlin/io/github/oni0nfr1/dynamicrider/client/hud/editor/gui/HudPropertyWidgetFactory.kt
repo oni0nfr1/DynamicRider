@@ -30,7 +30,6 @@ class HudPropertyWidgetFactory(
         onCommit: (JsonElement) -> Boolean,
         onInvalidInput: (String) -> Unit,
         onCancelInput: () -> Unit = {},
-        onOpenLayout: () -> Unit = {},
     ): List<AbstractWidget> = when (val editor = property.editor) {
         HudPropertyEditorType.BooleanToggle -> if (property.nullable) {
             selector(
@@ -117,11 +116,6 @@ class HudPropertyWidgetFactory(
             onCommit = onCommit,
             onInvalidInput = onInvalidInput,
             onCancelInput = onCancelInput,
-        )
-        HudPropertyEditorType.LayoutEditor -> listOf(
-            Button.builder(Component.translatable("dynamicrider.hud.editor.property.edit_layout")) { onOpenLayout() }
-                .bounds(x, y, width, WIDGET_HEIGHT)
-                .build()
         )
         is HudPropertyEditorType.Unsupported -> listOf(unsupportedButton(x, y, width, "dynamicrider.hud.editor.property.unsupported"))
     }

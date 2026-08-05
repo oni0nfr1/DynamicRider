@@ -95,6 +95,7 @@ class EditorPropertyStressElement(
         val enabled: Boolean = true,
         val label: String = "Property stress test",
         val style: StressStyle = StressStyle.Solid(),
+        val nullableStyle: StressStyle? = null,
         @HudRange(min = 20.0, max = 400.0, step = 1.0)
         val boxWidth: Int = 160,
         @HudRange(min = 20.0, max = 200.0, step = 1.0)

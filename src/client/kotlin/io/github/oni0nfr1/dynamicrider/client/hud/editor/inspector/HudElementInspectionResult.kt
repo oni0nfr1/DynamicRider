@@ -10,6 +10,13 @@ sealed interface HudElementInspectionResult {
         val elementId: String,
     ) : HudElementInspectionResult
 
+    /** nullable 요소 슬롯은 존재하지만 현재 값이 `null`이라 Inspector 내용이 없는 상태다. */
+    data class AbsentElement(
+        val path: io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath,
+        val nameKey: String,
+        val typeId: String?,
+    ) : HudElementInspectionResult
+
     data class UnregisteredSpec(
         val elementId: String,
         val specType: String,

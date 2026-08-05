@@ -1,7 +1,7 @@
 package io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.ElementHolder
 import io.github.oni0nfr1.dynamicrider.client.hud.HudAnchor
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.HudElement
@@ -10,6 +10,7 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaug
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudLayoutSpec
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
+import io.github.oni0nfr1.dynamicrider.client.hud.elements.tachometer.jiu.JiuTachometer
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.HudSceneContext
@@ -42,11 +43,18 @@ class HudElementInspectorTest {
         val model = result.model
         assertEquals("gauge", model.elementId)
         assertEquals(HudElementTypeRegistry.GRADIENT_GAUGE_BAR.id, model.typeId)
-        val width = model.properties.single { it.path == HudPropertyPath.of("width") }
+        val width = model.properties.single { it.path == HudPath.of("width") }
         assertEquals(180, width.value.jsonPrimitive.content.toInt())
         assertInstanceOf(HudPropertyEditorType.Slider::class.java, width.editor)
 
-        val unsupported = model.properties.single { it.path == HudPropertyPath.of("gradientStops") }
+        val layout = model.properties.single { it.path == HudPath.of("layout") }
+        val layoutObject = assertInstanceOf(HudEditablePropertySchema.Object::class.java, layout.schema)
+        assertEquals(
+            setOf("screenAnchor", "elementAnchor", "scaleX", "scaleY", "x", "y", "zIndex"),
+            layoutObject.properties.map { it.path.segments.last() }.toSet(),
+        )
+
+        val unsupported = model.properties.single { it.path == HudPath.of("gradientStops") }
         assertInstanceOf(HudPropertyEditorType.Unsupported::class.java, unsupported.editor)
         assertFalse(unsupported.supported)
         assertEquals(
@@ -88,8 +96,8 @@ class HudElementInspectorTest {
         ).model
 
         assertTrue(HudElementTypeRegistry.EDITOR_PROPERTY_STRESS_TEST.metadata.properties.single { it.serialName == "value20" }.hidden)
-        assertTrue(stress.properties.none { it.path == HudPropertyPath.of("value20") })
-        assertFalse(gauge.properties.single { it.path == HudPropertyPath.of("gradientStops") }.supported)
+        assertTrue(stress.properties.none { it.path == HudPath.of("value20") })
+        assertFalse(gauge.properties.single { it.path == HudPath.of("gradientStops") }.supported)
     }
 
     @Test
@@ -109,17 +117,48 @@ class HudElementInspectorTest {
             HudElementInspectionResult.Inspected::class.java,
             HudElementInspector(document).inspect("stress"),
         ).model
-        val style = model.properties.single { it.path == HudPropertyPath.of("style") }
+        val style = model.properties.single { it.path == HudPath.of("style") }
         val sealed = assertInstanceOf(HudEditablePropertySchema.Sealed::class.java, style.schema)
 
         assertEquals("outline", sealed.selectedVariant)
         assertEquals(listOf("checker", "outline", "solid"), sealed.variants.map { it.serialName }.sorted())
         assertEquals(
-            setOf(HudPropertyPath.parse("style.color"), HudPropertyPath.parse("style.thickness")),
+            setOf(HudPath.parse("style.color"), HudPath.parse("style.thickness")),
             sealed.properties.map { it.path }.toSet(),
         )
-        assertEquals(3, sealed.properties.single { it.path == HudPropertyPath.parse("style.thickness") }
+        assertEquals(3, sealed.properties.single { it.path == HudPath.parse("style.thickness") }
             .value.jsonPrimitive.content.toInt())
+    }
+
+    @Test
+    fun `nested element inspection returns absolute property paths`() {
+        val document = HudSceneDocument.from(
+            HudSceneSpec(elementIds = listOf("tach"), elements = listOf(JiuTachometer.Spec()))
+        )
+
+        val model = assertInstanceOf(
+            HudElementInspectionResult.Inspected::class.java,
+            HudElementInspector(document).inspect(HudPath.parse("tach.speedometer")),
+        ).model
+
+        assertEquals(HudPath.parse("tach.speedometer"), model.path)
+        assertEquals("tach", model.elementId)
+        assertTrue(model.properties.all { it.path.segments.take(2) == listOf("tach", "speedometer") })
+        assertTrue(model.properties.any { it.path == HudPath.parse("tach.speedometer.layout") })
+    }
+
+    @Test
+    fun `element properties are exposed through hierarchy instead of inspector`() {
+        val document = HudSceneDocument.from(
+            HudSceneSpec(elementIds = listOf("tach"), elements = listOf(JiuTachometer.Spec()))
+        )
+
+        val model = assertInstanceOf(
+            HudElementInspectionResult.Inspected::class.java,
+            HudElementInspector(document).inspect(HudPath.of("tach")),
+        ).model
+
+        assertEquals(listOf(HudPath.parse("tach.layout")), model.properties.map { it.path })
     }
 
     @Test

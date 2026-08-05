@@ -2,8 +2,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.gui
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditableProperty
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.inspector.HudEditablePropertySchema
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
-import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 
 sealed interface HudPropertyPanelRow {
     val property: HudEditableProperty
@@ -25,37 +24,29 @@ sealed interface HudPropertyPanelRow {
         override val expanded: Boolean,
     ) : GroupHeader
 
-    data class LayoutHeader(
+    data class ObjectHeader(
         override val property: HudEditableProperty,
         override val depth: Int,
+        val schema: HudEditablePropertySchema.Object,
         override val expanded: Boolean,
     ) : GroupHeader
-
-    data class LayoutField(
-        override val property: HudEditableProperty,
-        override val depth: Int,
-        val layout: HudEditableProperty,
-    ) : HudPropertyPanelRow
 }
 
 /** 펼친 container의 자식만 포함하는 스크롤 가능한 속성 행 snapshot을 만든다. */
 object HudPropertyPanelModel {
     fun rows(
         properties: List<HudEditableProperty>,
-        expandedPaths: Set<HudPropertyPath>,
+        expandedPaths: Set<HudPath>,
     ): List<HudPropertyPanelRow> = buildList {
         fun addProperties(properties: List<HudEditableProperty>, depth: Int) {
             properties.forEach { property ->
                 val sealed = property.schema as? HudEditablePropertySchema.Sealed
+                val objectSchema = property.schema as? HudEditablePropertySchema.Object
                 val expanded = property.path in expandedPaths
                 when {
-                    property.editor is HudPropertyEditorType.LayoutEditor -> {
-                        add(HudPropertyPanelRow.LayoutHeader(property, depth, expanded))
-                        if (expanded) {
-                            HudLayoutEditorModel.fields(property).forEach {
-                                add(HudPropertyPanelRow.LayoutField(it, depth + 1, property))
-                            }
-                        }
+                    objectSchema != null -> {
+                        add(HudPropertyPanelRow.ObjectHeader(property, depth, objectSchema, expanded))
+                        if (expanded) addProperties(objectSchema.properties, depth + 1)
                     }
                     sealed != null -> {
                         add(HudPropertyPanelRow.SealedHeader(property, depth, sealed, expanded))

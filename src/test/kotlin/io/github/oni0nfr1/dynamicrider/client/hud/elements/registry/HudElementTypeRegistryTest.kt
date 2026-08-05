@@ -4,6 +4,8 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.debug.EditorPropertyS
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyMetadata
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertySchema
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyRole
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudValueSchema
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -22,7 +24,9 @@ class HudElementTypeRegistryTest {
         assertTrue(type.metadata.properties.size >= 27)
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.BooleanToggle })
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.StringInput })
-        assertTrue(type.metadata.properties.any { it.schema is HudPropertySchema.Sealed })
+        assertTrue(type.metadata.properties.any {
+            (it.schema as? HudPropertySchema.Value)?.schema is HudValueSchema.Sealed
+        })
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.Slider })
         assertTrue(type.metadata.properties.any { it.editor is HudPropertyEditorType.ColorPicker })
     }
@@ -55,7 +59,9 @@ class HudElementTypeRegistryTest {
             assertTrue(metadata.nameKey.isNotBlank())
             assertTrue(metadata.categoryNameKey.isNotBlank())
             assertFalse(metadata.properties.isEmpty())
-            assertNotNull(metadata.properties.singleOrNull { it.editor is HudPropertyEditorType.LayoutEditor })
+            val layout = metadata.properties.singleOrNull { it.role == HudPropertyRole.LAYOUT }
+            assertNotNull(layout)
+            assertTrue((layout!!.schema as? HudPropertySchema.Value)?.schema is HudValueSchema.Object)
         }
     }
 
@@ -82,10 +88,13 @@ class HudElementTypeRegistryTest {
         properties.forEach { property ->
             add(property.nameKey)
             property.descriptionKey?.let(::add)
-            val sealed = property.schema as? HudPropertySchema.Sealed ?: return@forEach
-            sealed.variants.forEach { variant ->
-                add(variant.nameKey)
-                addPropertyKeys(variant.properties)
+            when (val schema = (property.schema as? HudPropertySchema.Value)?.schema) {
+                is HudValueSchema.Object -> addPropertyKeys(schema.properties)
+                is HudValueSchema.Sealed -> schema.variants.forEach { variant ->
+                    add(variant.nameKey)
+                    addPropertyKeys(variant.properties)
+                }
+                else -> Unit
             }
         }
     }

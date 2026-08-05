@@ -3,7 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.command
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementSpec
 
 /**
@@ -69,8 +69,9 @@ class MoveElementCommand(
 class ReplaceElementSpecCommand(
     private val elementId: String,
     replacement: HudElementSpec<*, *>,
-    private val mergeKey: HudPropertyPath? = null,
+    mergeKey: HudPath? = null,
 ) : HudMergeableEditCommand {
+    private var mergeKey: Set<HudPath>? = mergeKey?.let(::setOf)
     private var replacement: HudElementSpec<*, *> = replacement
     private var change: HudDocumentChange.SpecReplaced? = null
 
@@ -90,5 +91,17 @@ class ReplaceElementSpecCommand(
         }
         replacement = newer.replacement
         return document.replace(elementId, replacement)
+    }
+
+    companion object {
+        /** 동일한 [paths]를 갱신하는 후속 command와 병합 가능한 Spec 교체를 생성한다. */
+        fun mergingLeaves(
+            elementId: String,
+            replacement: HudElementSpec<*, *>,
+            paths: Set<HudPath>,
+        ): ReplaceElementSpecCommand = ReplaceElementSpecCommand(elementId, replacement).also {
+            require(paths.isNotEmpty()) { "Merge paths must not be empty" }
+            it.mergeKey = paths.toSet()
+        }
     }
 }

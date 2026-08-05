@@ -23,7 +23,9 @@ class HudElementType<S : KartState, SPEC : HudElementSpec<*, S>>(
     val visibleInEditor: Boolean = true,
 ) {
     val id: String = serializer.descriptor.serialName
-    val metadata: HudElementMetadata = HudMetadataReader.read(serializer)
+    val metadata: HudElementMetadata by lazy {
+        HudMetadataReader.read(serializer) { HudElementTypeRegistry.byId(it) != null }
+    }
 
     init {
         require(id.isNotBlank()) { "HUD element type ID must not be blank" }

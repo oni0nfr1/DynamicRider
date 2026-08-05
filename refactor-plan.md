@@ -179,6 +179,23 @@ hud/elements/**/bridge    상태값에 표시 효과를 적용하는 기존 dele
 - [x] preview 캔버스 선택·이동을 구현한다.
   - 선택 요소의 bounds, 화면 anchor, 요소 anchor와 두 anchor 사이 offset을 overlay로 표시한다.
   - 선택 bounds의 단일 모서리 handle로 `scaleX`와 `scaleY`를 같은 값으로 조절한다.
+- [x] 중첩 요소의 프리뷰 선택·표시·이동을 위해 `ElementHolder`에서 직접 보유한 runtime 요소를 조회하는 읽기 전용 경로를 제공한다.
+  - `HudScene`과 `CompoundElement`가 같은 형식의 자식 entry snapshot을 제공하되, 이 API로 runtime 구조를 변경하지는 못하게 한다.
+  - 각 entry는 부모 안에서 안정적인 local key와 runtime `HudElement`를 제공한다. 장면 root의 key는 document element ID, 복합 요소 자식의 key는 Spec property 이름으로 하여 재귀 순회 결과를 `HudPath`와 연결한다.
+  - `CompoundElement`의 자식 등록은 문자열을 중복 작성하지 않도록 `addChild(spec::property)`와 같은 bound property reference를 사용하고, nullable 자식은 비활성 상태를 표현할 수 있게 한다.
+  - preview guide 계산기는 `ElementHolder` 트리를 재귀적으로 순회하며 부모 이동·배율을 합성해 각 경로의 실제 화면 bounds, anchor, 실효 z-index와 render order를 계산한다.
+  - 선택 요소는 흰색 실선 outline과 anchor를 표시하고, 선택 요소가 보유한 직계 runtime 자식들은 얇은 반투명 실선 outline으로 함께 표시한다.
+  - 중첩 요소를 선택하면 `screenAnchor`가 기준으로 삼는 직접 부모 bounds를 반투명 점선 outline으로 표시한다. 점선은 선택 후보를 뜻하는 실선과 구별하며, 직접 부모보다 위의 조상은 표시하지 않는다. root 요소의 부모인 scene viewport는 기존 preview 경계로 대신한다.
+  - 보조 outline은 소유 관계만 나타내며 자식의 anchor·offset 선·scale handle은 실제로 선택된 뒤에만 표시한다. nullable로 비활성화되어 runtime 요소가 없는 슬롯은 preview bounds 없이 Hierarchy에서만 `None` 상태를 표시한다.
+  - pointer 아래의 전체 runtime 요소를 즉시 선택 후보로 수집하고, root 요소들을 가상 scene root 아래에 둔 하나의 트리로 간주한다. 두 `HudPath` 사이 거리는 `depth(a) + depth(b) - 2 * depth(LCA(a, b))`로 계산한다.
+  - 현재 선택과 후보의 관계를 `자손`, `무관한 다른 요소`, `조상`으로 분류하고 이 순서로 우선한다. 같은 관계 범주 안에서는 scene-tree 거리가 가까운 후보를 먼저 고른다. 따라서 자손은 직계 자식부터, 조상은 직접 부모부터 자연스럽게 선택되고, 가까운 조상도 무관한 다른 요소를 가로채지 않는다.
+  - 관계와 거리가 같은 후보는 실효 z-index, render order, hierarchy depth 순으로 비교해 화면상 위에 있고 더 구체적인 요소를 안정적으로 선택한다.
+  - 현재 선택 요소 자체가 pointer 아래에 있고 다른 후보가 없을 때만 선택을 유지하는 fallback으로 다룬다. 어떤 runtime 요소의 bounds에도 포함되지 않는 빈 공간을 click하면 `selectedPath`를 `null`로 바꾸어 선택을 해제한다.
+  - 선택이 없을 때는 hierarchy depth가 얕은 후보를 먼저 고르고, 같은 깊이에서 실효 z-index와 render order로 최초 후보를 결정한다. 따라서 겹친 복합 요소를 처음 click하면 내부 자식보다 root에 가까운 요소부터 선택한다.
+  - hover 대상은 실제 click 시 선택될 후보와 항상 같아야 한다. hover 대상 자체의 outline만 밝게 하고 요소 표시 이름 label로 구별하며, hover 대상의 부모·조상 bounds는 추가로 표시하지 않는다.
+  - 선택된 요소의 anchor·offset 선·scale handle은 hover path와 별개로 선택 요소에만 표시한다.
+  - Hierarchy 헤더는 depth별 들여쓰기 외에도 부모에서 직계 자식으로 이어지는 얇은 tree connector를 표시한다. 선택 헤더의 흰색 outline은 유지하여 preview의 흰색 선택 bounds와 같은 의미로 사용한다.
+  - drag는 화면상 최소 이동 임계값을 넘은 뒤 시작하고, 선택 경로의 직접 부모 로컬 좌표로 pointer를 역변환해 해당 요소의 `layout.x/y`만 변경한다. 단순 click은 document와 dirty 상태를 변경하지 않는다.
 - [x] undo/redo, 저장, 커스텀 삭제 및 리소스 기본값 복원을 세션 API로 제공한다.
 - [x] drag 중 명령을 병합하고 anchor 기준 좌표로 역변환한다.
 - [x] 저장 또는 삭제 후 현재 live HUD를 자동 갱신하지 않고 이후 생성되는 HUD부터 최신 설정을 사용한다.

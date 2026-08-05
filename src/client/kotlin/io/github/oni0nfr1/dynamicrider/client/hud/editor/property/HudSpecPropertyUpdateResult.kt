@@ -11,7 +11,7 @@ sealed interface HudSpecPropertyUpdateResult {
 
     /** 변경할 수 없는 값이나 경로에 대한 실패다. */
     data class Failure(
-        val path: HudPropertyPath,
+        val path: HudPath,
         val reason: Reason,
         val message: String,
     ) : HudSpecPropertyUpdateResult

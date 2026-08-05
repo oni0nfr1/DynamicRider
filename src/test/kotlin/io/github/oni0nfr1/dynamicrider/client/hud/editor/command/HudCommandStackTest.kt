@@ -3,7 +3,7 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.command
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentElement
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudDocumentChange
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.gaugebar.GradientGaugeBar
 import io.github.oni0nfr1.dynamicrider.client.hud.scene.model.HudSceneSpec
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -62,9 +62,9 @@ class HudCommandStackTest {
         )
         val commands = HudCommandStack(document)
 
-        commands.execute(ReplaceElementSpecCommand("gauge", intermediate, HudPropertyPath.of("layout")))
+        commands.execute(ReplaceElementSpecCommand("gauge", intermediate, HudPath.of("layout")))
         commands.execute(
-            ReplaceElementSpecCommand("gauge", final, HudPropertyPath.of("layout")),
+            ReplaceElementSpecCommand("gauge", final, HudPath.of("layout")),
             mergeWithPrevious = true,
         )
 
@@ -86,9 +86,9 @@ class HudCommandStackTest {
         )
         val commands = HudCommandStack(document)
 
-        commands.execute(ReplaceElementSpecCommand("gauge", first, HudPropertyPath.of("layout")))
+        commands.execute(ReplaceElementSpecCommand("gauge", first, HudPath.of("layout")))
         commands.execute(
-            ReplaceElementSpecCommand("gauge", second, HudPropertyPath.of("width")),
+            ReplaceElementSpecCommand("gauge", second, HudPath.of("width")),
             mergeWithPrevious = true,
         )
 

@@ -2,10 +2,11 @@ package io.github.oni0nfr1.dynamicrider.client.hud.editor.service
 
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.command.ReplaceElementSpecCommand
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.document.HudSceneDocument
-import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPropertyPath
+import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudPath
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropertyEditor
 import io.github.oni0nfr1.dynamicrider.client.hud.editor.property.HudSpecPropertyUpdateResult
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 
 /** document의 현재 Spec에 대한 property 변경 요청을 검증된 command로 변환한다. */
 class HudSpecEditService(
@@ -19,7 +20,7 @@ class HudSpecEditService(
      */
     fun createPropertyChangeCommand(
         elementId: String,
-        path: HudPropertyPath,
+        path: HudPath,
         value: JsonElement,
     ): HudSpecEditCommandResult {
         val element = document.elementById(elementId)
@@ -39,16 +40,63 @@ class HudSpecEditService(
         }
     }
 
+    /** 같은 root 요소에 속한 primitive leaf 변경들을 하나의 command로 만든다. */
+    fun createLeafChangeCommand(
+        elementId: String,
+        vararg changes: Pair<HudPath, JsonPrimitive>,
+    ): HudSpecEditCommandResult {
+        val element = document.elementById(elementId)
+            ?: return HudSpecEditCommandResult.ElementNotFound(elementId)
+
+        return when (val result = HudSpecPropertyEditor.updateLeaf(element.spec, *changes)) {
+            is HudSpecPropertyUpdateResult.Success -> {
+                if (result.spec == element.spec) {
+                    HudSpecEditCommandResult.Unchanged(elementId)
+                } else {
+                    HudSpecEditCommandResult.Created(
+                        ReplaceElementSpecCommand.mergingLeaves(
+                            elementId = elementId,
+                            replacement = result.spec,
+                            paths = changes.map(Pair<HudPath, JsonPrimitive>::first).toSet(),
+                        ),
+                    )
+                }
+            }
+            is HudSpecPropertyUpdateResult.Failure -> HudSpecEditCommandResult.PropertyRejected(result)
+        }
+    }
+
     /** [elementId]의 sealed property를 지정 subtype으로 바꾸는 command를 생성한다. */
     fun createVariantChangeCommand(
         elementId: String,
-        path: HudPropertyPath,
+        path: HudPath,
         variantSerialName: String,
     ): HudSpecEditCommandResult {
         val element = document.elementById(elementId)
             ?: return HudSpecEditCommandResult.ElementNotFound(elementId)
 
         return when (val result = HudSpecPropertyEditor.changeVariant(element.spec, path, variantSerialName)) {
+            is HudSpecPropertyUpdateResult.Success -> {
+                if (result.spec == element.spec) {
+                    HudSpecEditCommandResult.Unchanged(elementId)
+                } else {
+                    HudSpecEditCommandResult.Created(ReplaceElementSpecCommand(elementId, result.spec))
+                }
+            }
+            is HudSpecPropertyUpdateResult.Failure -> HudSpecEditCommandResult.PropertyRejected(result)
+        }
+    }
+
+    /** [elementId]의 nullable property를 비활성화하거나 기본값으로 활성화하는 command를 생성한다. */
+    fun createPresenceChangeCommand(
+        elementId: String,
+        path: HudPath,
+        present: Boolean,
+    ): HudSpecEditCommandResult {
+        val element = document.elementById(elementId)
+            ?: return HudSpecEditCommandResult.ElementNotFound(elementId)
+
+        return when (val result = HudSpecPropertyEditor.setPresence(element.spec, path, present)) {
             is HudSpecPropertyUpdateResult.Success -> {
                 if (result.spec == element.spec) {
                     HudSpecEditCommandResult.Unchanged(elementId)

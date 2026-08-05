@@ -7,8 +7,10 @@ import io.github.oni0nfr1.dynamicrider.client.hud.elements.impl.spec.HudElementS
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementType
 import io.github.oni0nfr1.dynamicrider.client.hud.elements.registry.HudElementTypeRegistry
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyEditorType
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudElementSlotSchema
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertyMetadata
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudPropertySchema
+import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HudValueSchema
 import io.github.oni0nfr1.dynamicrider.client.hud.metadata.HUD_CLASS_DISCRIMINATOR
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidationResult
 import io.github.oni0nfr1.dynamicrider.client.hud.validation.HudSpecValidator
@@ -37,7 +39,7 @@ object HudSpecPropertyEditor {
      */
     fun update(
         spec: HudElementSpec<*, *>,
-        path: HudPropertyPath,
+        path: HudPath,
         value: JsonElement,
     ): HudSpecPropertyUpdateResult {
         val type = HudElementTypeRegistry.bySpec(spec)
@@ -63,10 +65,51 @@ object HudSpecPropertyEditor {
         return decodeAndValidate(serializer, updated, path)
     }
 
+    /** 하나 이상의 primitive leaf 변경을 원자적으로 적용한 새 최상위 spec을 생성한다. */
+    fun updateLeaf(
+        spec: HudElementSpec<*, *>,
+        vararg changes: Pair<HudPath, JsonPrimitive>,
+    ): HudSpecPropertyUpdateResult {
+        require(changes.isNotEmpty()) { "At least one HUD leaf change is required" }
+        require(changes.map(Pair<HudPath, JsonPrimitive>::first).distinct().size == changes.size) {
+            "HUD leaf change paths must be unique"
+        }
+        val type = HudElementTypeRegistry.bySpec(spec)
+            ?: return Failure(
+                changes.first().first,
+                Reason.UNREGISTERED_SPEC,
+                "HUD element spec '${spec::class.qualifiedName}' is not registered",
+            )
+        val serializer = serializer(type)
+        val encoded = encode(serializer, spec) ?: return Failure(
+            changes.first().first,
+            Reason.INVALID_VALUE,
+            "HUD element spec must serialize as an object",
+        )
+
+        changes.forEach { (path, value) ->
+            val property = resolveProperty(type.metadata.properties, encoded, path.segments)
+                ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+            unsupportedReason(property, path)?.let { return it }
+            val leaf = (property.schema as? HudPropertySchema.Value)?.schema as? HudValueSchema.Leaf
+                ?: return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '$path' is not a leaf")
+            if (leaf.editor is HudPropertyEditorType.Unsupported) {
+                return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '$path' is unsupported")
+            }
+            validateInput(property, path, value)?.let { return it }
+        }
+
+        val updated = changes.fold(encoded) { current, (path, value) ->
+            replace(current, path.segments, value)
+                ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        }
+        return decodeAndValidate(serializer, updated, changes.first().first)
+    }
+
     /** [path]의 sealed property를 [variantSerialName] subtype의 기본값으로 교체한다. */
     fun changeVariant(
         spec: HudElementSpec<*, *>,
-        path: HudPropertyPath,
+        path: HudPath,
         variantSerialName: String,
     ): HudSpecPropertyUpdateResult {
         val type = HudElementTypeRegistry.bySpec(spec)
@@ -79,28 +122,116 @@ object HudSpecPropertyEditor {
         if (property.hidden) {
             return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '${property.serialName}' is hidden")
         }
-        val schema = property.schema as? HudPropertySchema.Sealed
-            ?: return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '$path' is not sealed")
-        if (schema.variants.none { it.serialName == variantSerialName }) {
-            return Failure(path, Reason.INVALID_VALUE, "Unknown variant '$variantSerialName' for HUD property '$path'")
+        val currentValue = valueAt(encoded, path.segments)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        val replacement = when (val propertySchema = property.schema) {
+            is HudPropertySchema.Value -> {
+                val schema = propertySchema.schema as? HudValueSchema.Sealed
+                    ?: return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '$path' is not sealed")
+                if (schema.variants.none { it.serialName == variantSerialName }) {
+                    return Failure(path, Reason.INVALID_VALUE, "Unknown variant '$variantSerialName' for HUD property '$path'")
+                }
+                if ((currentValue as? JsonObject)?.selectedVariant(schema.discriminator) == variantSerialName) {
+                    return Success(spec)
+                }
+                JsonObject(mapOf(schema.discriminator to JsonPrimitive(variantSerialName)))
+            }
+            is HudPropertySchema.Element -> {
+                val schema = propertySchema.schema as? HudElementSlotSchema.Sealed
+                    ?: return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD element property '$path' is not sealed")
+                if (schema.variants.none { it.serialName == variantSerialName }) {
+                    return Failure(path, Reason.INVALID_VALUE, "Unknown variant '$variantSerialName' for HUD element property '$path'")
+                }
+                if ((currentValue as? JsonObject)?.selectedVariant(schema.discriminator) == variantSerialName) {
+                    return Success(spec)
+                }
+                val type = HudElementTypeRegistry.byId(variantSerialName)
+                    ?: return Failure(path, Reason.INVALID_VALUE, "HUD element variant '$variantSerialName' is not registered")
+                JsonObject(
+                    encodeDefaultSpec(type) + (schema.discriminator to JsonPrimitive(variantSerialName)),
+                )
+            }
         }
-        val currentValue = valueAt(encoded, path.segments) as? JsonObject
-            ?: return Failure(path, Reason.INVALID_VALUE, "HUD property '$path' is not an object")
-        if ((currentValue[schema.discriminator] as? JsonPrimitive)?.content == variantSerialName) {
-            return Success(spec)
-        }
-        val replacement = JsonObject(
-            mapOf(schema.discriminator to JsonPrimitive(variantSerialName))
-        )
         val updated = replace(encoded, path.segments, replacement)
             ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
         return decodeAndValidate(serializer, updated, path)
     }
 
+    /** nullable property를 비활성화하거나 스키마의 기본값으로 다시 활성화한다. */
+    fun setPresence(
+        spec: HudElementSpec<*, *>,
+        path: HudPath,
+        present: Boolean,
+    ): HudSpecPropertyUpdateResult {
+        val type = HudElementTypeRegistry.bySpec(spec)
+            ?: return Failure(path, Reason.UNREGISTERED_SPEC, "HUD element spec '${spec::class.qualifiedName}' is not registered")
+        val serializer = serializer(type)
+        val encoded = encode(serializer, spec)
+            ?: return Failure(path, Reason.INVALID_VALUE, "HUD element spec must serialize as an object")
+        val property = resolveProperty(type.metadata.properties, encoded, path.segments)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        if (property.hidden) {
+            return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '${property.serialName}' is hidden")
+        }
+        if (!property.nullable) {
+            return Failure(path, Reason.INVALID_VALUE, "HUD property '$path' is not nullable")
+        }
+        val currentValue = valueAt(encoded, path.segments)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        if ((currentValue !is JsonNull) == present) return Success(spec)
+
+        val replacement = if (!present) {
+            JsonNull
+        } else {
+            defaultValue(property) ?: return Failure(
+                path,
+                Reason.UNSUPPORTED_PROPERTY,
+                "HUD property '$path' has no constructible default value",
+            )
+        }
+        val updated = replace(encoded, path.segments, replacement)
+            ?: return Failure(path, Reason.UNKNOWN_PROPERTY, "Unknown HUD property '$path'")
+        return decodeAndValidate(serializer, updated, path)
+    }
+
+    private fun defaultValue(property: HudPropertyMetadata): JsonElement? =
+        when (val propertySchema = property.schema) {
+            is HudPropertySchema.Value -> when (val schema = propertySchema.schema) {
+                is HudValueSchema.Object -> JsonObject(emptyMap())
+                is HudValueSchema.Sealed -> JsonObject(
+                    mapOf(schema.discriminator to JsonPrimitive(schema.variants.first().serialName)),
+                )
+                is HudValueSchema.Leaf,
+                is HudValueSchema.Unsupported,
+                -> null
+            }
+            is HudPropertySchema.Element -> when (val schema = propertySchema.schema) {
+                is HudElementSlotSchema.Fixed -> HudElementTypeRegistry.byId(schema.serialName)
+                    ?.let(::encodeDefaultSpec)
+                is HudElementSlotSchema.Sealed -> {
+                    val variant = schema.variants.first()
+                    val type = HudElementTypeRegistry.byId(variant.serialName) ?: return null
+                    JsonObject(
+                        encodeDefaultSpec(type) +
+                            (schema.discriminator to JsonPrimitive(variant.serialName)),
+                    )
+                }
+            }
+        }
+
+    private fun encodeDefaultSpec(type: HudElementType<*, *>): JsonObject {
+        val defaultSpec = type.createDefaultSpec()
+        return encode(serializer(type), defaultSpec)
+            ?: error("Default HUD element spec '${type.id}' must serialize as an object")
+    }
+
+    private fun JsonObject.selectedVariant(discriminator: String): String? =
+        (this[discriminator] as? JsonPrimitive)?.content
+
     private fun decodeAndValidate(
         serializer: KSerializer<HudElementSpec<*, *>>,
         updated: JsonObject,
-        path: HudPropertyPath,
+        path: HudPath,
     ): HudSpecPropertyUpdateResult {
         return try {
             val updatedSpec = json.decodeFromJsonElement(serializer, updated)
@@ -110,7 +241,7 @@ object HudSpecPropertyEditor {
                     val error = validation.errors.first()
                     Failure(
                         error.path.segments.takeIf { it.isNotEmpty() }
-                            ?.let { HudPropertyPath.of(*it.toTypedArray()) }
+                            ?.let { HudPath.of(*it.toTypedArray()) }
                             ?: path,
                         Reason.INVALID_VALUE,
                         error.message,
@@ -149,7 +280,7 @@ object HudSpecPropertyEditor {
 
     private fun unsupportedReason(
         property: HudPropertyMetadata,
-        path: HudPropertyPath,
+        path: HudPath,
     ): Failure? {
         if (property.hidden) {
             return Failure(path, Reason.UNSUPPORTED_PROPERTY, "HUD property '${property.serialName}' is hidden")
@@ -167,7 +298,7 @@ object HudSpecPropertyEditor {
 
     private fun validateInput(
         property: HudPropertyMetadata,
-        path: HudPropertyPath,
+        path: HudPath,
         value: JsonElement,
     ): Failure? {
         if (value is JsonNull) {
@@ -177,7 +308,7 @@ object HudSpecPropertyEditor {
                 "HUD property '$path' is not nullable",
             )
         }
-        if (property.editor !is HudPropertyEditorType.LayoutEditor && value !is JsonPrimitive) {
+        if (value !is JsonPrimitive) {
             return Failure(
                 path,
                 Reason.INVALID_VALUE,
@@ -193,12 +324,32 @@ object HudSpecPropertyEditor {
         path: List<String>,
     ): HudPropertyMetadata? {
         val property = properties.firstOrNull { it.serialName == path.first() } ?: return null
-        if (path.size == 1 || property.editor is HudPropertyEditorType.LayoutEditor) return property
-        val schema = property.schema as? HudPropertySchema.Sealed ?: return null
+        if (path.size == 1) return property
         val objectValue = encoded[property.serialName] as? JsonObject ?: return null
-        val selected = (objectValue[schema.discriminator] as? JsonPrimitive)?.content ?: return null
-        val variant = schema.variants.firstOrNull { it.serialName == selected } ?: return null
-        return resolveProperty(variant.properties, objectValue, path.drop(1))
+        val nestedProperties = when (val schema = property.schema) {
+            is HudPropertySchema.Value -> when (val valueSchema = schema.schema) {
+                is HudValueSchema.Object -> valueSchema.properties
+                is HudValueSchema.Sealed -> {
+                    val selected = (objectValue[valueSchema.discriminator] as? JsonPrimitive)?.content
+                        ?: return null
+                    valueSchema.variants.firstOrNull { it.serialName == selected }?.properties
+                        ?: return null
+                }
+                else -> return null
+            }
+            is HudPropertySchema.Element -> when (val elementSchema = schema.schema) {
+                is HudElementSlotSchema.Fixed -> HudElementTypeRegistry.byId(elementSchema.serialName)
+                    ?.metadata
+                    ?.properties
+                    ?: return null
+                is HudElementSlotSchema.Sealed -> {
+                    val selected = (objectValue[elementSchema.discriminator] as? JsonPrimitive)?.content
+                        ?: return null
+                    HudElementTypeRegistry.byId(selected)?.metadata?.properties ?: return null
+                }
+            }
+        }
+        return resolveProperty(nestedProperties, objectValue, path.drop(1))
     }
 
     private fun replace(
